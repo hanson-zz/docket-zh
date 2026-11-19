@@ -708,8 +708,36 @@ public enum NotchIslandLayout {
             if case .charging = primary { result.append(panda(geometry, body: main)) }
             return result
         case .expanded(let primary, let secondary):
+            if NotchHangingPanda.hangs(primary) {
+                return [hanging(geometry, hasSecondary: secondary != nil)]
+            }
             return [card(geometry, kind: primary.kind, hasSecondary: secondary != nil)]
         }
+    }
+
+    // MARK: 专注计时展开：小熊猫从刘海倒挂下来
+
+    /// 倒挂那一套的宽度（计时牌宽度，小熊猫在它正上方）。
+    public static let hangWidth: CGFloat = 248
+    /// 刘海底边到小熊猫尾巴尖那段绳子露出来多长。
+    public static let hangRope: CGFloat = 8
+    /// 倒挂小熊猫图的边长（正方形透明图，尾巴尖在顶边中间）。
+    public static let hangPanda: CGFloat = 96
+    /// 小熊猫两只爪子搭在计时牌上，和计时牌重叠多少。
+    public static let hangPawOverlap: CGFloat = 18
+    /// 计时牌高度（不含第二个活动那一行）。
+    public static let hangCardHeight: CGFloat = 168
+
+    /// 计时牌顶边（原点坐标 y）。
+    public static func hangCardTop(_ geometry: NotchIslandGeometry) -> CGFloat {
+        geometry.notchHeight + hangRope + hangPanda - hangPawOverlap
+    }
+
+    /// 倒挂那一套整体的范围：顶边贴屏幕顶，以刘海中线对称，含绳子、小熊猫、计时牌。
+    public static func hanging(_ geometry: NotchIslandGeometry, hasSecondary: Bool) -> CGRect {
+        let width = max(hangWidth, geometry.notchWidth + 40)
+        let height = hangCardTop(geometry) + hangCardHeight + (hasSecondary ? secondaryRowHeight : 0)
+        return CGRect(x: -width / 2, y: 0, width: width, height: height)
     }
 
     /// 指针在这些范围里算「停在小岛上」（原点坐标，往外放宽 `slack`）。
@@ -749,5 +777,49 @@ public enum NotchIslandLayout {
     /// 原点坐标里的一块换成屏幕坐标（原点左下）。
     public static func screenRect(_ local: CGRect, centerX: CGFloat, screenTop: CGFloat) -> CGRect {
         CGRect(x: centerX + local.minX, y: screenTop - local.maxY, width: local.width, height: local.height)
+    }
+}
+
+// MARK: - 倒挂小熊猫
+
+/// 专注计时在小岛上展开时，小熊猫用尾巴缠着绳子从刘海倒挂下来，爪子捧着计时牌。
+/// 图在 Resources/NotchPanda（`notch-panda-<样子>.png`，@1x 112、@2x 224 透明 PNG；
+/// 收起时左边探出来的小脑袋是 `notch-panda-peek`）。
+public enum NotchHangingPanda {
+    /// 倒挂时的样子：专注中、眨眼那一帧、打盹（暂停）、开心（刚完成和休息）。
+    public enum Pose: String, CaseIterable, Sendable {
+        case hang, blink, sleep, done
+
+        public var imageName: String { "notch-panda-\(rawValue)" }
+    }
+
+    /// 收起时左边那颗小脑袋。
+    public static let peekImageName = "notch-panda-peek"
+
+    /// 只有专注计时（含休息环节）倒挂；倒计时卡片的计时器照旧是卡片。
+    public static func hangs(_ activity: NotchIslandActivity) -> Bool {
+        if case .timer(_, _, _, _, .focus, _) = activity { return true }
+        return false
+    }
+
+    /// 吉祥物状态换成倒挂的样子：暂停（等开始）打盹，刚完成和休息开心，专注中睁眼。
+    /// `blinking` 是眨眼那一下，只在专注中生效。
+    public static func pose(_ state: FocusMascotState, blinking: Bool = false) -> Pose {
+        switch state {
+        case .focus: blinking ? .blink : .hang
+        case .idle: .sleep
+        case .done, .break: .done
+        }
+    }
+
+    /// 下一次眨眼前等多久（秒）：3 到 6 秒，`unit` 是 0...1 的随机数。
+    public static func blinkDelay(_ unit: Double) -> TimeInterval {
+        3 + 3 * min(1, max(0, unit))
+    }
+
+    /// 轻轻摆动的角度（度）：周期 4 秒，左右各 `amplitude` 度。减弱动态效果时不摆。
+    public static func sway(at time: TimeInterval, amplitude: Double = 3, reduceMotion: Bool) -> Double {
+        guard !reduceMotion else { return 0 }
+        return amplitude * sin(time * 2 * .pi / 4)
     }
 }

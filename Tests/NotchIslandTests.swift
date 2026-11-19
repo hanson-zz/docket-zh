@@ -508,4 +508,47 @@ final class NotchIslandTests: XCTestCase {
         XCTAssertFalse(NotchIslandShiduoYield.shelfOpen([far], screen: screen), "不在刘海附近")
         XCTAssertFalse(NotchIslandGate.visible(.init(active: true, shiduoShelf: true)))
     }
+
+    // MARK: 倒挂小熊猫
+
+    func testOnlyFocusTimerHangs() {
+        let focus = NotchIslandActivity.timer(deadline: Date(), pausedLeft: nil, total: 1500, focus: true)
+        let rest = NotchIslandActivity.timer(deadline: Date(), pausedLeft: nil, total: 300, focus: false)
+        let countdown = NotchIslandActivity.timer(deadline: Date(), pausedLeft: nil, total: 180, focus: false,
+                                                  source: .countdown(widget: UUID(), timer: "main"))
+        XCTAssertTrue(NotchHangingPanda.hangs(focus))
+        XCTAssertTrue(NotchHangingPanda.hangs(rest), "休息环节也倒挂")
+        XCTAssertFalse(NotchHangingPanda.hangs(countdown), "倒计时卡片照旧是卡片")
+        XCTAssertFalse(NotchHangingPanda.hangs(.radio(station: "a", playing: true)))
+    }
+
+    func testHangingPoses() {
+        XCTAssertEqual(NotchHangingPanda.pose(.focus), .hang)
+        XCTAssertEqual(NotchHangingPanda.pose(.focus, blinking: true), .blink)
+        XCTAssertEqual(NotchHangingPanda.pose(.idle, blinking: true), .sleep, "暂停打盹，不眨眼")
+        XCTAssertEqual(NotchHangingPanda.pose(.done), .done)
+        XCTAssertEqual(NotchHangingPanda.pose(.break), .done)
+        XCTAssertEqual(NotchHangingPanda.Pose.sleep.imageName, "notch-panda-sleep")
+        XCTAssertEqual(NotchHangingPanda.blinkDelay(0), 3)
+        XCTAssertEqual(NotchHangingPanda.blinkDelay(1), 6)
+        XCTAssertEqual(NotchHangingPanda.blinkDelay(5), 6)
+        XCTAssertEqual(NotchHangingPanda.sway(at: 1, reduceMotion: true), 0)
+        XCTAssertLessThanOrEqual(abs(NotchHangingPanda.sway(at: 1, reduceMotion: false)), 3.0001)
+    }
+
+    func testHangingLayout() {
+        let geometry = NotchIslandLayout.geometry(screen: notched)
+        let focus = NotchIslandActivity.timer(deadline: Date(), pausedLeft: nil, total: 1500, focus: true)
+        let pieces = NotchIslandLayout.pieces(geometry, form: .expanded(focus, secondary: nil))
+        XCTAssertEqual(pieces, [NotchIslandLayout.hanging(geometry, hasSecondary: false)])
+        XCTAssertEqual(pieces[0].minY, 0)
+        XCTAssertEqual(pieces[0].midX, 0, accuracy: 0.001, "以刘海中线对称")
+        XCTAssertGreaterThan(NotchIslandLayout.hangCardTop(geometry), geometry.notchHeight + NotchIslandLayout.hangPanda / 2,
+                             "计时牌在小熊猫下面")
+        XCTAssertEqual(pieces[0].maxY, NotchIslandLayout.hangCardTop(geometry) + NotchIslandLayout.hangCardHeight)
+        XCTAssertEqual(NotchIslandLayout.hanging(geometry, hasSecondary: true).height - pieces[0].height,
+                       NotchIslandLayout.secondaryRowHeight)
+        let zone = NotchIslandLayout.hotZone(geometry, form: .expanded(focus, secondary: nil))
+        XCTAssertTrue(zone.contains(pieces[0]))
+    }
 }

@@ -93,6 +93,10 @@ targets:
       # @1x 128、@2x 256 透明 PNG；原图在 design/finder-panda，不提交），作为普通资源打包。
       - path: Resources/LiveIcons
         buildPhase: resources
+      # 刘海小岛专注计时的倒挂小熊猫（作者用 ChatGPT 出的透明图，倒挂四种样子 @1x 112、@2x 224，
+      # 外加收起时探头的小脑袋），作为普通资源打包。
+      - path: Resources/NotchPanda
+        buildPhase: resources
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is

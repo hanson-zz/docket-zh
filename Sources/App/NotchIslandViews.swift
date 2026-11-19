@@ -45,14 +45,28 @@ struct NotchIslandRootView: View {
                         .fill(.black)
                         .place(NotchIslandLayout.notch(geometry))
                         .id("island-body")
-                    let card = NotchIslandLayout.card(geometry, kind: primary.kind, hasSecondary: secondary != nil)
-                    NotchIslandCard(model: model, primary: primary, secondary: secondary)
-                        .frame(width: card.width, height: card.height)
-                        .offset(x: card.midX, y: card.minY)
-                        .transition(reduceMotion
-                            ? .opacity
-                            : .scale(scale: 0.4, anchor: .top).combined(with: .opacity))
-                        .id("island-card")
+                    if NotchIslandHanging.available, NotchHangingPanda.hangs(primary),
+                       case .timer(let deadline, let pausedLeft, let total, _, _, _) = primary {
+                        // 专注计时：小熊猫用尾巴缠着绳子从刘海倒挂下来，捧着计时牌。
+                        let rect = NotchIslandLayout.hanging(geometry, hasSecondary: secondary != nil)
+                        NotchIslandHangingFocus(model: model, deadline: deadline, pausedLeft: pausedLeft,
+                                                total: total, secondary: secondary)
+                            .frame(width: rect.width, height: rect.height)
+                            .offset(x: rect.midX, y: rect.minY)
+                            .transition(reduceMotion
+                                ? .opacity
+                                : .move(edge: .top).combined(with: .opacity))
+                            .id("island-hanging")
+                    } else {
+                        let card = NotchIslandLayout.card(geometry, kind: primary.kind, hasSecondary: secondary != nil)
+                        NotchIslandCard(model: model, primary: primary, secondary: secondary)
+                            .frame(width: card.width, height: card.height)
+                            .offset(x: card.midX, y: card.minY)
+                            .transition(reduceMotion
+                                ? .opacity
+                                : .scale(scale: 0.4, anchor: .top).combined(with: .opacity))
+                            .id("island-card")
+                    }
                 }
             }
         }
@@ -179,10 +193,22 @@ private struct NotchIslandBody: View {
                 .foregroundStyle(NotchIslandPalette.onBlack)
         case .timer(_, _, _, _, .focus, _):
             // 专注计时：左边是选好的吉祥物（专注中、暂停、休息、刚完成各一种样子）。
+            // 选的是小熊猫时，是从刘海底下探出来的小脑袋（展开后整只倒挂下来）。
             TimelineView(.periodic(from: .now, by: 1)) { tick in
                 let state = TimerStateProvider.shared.state
-                FocusMascotImage(mascot: FocusMascot.of(state, unlocked: ProAccess.isUnlocked), state: FocusMascotState.of(state, now: tick.date),
-                                 height: max(18, geometry.notchHeight - 6))
+                let mascot = FocusMascot.of(state, unlocked: ProAccess.isUnlocked)
+                if mascot == .panda, let peek = NotchIslandHanging.peek {
+                    Image(nsImage: peek)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(height: max(16, geometry.notchHeight - 10))
+                        .frame(maxHeight: .infinity, alignment: .bottom)
+                        .accessibilityHidden(true)
+                } else {
+                    FocusMascotImage(mascot: mascot, state: FocusMascotState.of(state, now: tick.date),
+                                     height: max(18, geometry.notchHeight - 6))
+                }
             }
         case .timer:
             EmptyView()
@@ -859,6 +885,153 @@ private struct NotchIslandSecondaryRow: View {
         case .timer: "timer"
         case .meeting: "calendar"
         case .radio: "radio.fill"
+        }
+    }
+}
+
+// MARK: - 专注计时展开：倒挂小熊猫
+
+/// 倒挂小熊猫的图（Resources/NotchPanda），读一次存着；缺图时专注照旧用展开卡片。
+@MainActor
+enum NotchIslandHanging {
+    static let poses: [NotchHangingPanda.Pose: NSImage] = {
+        var result: [NotchHangingPanda.Pose: NSImage] = [:]
+        for pose in NotchHangingPanda.Pose.allCases {
+            if let image = Bundle.main.image(forResource: pose.imageName) { result[pose] = image }
+        }
+        return result
+    }()
+    static let peek = Bundle.main.image(forResource: NotchHangingPanda.peekImageName)
+
+    static var available: Bool { poses.count == NotchHangingPanda.Pose.allCases.count }
+}
+
+/// 专注计时展开后的样子（照效果图）：刘海底边中间垂下一根细绳，小熊猫尾巴缠着绳子倒挂，
+/// 两只爪子搭在下面的液态玻璃计时牌上。专注中睁眼、隔几秒眨一下，整只轻轻左右摆；
+/// 暂停时闭眼打盹、头上飘「zZ」、时间变淡；刚完成和休息时开心大笑。减弱动态效果时不摆不眨。
+private struct NotchIslandHangingFocus: View {
+    var model: NotchIslandModel
+    var deadline: Date?
+    var pausedLeft: TimeInterval?
+    var total: TimeInterval
+    var secondary: NotchIslandActivity?
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var blinking = false
+
+    private var cardShape: RoundedRectangle { RoundedRectangle(cornerRadius: 24, style: .continuous) }
+
+    var body: some View {
+        let geometry = model.geometry
+        let cardTop = NotchIslandLayout.hangCardTop(geometry)
+        let panda = NotchIslandLayout.hangPanda
+        TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30, paused: false)) { tick in
+            let state = TimerStateProvider.shared.state
+            let mascotState = FocusMascotState.of(state, now: tick.date)
+            let pose = NotchHangingPanda.pose(mascotState, blinking: blinking && !reduceMotion)
+            let swing = NotchHangingPanda.sway(at: tick.date.timeIntervalSinceReferenceDate,
+                                               reduceMotion: reduceMotion || pausedLeft != nil)
+            ZStack(alignment: .top) {
+                // 计时牌在下面，小熊猫和绳子压在它上面（爪子搭在牌子上沿）。
+                card(now: tick.date)
+                    .frame(width: NotchIslandLayout.hangWidth,
+                           height: NotchIslandLayout.hangCardHeight
+                               + (secondary != nil ? NotchIslandLayout.secondaryRowHeight : 0))
+                    .offset(y: cardTop)
+                ZStack(alignment: .top) {
+                    Capsule()
+                        .fill(Color(hex: "#F3D9B8"))
+                        .frame(width: 2, height: NotchIslandLayout.hangRope + panda * 0.12)
+                        .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
+                    if let image = NotchIslandHanging.poses[pose] {
+                        Image(nsImage: image)
+                            .resizable()
+                            .interpolation(.high)
+                            .frame(width: panda, height: panda)
+                            .offset(y: NotchIslandLayout.hangRope)
+                            .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.18), radius: 6, y: 3)
+                    }
+                    if pose == .sleep {
+                        Text(verbatim: "zZ")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(NotchIslandPalette.accent(scheme))
+                            .offset(x: panda * 0.42, y: NotchIslandLayout.hangRope + panda * 0.3)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .rotationEffect(.degrees(swing), anchor: .top)
+                .offset(y: geometry.notchHeight)
+                .accessibilityHidden(true)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .task(id: reduceMotion) { await blinkLoop() }
+    }
+
+    @ViewBuilder private func card(now: Date) -> some View {
+        let left = NotchIslandTimer.remaining(deadline: deadline, pausedLeft: pausedLeft, now: now)
+        let paused = pausedLeft != nil
+        VStack(spacing: 10) {
+            Text(verbatim: FocusCycle.caption(TimerStateProvider.shared.state))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(1)
+            Text(verbatim: NotchIslandText.clock(left))
+                .font(.system(size: 36, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(paused ? Color.panelSecondary : NotchIslandPalette.accent(scheme))
+                .contentTransition(.numericText(countsDown: true))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            HStack(spacing: 10) {
+                NotchIslandCapsuleButton(title: paused ? tr("继续") : tr("暂停"), solid: true) {
+                    model.act?(.timerToggle(.focus))
+                }
+                NotchIslandCapsuleButton(title: tr("结束"), solid: false) {
+                    model.act?(.timerEnd(.focus))
+                }
+            }
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.panelTrack)
+                    Capsule()
+                        .fill(NotchIslandPalette.accent(scheme))
+                        .frame(width: proxy.size.width * NotchIslandTimer.elapsedFraction(remaining: left, total: total))
+                }
+            }
+            .frame(height: 4)
+            .padding(.horizontal, 6)
+            .accessibilityHidden(true)
+            if let secondary {
+                NotchIslandSecondaryRow(activity: secondary)
+                    .padding(.top, 4)
+            }
+        }
+        .padding(.top, NotchIslandLayout.hangPawOverlap + 6)
+        .padding(.horizontal, 18)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            NotchMessageGlass(shape: cardShape)
+                .overlay { cardShape.stroke(Color.panelStroke, lineWidth: 0.6) }
+                .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.16), radius: 18, y: 8)
+        }
+        .contentShape(cardShape)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(tr("刘海小岛"))
+        .accessibilityValue(NotchIslandText.spoken(
+            .timer(deadline: deadline, pausedLeft: pausedLeft, total: total, focus: true), now: now))
+    }
+
+    /// 专注中隔 3 到 6 秒眨一下眼（闭眼 0.15 秒）。
+    private func blinkLoop() async {
+        guard !reduceMotion else { blinking = false; return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(NotchHangingPanda.blinkDelay(Double.random(in: 0...1))))
+            if Task.isCancelled { return }
+            blinking = true
+            try? await Task.sleep(for: .milliseconds(150))
+            blinking = false
         }
     }
 }
