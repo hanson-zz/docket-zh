@@ -175,11 +175,15 @@ struct VisualEffectPlate: NSViewRepresentable {
         view.state = .active
         view.material = material
         view.blendingMode = blending
+        view.appearance = NSAppearance(named: context.environment.colorScheme == .dark ? .darkAqua : .aqua)
         return view
     }
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {
         view.material = material
         view.blendingMode = blending
+        // 钉住外观：macOS 26 的材质会按身后内容自动变深，浅色外观下面板
+        // 落在深色窗口或壁纸上就成了深色底，而字还是深色，看不清。
+        view.appearance = NSAppearance(named: context.environment.colorScheme == .dark ? .darkAqua : .aqua)
     }
 }

@@ -588,6 +588,13 @@ struct WidgetDetailChrome: View {
             // Reduce Transparency and Increase Contrast take the same door,
             // which closes a gap every one of these panels had: the chrome
             // never read either setting.
+            // 跟外观走的半透明底色（同 PanelGlassSurface）：系统材质在深色内容上
+            // 仍可能变深，垫一层后浅色外观的面板始终是浅底，深色字看得清。
+            .overlay {
+                if ground == nil {
+                    Rectangle().fill(scheme == .dark ? Color.black.opacity(0.18) : Color.white.opacity(0.55))
+                }
+            }
             .overlay {
                 if ground == nil, reduceTransparency || contrast == .increased {
                     Rectangle().fill(scheme == .dark ? Color(white: 0.11) : Color(white: 0.95))
