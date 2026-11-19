@@ -349,11 +349,7 @@ private struct AIChatPanelSurface: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        if reduceTransparency {
-            shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
-        } else {
-            Color.clear.glassEffect(.regular, in: shape)
-        }
+        ReadableGlass(shape: shape)
     }
 }
 

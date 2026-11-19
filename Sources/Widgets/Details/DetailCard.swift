@@ -119,11 +119,37 @@ struct PanelGlassSurface: View {
             // 底色不能放进 glassEffect 里当它的内容：玻璃在深色内容上会把自己的内容
             // 一起翻成深色（实测浅色外观下整张卡变 #1C1C20），所以玻璃单独一层，
             // 底色作为兄弟层盖在玻璃上面，玻璃动不到它。
+            ReadableGlass(shape: shape)
+        }
+    }
+}
+
+/// 字看得清的液态玻璃：玻璃单独一层，跟外观走的半透明底色作为兄弟层盖在上面。
+/// 只有玻璃时，浅色外观下放在深色壁纸或窗口上会被翻成深色玻璃，深色字就看不清；
+/// 底色放进 glassEffect 当内容也会被一起翻深，所以必须分层。所有带字的玻璃底都用它。
+/// 系统「降低透明度」时换实心底。
+struct ReadableGlass<S: Shape>: View {
+    var shape: S
+
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        if reduceTransparency {
+            shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
+        } else {
             ZStack {
                 Color.clear.glassEffect(.regular, in: shape)
                 shape.fill(scheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.72))
             }
         }
+    }
+}
+
+extension View {
+    /// 垫一层 `ReadableGlass`，代替直接 `.glassEffect(.regular, in:)`。
+    func readableGlass<S: Shape>(in shape: S) -> some View {
+        background { ReadableGlass(shape: shape) }
     }
 }
 

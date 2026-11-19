@@ -135,11 +135,7 @@ struct DesktopCard: View {
 
     /// 液态玻璃，跟着卡片的浅色 / 深色走；降低透明度时换实心底。
     @ViewBuilder private var surface: some View {
-        if reduceTransparency {
-            shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
-        } else {
-            Color.clear.glassEffect(.regular, in: shape)
-        }
+        ReadableGlass(shape: shape)
     }
 
     /// 排列时整张卡片都能拖，内容不接点击；橙色虚线框说明它能动。
@@ -276,7 +272,7 @@ struct DesktopCardToolbar: View {
             .fixedSize()
         }
         .padding(3)
-        .background { Color.clear.glassEffect(.regular, in: Capsule()) }
+        .readableGlass(in: Capsule())
     }
 
     private func icon(_ symbol: String, help: String) -> some View {
@@ -590,6 +586,6 @@ struct DesktopPinArrangeBar: View {
         .padding(.leading, 20)
         .padding(.trailing, 11)
         .frame(width: Self.size.width, height: Self.size.height)
-        .background { Color.clear.glassEffect(.regular, in: Capsule()) }
+        .readableGlass(in: Capsule())
     }
 }

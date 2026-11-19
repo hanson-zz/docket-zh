@@ -312,8 +312,8 @@ struct BatteryNeonPlugView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 3)
         .background {
-            Capsule().fill(.black.opacity(0.55))
             Color.clear.glassEffect(.regular, in: Capsule())
+            Capsule().fill(.black.opacity(0.55))
             Capsule().strokeBorder(color.opacity(0.75), lineWidth: 1)
         }
         .environment(\.colorScheme, .dark)

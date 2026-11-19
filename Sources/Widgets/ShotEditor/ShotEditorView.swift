@@ -297,7 +297,7 @@ private struct ShotCanvas: View {
         .foregroundStyle(Color.panelPrimary)
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
-        .glassEffect(.regular, in: Capsule())
+        .readableGlass(in: Capsule())
         .frame(maxWidth: max(120, model.size.width - 16))
         .padding(8)
         .allowsHitTesting(false)
@@ -438,7 +438,7 @@ private struct ShotToolbarBlock: View {
         }
         .padding(.horizontal, 6)
         .frame(height: 42)
-        .glassEffect(.regular, in: Capsule())
+        .readableGlass(in: Capsule())
         .overlay(alignment: above ? .bottom : .top) {
             if let tip = hovered ?? model.note {
                 Text(verbatim: tip)
@@ -448,7 +448,7 @@ private struct ShotToolbarBlock: View {
                     .fixedSize()
                     .padding(.horizontal, 10)
                     .frame(height: 26)
-                    .glassEffect(.regular, in: Capsule())
+                    .readableGlass(in: Capsule())
                     .offset(y: above ? 34 : -34)
                     .allowsHitTesting(false)
                     .transition(.opacity)
@@ -522,7 +522,7 @@ private struct ShotToolbarBlock: View {
             }
             .padding(.horizontal, 12)
             .frame(height: 38)
-            .glassEffect(.regular, in: Capsule())
+            .readableGlass(in: Capsule())
         }
     }
 
@@ -627,7 +627,7 @@ private struct ShotToolbarBlock: View {
             }
             .padding(14)
             .frame(width: 360)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .readableGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
 }

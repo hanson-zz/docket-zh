@@ -2063,7 +2063,7 @@ struct DesktopPetBubbleView: View {
                     .foregroundStyle(scheme == .dark ? Color.white.opacity(0.9) : Color.black.opacity(0.7))
                     .padding(.horizontal, 10)
                     .frame(height: 28)
-                    .glassEffect(.regular, in: Capsule())
+                    .readableGlass(in: Capsule())
                     .accessibilityLabel(tr("小熊猫睡着了"))
             case nil:
                 Color.clear.frame(width: 1, height: 1)
@@ -2082,7 +2082,7 @@ struct DesktopPetBubbleView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .frame(minHeight: 30)
-            .glassEffect(.regular, in: Capsule())
+            .readableGlass(in: Capsule())
     }
 }
 
@@ -2108,7 +2108,7 @@ struct DesktopPetQuickBarView: View {
             }
         }
         .padding(DesktopPetQuickAction.padding)
-        .glassEffect(.regular, in: Capsule())
+        .readableGlass(in: Capsule())
         .frame(width: DesktopPetQuickAction.barSize.width, height: DesktopPetQuickAction.barSize.height)
     }
 

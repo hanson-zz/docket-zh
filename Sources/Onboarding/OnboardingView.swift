@@ -583,14 +583,14 @@ private struct PandaTipStep: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .readableGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .padding(.bottom, 28)
             }
 
             illustration
                 .frame(maxWidth: .infinity)
                 .frame(height: 150)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .readableGlass(in: RoundedRectangle(cornerRadius: 22, style: .continuous))
 
             if step == .switcher {
                 Button {

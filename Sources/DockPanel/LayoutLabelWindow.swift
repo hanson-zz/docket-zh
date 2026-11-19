@@ -333,8 +333,7 @@ struct LayoutLabelCapsule: View {
                 .overlay { shape.strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.5) }
                 .shadow(color: .black.opacity(0.22), radius: 5, y: 1)
         } else {
-            Color.clear
-                .glassEffect(.regular, in: shape)
+            ReadableGlass(shape: shape)
                 .overlay { shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5) }
                 .shadow(color: .black.opacity(0.18), radius: 5, y: 1)
         }

@@ -426,8 +426,7 @@ struct DockIconDropHintLabel: View {
         .padding(.horizontal, 12)
         .frame(height: 28)
         .background {
-            Color.clear
-                .glassEffect(.regular, in: shape)
+            ReadableGlass(shape: shape)
                 .overlay { shape.strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.5) }
                 .shadow(color: .black.opacity(0.18), radius: 6, y: 1)
         }

@@ -414,11 +414,7 @@ private struct InputSourceCapsule: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             ZStack(alignment: .topLeading) {
-                if reduceTransparency {
-                    shape.fill(scheme == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#F4F4F6"))
-                } else {
-                    Color.clear.glassEffect(.regular, in: shape)
-                }
+                ReadableGlass(shape: shape)
                 if let blend = model.notchBlend {
                     InputSourceNotchBlend()
                         .frame(width: blend.width, height: blend.height)
