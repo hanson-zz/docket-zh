@@ -44,6 +44,48 @@ struct FocusMascotImage: View {
     }
 }
 
+/// 专注面板进度环右边（小熊猫竹竿那一侧）吉祥物的道具图，读一次就留着；小熊猫和缺图时什么都不画、
+/// 不占位。专注进行中轻轻上下浮，减弱动态效果时不动。
+struct FocusMascotPropImage: View {
+    var mascot: FocusMascot
+    var running: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @MainActor private static var cache: [String: NSImage] = [:]
+    @MainActor private static var missing: Set<String> = []
+
+    @MainActor private static func image(named name: String) -> NSImage? {
+        if let image = cache[name] { return image }
+        guard !missing.contains(name), let image = Bundle.main.image(forResource: name) else {
+            missing.insert(name)
+            return nil
+        }
+        cache[name] = image
+        return image
+    }
+
+    var body: some View {
+        if let name = FocusMascotProp.resolve(mascot, exists: { Self.image(named: $0) != nil }),
+           let image = Self.image(named: name), image.size.height > 0 {
+            let height = CGFloat(FocusMascotProp.height)
+            TimelineView(.animation(minimumInterval: 1.0 / 20, paused: !running || reduceMotion)) { tick in
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: image.size.width * height / image.size.height, height: height)
+                    .offset(y: FocusMascotProp.bob(at: tick.date.timeIntervalSinceReferenceDate,
+                                                   running: running, reduceMotion: reduceMotion))
+            }
+            .padding(.trailing, 4)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .transition(.opacity)
+        }
+    }
+}
+
 // MARK: - 拖大数字定时长
 
 /// 专注还没开始时，左右（或上下）拖剩余时间的大数字调专注时长：5 分钟一档，5 到 90 分钟，

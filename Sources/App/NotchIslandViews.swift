@@ -193,11 +193,13 @@ private struct NotchIslandBody: View {
                 .foregroundStyle(NotchIslandPalette.onBlack)
         case .timer(_, _, _, _, .focus, _):
             // 专注计时：左边是选好的吉祥物（专注中、暂停、休息、刚完成各一种样子）。
-            // 选的是小熊猫时，是从刘海底下探出来的小脑袋（展开后整只倒挂下来）。
+            // 有刘海专用的小头（notch-<吉祥物>-peek，小熊猫是现有那张）时是从刘海底下探出来的小脑袋
+            // （展开后整只倒挂下来），没有时用面板那套状态图。
             TimelineView(.periodic(from: .now, by: 1)) { tick in
                 let state = TimerStateProvider.shared.state
                 let mascot = FocusMascot.of(state, unlocked: ProAccess.isUnlocked)
-                if mascot == .panda, let peek = NotchIslandHanging.peek {
+                if case .image(let name) = NotchMascotArt.peek(mascot, exists: { NotchIslandHanging.exists($0) }),
+                   let peek = NotchIslandHanging.image(named: name) {
                     Image(nsImage: peek)
                         .resizable()
                         .interpolation(.high)
@@ -892,6 +894,8 @@ private struct NotchIslandSecondaryRow: View {
 // MARK: - 专注计时展开：倒挂小熊猫
 
 /// 倒挂小熊猫的图（Resources/NotchPanda），读一次存着；缺图时专注照旧用展开卡片。
+/// 别的吉祥物的刘海图（Resources/NotchMascots/notch-<吉祥物>-<样子>.png）按名字查，也读一次存着，
+/// 没有时按 `NotchMascotArt` 回退到小熊猫。
 @MainActor
 enum NotchIslandHanging {
     static let poses: [NotchHangingPanda.Pose: NSImage] = {
@@ -904,6 +908,27 @@ enum NotchIslandHanging {
     static let peek = Bundle.main.image(forResource: NotchHangingPanda.peekImageName)
 
     static var available: Bool { poses.count == NotchHangingPanda.Pose.allCases.count }
+
+    private static var cache: [String: NSImage] = [:]
+    private static var missing: Set<String> = []
+
+    /// 按图名取（带 @2x 的也认）；查过没有的记下来，不反复查。
+    static func image(named name: String) -> NSImage? {
+        if let image = cache[name] { return image }
+        guard !missing.contains(name), let image = Bundle.main.image(forResource: name) else {
+            missing.insert(name)
+            return nil
+        }
+        cache[name] = image
+        return image
+    }
+
+    static func exists(_ name: String) -> Bool { image(named: name) != nil }
+
+    /// 展开时这只吉祥物这个样子的图，缺图回退小熊猫。
+    static func image(_ mascot: FocusMascot, _ pose: NotchMascotPose, blinking: Bool) -> NSImage? {
+        NotchMascotArt.resolve(mascot, pose, blinking: blinking, exists: { exists($0) }).flatMap(image(named:))
+    }
 }
 
 /// 专注计时展开后的样子（照效果图）：刘海底边中间垂下一根细绳，小熊猫尾巴缠着绳子倒挂，
@@ -929,7 +954,9 @@ private struct NotchIslandHangingFocus: View {
         TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30, paused: false)) { tick in
             let state = TimerStateProvider.shared.state
             let mascotState = FocusMascotState.of(state, now: tick.date)
-            let pose = NotchHangingPanda.pose(mascotState, blinking: blinking && !reduceMotion)
+            // 跟随所选吉祥物（没解锁 Pro 时是小熊猫）；它的图还没有时回退倒挂小熊猫，眨眼只在回退时有。
+            let mascot = FocusMascot.of(state, unlocked: ProAccess.isUnlocked)
+            let pose = NotchMascotPose.of(mascotState)
             let swing = NotchHangingPanda.sway(at: tick.date.timeIntervalSinceReferenceDate,
                                                reduceMotion: reduceMotion || pausedLeft != nil)
             ZStack(alignment: .top) {
@@ -944,11 +971,12 @@ private struct NotchIslandHangingFocus: View {
                         .fill(Color(hex: "#F3D9B8"))
                         .frame(width: 2, height: NotchIslandLayout.hangRope + panda * 0.12)
                         .shadow(color: .black.opacity(0.25), radius: 1, y: 0.5)
-                    if let image = NotchIslandHanging.poses[pose] {
+                    if let image = NotchIslandHanging.image(mascot, pose, blinking: blinking && !reduceMotion) {
                         Image(nsImage: image)
                             .resizable()
                             .interpolation(.high)
-                            .frame(width: panda, height: panda)
+                            .scaledToFit()
+                            .frame(width: panda, height: panda, alignment: .top)
                             .offset(y: NotchIslandLayout.hangRope)
                             .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.18), radius: 6, y: 3)
                     }

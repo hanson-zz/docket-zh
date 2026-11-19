@@ -97,6 +97,21 @@ targets:
       # 外加收起时探头的小脑袋），作为普通资源打包。
       - path: Resources/NotchPanda
         buildPhase: resources
+      # 刘海小岛跟随所选吉祥物的图（notch-<吉祥物>-<peek|focus|sleep|done>.png，可带 @2x），素材待补。
+      # 目录里暂时只有占位的 .gitkeep（不打包）；optional 让目录不在时也能生成工程。缺图时代码回退小熊猫。
+      # 小熊猫自己的 peek、sleep、done 就在上面的 NotchPanda 里，这里别放同名图（打包会重名）。
+      - path: Resources/NotchMascots
+        buildPhase: resources
+        optional: true
+        excludes:
+          - ".gitkeep"
+      # 专注面板进度环旁边每只吉祥物的道具（prop-<吉祥物>.png，小熊猫用竹竿不需要），素材待补，
+      # 缺图不画；规则同上。
+      - path: Resources/FocusProps
+        buildPhase: resources
+        optional: true
+        excludes:
+          - ".gitkeep"
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is

@@ -103,12 +103,16 @@ struct FocusTimerDetail: View {
                 .frame(maxWidth: .infinity)
                 // 专注进行中，进度环右边一根竹竿，小熊猫按进度往上爬（码头 Pro，
                 // 免费是一只静态的小熊猫），见 `FocusBambooClimber`。
-                // 选的不是小熊猫时没有竹竿，吉祥物的状态图放在左下角。
+                // 选的不是小熊猫时没有竹竿，那一侧换成吉祥物的道具，吉祥物的状态图放在左下角。
                 .overlay(alignment: .trailing) {
                     if mascot(state).climbsBamboo {
                         FocusBambooClimber(state: state, now: now,
                                            unlocked: ProLicenseGate.canUseFocusPanda(unlocked: unlocked),
                                            isPreview: context.isPreview)
+                    } else {
+                        // 别的吉祥物在竹竿那一侧放自己的道具（Resources/FocusProps/prop-<吉祥物>.png），
+                        // 缺图不画，见 `FocusMascotProp`。
+                        FocusMascotPropImage(mascot: mascot(state), running: FocusCycle.isRunning(state, now: now))
                     }
                 }
                 .overlay(alignment: .bottomLeading) {
