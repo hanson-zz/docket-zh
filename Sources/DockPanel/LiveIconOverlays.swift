@@ -246,20 +246,48 @@ struct LiveChromeSpin: ViewModifier {
 
 // MARK: - ChatGPT / Codex / Claude：额度水位与流光
 
-/// 画在 ChatGPT、Codex 图标内部：Codex 剩余额度有多少就有多高的一层半透明「水」
-/// （5 小时和每周里更紧的那个，见 `LiveIconUsage.quota`），水面轻轻晃，裁剪在图标的
+/// 每个 AI App 的水色：ChatGPT 蓝、Claude 比图标本身深一档的橙（橙图标上也看得出水面）、
+/// Codex 紫。只染图标下部的水，不发光，浅色和深色外观下同一套。
+struct LiveQuotaTint: Equatable {
+    /// 水面附近（浅一点）。
+    var top: Color
+    /// 水底（深一点）。
+    var bottom: Color
+    /// 前一层水的不透明度：留一点透出图标本身的图案。
+    var opacity: Double
+
+    static let chatGPT = LiveQuotaTint(top: Color(hex: "#59A8FF"), bottom: Color(hex: "#1B64DA"), opacity: 0.86)
+    static let claude = LiveQuotaTint(top: Color(hex: "#C24A16"), bottom: Color(hex: "#86290A"), opacity: 0.88)
+    static let codex = LiveQuotaTint(top: Color(hex: "#9A6BFF"), bottom: Color(hex: "#5B21D6"), opacity: 0.9)
+
+    static func of(_ app: LiveIconApp) -> LiveQuotaTint {
+        switch app {
+        case .claude: return .claude
+        case .codex: return .codex
+        default: return .chatGPT
+        }
+    }
+}
+
+/// 画在 ChatGPT、Codex 图标内部：Codex 剩余额度有多少就有多高的一层水（ChatGPT 和 Codex
+/// 共用这份额度数据；窗口按设置选，见 `LiveIconUsage.quota`），水面一条亮线轻轻晃，裁剪在图标的
 /// 圆角方形里；Codex 正在干活时一道柔和白光沿圆角方形边缘绕圈。
 /// 没有数据或数据过期时不画水（未知），不拿猜的数顶上。
 struct LiveOpenAIOverlay: View {
     var side: CGFloat
+    var tint: LiveQuotaTint
+    var showWater: Bool
     var showPercent: Bool
+
+    @AppStorage(LiveQuotaPreference.key) private var window = LiveQuotaPreference.default.rawValue
 
     private var codex: CodexService { .shared }
 
     var body: some View {
         let report = codex.report
         let working = LiveIconUsage.isWorking(codex.activity)
-        LiveQuotaWater(side: side, showPercent: showPercent, report: report, working: working)
+        LiveQuotaWater(side: side, tint: tint, showWater: showWater, showPercent: showPercent,
+                       preference: LiveQuotaPreference(stored: window), report: report, working: working)
             .task {
                 // 只为动态图标拉起时不发通知、不响；有 Codex 小组件时它照常提醒。
                 codex.startActivity(quiet: true)
@@ -278,10 +306,13 @@ struct LiveClaudeOverlay: View {
     var side: CGFloat
     var showPercent: Bool
 
+    @AppStorage(LiveQuotaPreference.key) private var window = LiveQuotaPreference.default.rawValue
+
     private var claude: ClaudeUsageService { .shared }
 
     var body: some View {
-        LiveQuotaWater(side: side, showPercent: showPercent, report: claude.report, working: false)
+        LiveQuotaWater(side: side, tint: .claude, showWater: true, showPercent: showPercent,
+                       preference: LiveQuotaPreference(stored: window), report: claude.report, working: false)
             .task {
                 while !Task.isCancelled {
                     claude.refresh()
@@ -291,36 +322,58 @@ struct LiveClaudeOverlay: View {
     }
 }
 
-/// 水位（剩余额度）加可选的流光和百分比小字，Codex 和 Claude 共用。
-// TODO: 悬停显示重置倒计时（LiveIconUsage.resetCountdown）、大字百分比，等效果图。
+/// 悬停名称标签下面那颗倒计时胶囊的文字：只给开着水位、读得到重置时间的 AI 图标，
+/// 别的格子和未知数据都是 nil（不显示胶囊）。只在指针换格子时算一次。
+@MainActor
+enum LiveQuotaHover {
+    static func resetSentence(bundleID: String?, now: Date = .now) -> String? {
+        guard let bundleID, let app = LiveIconApp(bundleID: bundleID), app.isAI else { return nil }
+        let defaults = UserDefaults.standard
+        guard LiveIconToggles(defaults: defaults).showsQuota(app) else { return nil }
+        let preference = LiveQuotaPreference(stored: defaults.string(forKey: LiveQuotaPreference.key))
+        let report = app == .claude ? ClaudeUsageService.shared.report : CodexService.shared.report
+        return LiveIconUsage.resetSentence(LiveIconUsage.quota(report, now: now, preference: preference), now: now)
+    }
+}
+
+/// 水位（剩余额度）加可选的流光和左下角百分比大字，三个 AI App 共用。
+/// 水面低帧率轻晃，扩展栏不在屏幕上（自动隐藏滑走、被挡住）或没东西可动时 TimelineView 暂停；
+/// 减弱动态效果时完全静止。
 struct LiveQuotaWater: View {
     var side: CGFloat
+    var tint: LiveQuotaTint
+    var showWater: Bool
     var showPercent: Bool
+    var preference: LiveQuotaPreference
     var report: CodexUsageReport?
     var working: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private func remaining(at date: Date) -> Double? {
+        guard showWater else { return nil }
+        return LiveIconUsage.quota(report, now: date, preference: preference)?.remaining
+    }
+
     var body: some View {
         let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         let interval = LiveIconMotion.frameInterval(working ? .flow : .water, lowPower: lowPower)
-        // 没水可画也不在干活时，TimelineView 暂停，不空转。
-        let idle = LiveIconUsage.quota(report, now: .now) == nil && !working
+        // 没水可画也不在干活、或者扩展栏不在屏幕上时，TimelineView 暂停，不空转。
+        let idle = (remaining(at: .now) == nil && !working) || !ShelfVisibility.shared.cardsOnScreen
 
         Group {
             if reduceMotion {
-                // 减弱动态效果：水位静止，流光换成一圈不动的淡光；每分钟看一次数据有没有过期。
+                // 减弱动态效果：水面不晃，流光换成一圈不动的淡光；每分钟看一次数据有没有过期。
                 TimelineView(.everyMinute) { context in
-                    let level = LiveIconUsage.quota(report, now: context.date)?.remaining
+                    let level = remaining(at: context.date)
                     canvas(level: level, time: nil)
-                        .overlay(alignment: .bottomTrailing) { percent(level) }
+                        .overlay { percent(level) }
                 }
             } else {
-                TimelineView(.animation(minimumInterval: interval,
-                                        paused: idle)) { context in
-                    let level = LiveIconUsage.quota(report, now: context.date)?.remaining
+                TimelineView(.animation(minimumInterval: interval, paused: idle)) { context in
+                    let level = remaining(at: context.date)
                     canvas(level: level, time: context.date.timeIntervalSinceReferenceDate)
-                        .overlay(alignment: .bottomTrailing) { percent(level) }
+                        .overlay { percent(level) }
                 }
             }
         }
@@ -329,17 +382,21 @@ struct LiveQuotaWater: View {
         .accessibilityHidden(true)
     }
 
-    /// 右下角的百分比小字：剩余额度。
+    /// 左下角的白色粗体百分比：剩余额度。字号跟图标缩放，不小于 11pt；
+    /// 一层很淡的阴影保证压在浅色水、白色图标上也读得出。
     @ViewBuilder
     private func percent(_ level: Double?) -> some View {
         if showPercent, let level {
+            let g = LiveIconGeometry.content(side: Double(side))
+            let size = LiveIconUsage.percentFontSize(side: Double(side))
             Text(LiveIconUsage.percentText(level))
-                .font(.system(size: 13, weight: .semibold, design: .rounded).monospacedDigit())
+                .font(.system(size: size, weight: .heavy, design: .rounded).monospacedDigit())
                 .foregroundStyle(.white)
-                .padding(.horizontal, 4)
-                .background(Color.black.opacity(0.62), in: Capsule())
-                .overlay(Capsule().strokeBorder(.white.opacity(0.35), lineWidth: 0.5))
-                .offset(x: side * 0.06, y: side * 0.04)
+                .fixedSize()
+                .shadow(color: .black.opacity(0.38), radius: max(0.8, size * 0.08), y: max(0.4, size * 0.04))
+                .padding(.leading, g.inset + g.length * 0.08)
+                .padding(.bottom, g.inset + g.length * 0.06)
+                .frame(width: side, height: side, alignment: .bottomLeading)
         }
     }
 
@@ -349,7 +406,7 @@ struct LiveQuotaWater: View {
             let rect = CGRect(x: g.inset, y: g.inset, width: g.length, height: g.length)
             let shape = Path(roundedRect: rect, cornerRadius: g.corner, style: .continuous)
             if let level {
-                LiveOpenAIDrawing.water(in: context, rect: rect, shape: shape, level: level, time: time)
+                LiveOpenAIDrawing.water(in: context, rect: rect, shape: shape, level: level, tint: tint, time: time)
             }
             if working {
                 LiveOpenAIDrawing.flow(in: context, rect: rect, corner: g.corner, time: time)
@@ -378,28 +435,34 @@ enum LiveOpenAIDrawing {
         return path
     }
 
-    static func water(in context: GraphicsContext, rect: CGRect, shape: Path, level: Double, time: Double?) {
+    /// 一层带色的水：后面一道浅一点的波，前面一道上浅下深的主体，水面下一抹很窄的反光，
+    /// 水面一条亮白线。都裁在图标的圆角方形里，不往外发光。
+    static func water(in context: GraphicsContext, rect: CGRect, shape: Path, level: Double,
+                      tint: LiveQuotaTint, time: Double?) {
         var ctx = context
         ctx.clip(to: shape)
         let surface = rect.maxY - rect.height * CGFloat(LiveIconUsage.surfaceFraction(level))
-        let amplitude = rect.height * (time == nil ? 0.012 : 0.018)
-        let phase = (time ?? 0) * 1.7
-        let back = wave(rect, surface: surface - amplitude * 0.4, amplitude: amplitude * 0.8,
+        let amplitude = rect.height * (time == nil ? 0.012 : 0.02)
+        let phase = (time ?? 0) * 1.5
+        let back = wave(rect, surface: surface - amplitude * 0.5, amplitude: amplitude * 0.8,
                         phase: -phase * 0.8 + 1.3, cycles: 1.4, closed: true)
         let front = wave(rect, surface: surface, amplitude: amplitude, phase: phase, cycles: 1.1, closed: true)
         let line = wave(rect, surface: surface, amplitude: amplitude, phase: phase, cycles: 1.1, closed: false)
 
-        // 浅色图标（白底）上靠一层很淡的压暗看得见，深色图标上靠白色看得见。
-        var shade = ctx
-        shade.blendMode = .multiply
-        shade.fill(front, with: .color(.black.opacity(0.10)))
-        ctx.fill(back, with: .color(.white.opacity(0.14)))
+        ctx.fill(back, with: .color(tint.top.opacity(tint.opacity * 0.45)))
         ctx.fill(front, with: .linearGradient(
-            Gradient(colors: [.white.opacity(0.36), .white.opacity(0.16)]),
+            Gradient(colors: [tint.top.opacity(tint.opacity), tint.bottom.opacity(min(1, tint.opacity + 0.06))]),
             startPoint: CGPoint(x: rect.midX, y: surface), endPoint: CGPoint(x: rect.midX, y: rect.maxY)))
-        let width = max(1, rect.width * 0.022)
-        ctx.stroke(line.offsetBy(dx: 0, dy: width * 0.8), with: .color(.black.opacity(0.16)), lineWidth: max(0.75, width * 0.7))
-        ctx.stroke(line, with: .color(.white.opacity(0.88)), lineWidth: width)
+        // 水面下一抹窄反光，让水有玻璃一样的厚度。
+        let sheen = rect.height * 0.12
+        var gleam = ctx
+        gleam.clip(to: front)
+        gleam.fill(Path(CGRect(x: rect.minX, y: surface - amplitude, width: rect.width, height: sheen + amplitude)),
+                   with: .linearGradient(Gradient(colors: [.white.opacity(0.28), .white.opacity(0)]),
+                                         startPoint: CGPoint(x: rect.midX, y: surface - amplitude),
+                                         endPoint: CGPoint(x: rect.midX, y: surface + sheen)))
+        let width = max(1, rect.width * 0.024)
+        ctx.stroke(line, with: .color(.white.opacity(0.9)), lineWidth: width)
     }
 
     /// 环形路径上 a 到 b 的一段，a 可以是负数（从终点绕回来）。

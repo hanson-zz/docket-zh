@@ -8,9 +8,11 @@ import Foundation
 public enum LiveIconApp: Equatable, Sendable {
     case finder
     case chrome
-    /// ChatGPT 和 Codex 桌面 App 共用一种画法：水位加流光。
-    case openAI
-    /// Claude 桌面 App：只有水位，没有流光（没有可靠的「正在干活」信号）。
+    /// ChatGPT 桌面 App：蓝色水位加流光，额度读的是 Codex 的（两者共用一份 OpenAI 额度数据）。
+    case chatGPT
+    /// Codex 桌面 App：紫色水位加流光。
+    case codex
+    /// Claude 桌面 App：橙色水位，没有流光（没有可靠的「正在干活」信号）。
     case claude
 
     public static let finderBundleID = "com.apple.finder"
@@ -26,48 +28,89 @@ public enum LiveIconApp: Equatable, Sendable {
         switch bundleID {
         case Self.finderBundleID: self = .finder
         case Self.chromeBundleID: self = .chrome
-        case Self.chatGPTBundleID: self = .openAI
+        case Self.chatGPTBundleID: self = .chatGPT
         case Self.claudeBundleID: self = .claude
         default:
             guard Self.codexBundleIDs.contains(bundleID) else { return nil }
-            self = .openAI
+            self = .codex
+        }
+    }
+
+    /// 画额度水位的三个 AI App。
+    public var isAI: Bool {
+        switch self {
+        case .chatGPT, .codex, .claude: return true
+        case .finder, .chrome: return false
         }
     }
 }
 
-/// 设置 ▸ 扩展栏的总开关和四个子开关。总开关默认关，子开关默认开。
+/// 设置 ▸ 扩展栏的动态图标开关。总开关默认关，各 App 的子开关默认开；
+/// 「AI 额度水位」管三个 AI 图标里的水位、百分比和悬停倒计时，默认开。
 public struct LiveIconToggles: Equatable, Sendable {
     public static let masterKey = "liveIcons.enabled"
     public static let finderKey = "liveIcons.finder"
     public static let chromeKey = "liveIcons.chrome"
+    /// 历史原因叫 ai：以前 ChatGPT 和 Codex 共用这一个开关，现在只管 ChatGPT。
     public static let openAIKey = "liveIcons.ai"
+    public static let codexKey = "liveIcons.codex"
     public static let claudeKey = "liveIcons.claude"
-    /// 水位右下角的百分比小字，默认不显示。
+    /// 「AI 额度水位」总开关。
+    public static let quotaKey = "liveIcons.aiQuota"
+    /// 水位左下角的百分比大字，默认不显示。
     public static let percentKey = "liveIcons.aiPercent"
 
     public var master: Bool
     public var finder: Bool
     public var chrome: Bool
-    public var openAI: Bool
+    public var chatGPT: Bool
+    public var codex: Bool
     public var claude: Bool
+    public var quota: Bool
 
-    public init(master: Bool = false, finder: Bool = true, chrome: Bool = true, openAI: Bool = true,
-                claude: Bool = true) {
+    public init(master: Bool = false, finder: Bool = true, chrome: Bool = true, chatGPT: Bool = true,
+                codex: Bool = true, claude: Bool = true, quota: Bool = true) {
         self.master = master
         self.finder = finder
         self.chrome = chrome
-        self.openAI = openAI
+        self.chatGPT = chatGPT
+        self.codex = codex
         self.claude = claude
+        self.quota = quota
     }
 
+    /// 从设置里读；没存过的键用各自的默认值。
+    public init(defaults: UserDefaults) {
+        func flag(_ key: String, _ fallback: Bool) -> Bool { defaults.object(forKey: key) as? Bool ?? fallback }
+        self.init(master: flag(Self.masterKey, false), finder: flag(Self.finderKey, true),
+                  chrome: flag(Self.chromeKey, true), chatGPT: flag(Self.openAIKey, true),
+                  codex: flag(Self.codexKey, true), claude: flag(Self.claudeKey, true),
+                  quota: flag(Self.quotaKey, true))
+    }
+
+    /// 这个 App 的动态图标开没开（AI App 开着时至少有流光）。
     public func isOn(_ app: LiveIconApp) -> Bool {
         guard master else { return false }
         switch app {
         case .finder: return finder
         case .chrome: return chrome
-        case .openAI: return openAI
+        case .chatGPT: return chatGPT
+        case .codex: return codex
         case .claude: return claude
         }
+    }
+
+    /// 这个 App 的图标里画不画额度水位（连同百分比和悬停倒计时）。
+    public func showsQuota(_ app: LiveIconApp) -> Bool {
+        app.isAI && quota && isOn(app)
+    }
+
+    /// Codex 拆出自己的开关之前，ChatGPT/Codex 共用 `liveIcons.ai`。
+    /// 升级上来还没有 Codex 开关的，照搬原来那个开关的值，不让关掉的 Codex 突然动起来。
+    public static func migrateCodexToggle(_ defaults: UserDefaults) {
+        guard defaults.object(forKey: codexKey) == nil,
+              let shared = defaults.object(forKey: openAIKey) as? Bool else { return }
+        defaults.set(shared, forKey: codexKey)
     }
 }
 
@@ -93,17 +136,36 @@ public struct LiveQuota: Equatable, Sendable {
     }
 }
 
-/// ChatGPT / Codex 和 Claude 图标里的水位和流光。
+/// 设置里「显示：」选的额度窗口。
+public enum LiveQuotaPreference: String, CaseIterable, Equatable, Sendable {
+    /// 固定看 5 小时窗口。
+    case session
+    /// 固定看每周窗口。
+    case weekly
+    /// 两个里取更紧的（默认）。
+    case tighter
+
+    public static let key = "liveIcons.aiWindow"
+    public static let `default` = LiveQuotaPreference.tighter
+
+    /// 存的值读不懂或没存时用默认。
+    public init(stored: String?) {
+        self = stored.flatMap(LiveQuotaPreference.init(rawValue:)) ?? .default
+    }
+}
+
+/// ChatGPT、Codex 和 Claude 图标里的水位和流光。
 public enum LiveIconUsage {
     /// 水位 = 剩余额度（1 - 已用）：水越少越接近用完，像油箱。
     ///
-    /// 5 小时和每周两个窗口取更紧的那个（剩余更少的）：哪个先卡住你，就看哪个。
-    /// 某个窗口缺失、数值不对，或者它的重置时间已经过了（读数是上一轮的，不再可信），
-    /// 就只看另一个；两个都用不了、报告没有或已过期（默认 30 分钟）时是 nil，
-    /// 即「未知」，图标里不画水位，绝不拿猜的数顶上。
-    /// 剩余一样多时取 5 小时窗口（它先重置，倒计时更有用）。
+    /// 默认（`.tighter`）5 小时和每周两个窗口取更紧的那个（剩余更少的）：哪个先卡住你，
+    /// 就看哪个。某个窗口缺失、数值不对，或者它的重置时间已经过了（读数是上一轮的，
+    /// 不再可信），就只看另一个；剩余一样多时取 5 小时窗口（它先重置，倒计时更有用）。
+    /// 设置里固定成 5 小时或每周时只看那一个，它用不了就是未知，不拿另一个顶上。
+    /// 报告没有或已过期（默认 30 分钟）时是 nil，即「未知」，图标里不画水位，绝不拿猜的数顶上。
     public static func quota(session: CodexLimitWindow?, weekly: CodexLimitWindow?,
                              fetchedAt: Date?, now: Date,
+                             preference: LiveQuotaPreference = .tighter,
                              staleAfter: TimeInterval = 30 * 60) -> LiveQuota? {
         guard let fetchedAt, now.timeIntervalSince(fetchedAt) <= staleAfter else { return nil }
         func usable(_ w: CodexLimitWindow?, _ kind: LiveQuotaWindow) -> LiveQuota? {
@@ -111,34 +173,66 @@ public enum LiveIconUsage {
             if let resets = w.resetsAt, resets <= now { return nil }
             return LiveQuota(remaining: 1 - w.usedFraction, window: kind, resetsAt: w.resetsAt)
         }
-        let candidates = [usable(session, .session), usable(weekly, .weekly)].compactMap { $0 }
-        return candidates.min { $0.remaining < $1.remaining }
+        switch preference {
+        case .session: return usable(session, .session)
+        case .weekly: return usable(weekly, .weekly)
+        case .tighter:
+            let candidates = [usable(session, .session), usable(weekly, .weekly)].compactMap { $0 }
+            return candidates.min { $0.remaining < $1.remaining }
+        }
     }
 
     /// 报告里的 5 小时和每周窗口（Codex、Claude 共用一种报告）。
     public static func quota(_ report: CodexUsageReport?, now: Date,
+                             preference: LiveQuotaPreference = .tighter,
                              staleAfter: TimeInterval = 30 * 60) -> LiveQuota? {
         guard let report else { return nil }
         return quota(session: report.primary, weekly: report.weekly,
-                     fetchedAt: report.fetchedAt, now: now, staleAfter: staleAfter)
+                     fetchedAt: report.fetchedAt, now: now, preference: preference, staleAfter: staleAfter)
     }
 
-    /// 重置倒计时，中英文同一种写法，只用 ASCII：不到 1 小时「42m」，
+    /// 重置倒计时的紧凑写法，只用 ASCII：不到 1 小时「42m」，
     /// 不到 1 天「19h 0m」，再长「1d 18h」。分钟向下取整，还剩不到 1 分钟时是「0m」；
     /// 已经过了或数值不对时也是「0m」。
-    // TODO: 悬停显示倒计时、大字百分比等效果图定了再接到图标上。
     public static func resetCountdown(_ seconds: TimeInterval) -> String {
-        guard seconds.isFinite, seconds > 0 else { return "0m" }
-        let s = Int(min(seconds, 9_999 * 86_400))
-        let minutes = s / 60, hours = s / 3600, days = s / 86_400
-        if hours < 1 { return "\(minutes)m" }
-        if days < 1 { return "\(hours)h \(minutes % 60)m" }
-        return "\(days)d \(hours % 24)h"
+        let p = countdownParts(seconds)
+        if p.hours < 1 && p.days < 1 { return "\(p.minutes)m" }
+        if p.days < 1 { return "\(p.hours)h \(p.minutes)m" }
+        return "\(p.days)d \(p.hours)h"
     }
 
-    /// 离 resetsAt 还有多久的倒计时文字；没有重置时间时是 nil。
+    /// 离 resetsAt 还有多久的紧凑倒计时；没有重置时间时是 nil。
     public static func resetCountdown(_ quota: LiveQuota, now: Date) -> String? {
         quota.resetsAt.map { resetCountdown($0.timeIntervalSince(now)) }
+    }
+
+    /// 悬停胶囊里的整句：「1天 18小时后重置」「19小时 0分后重置」「42分后重置」，
+    /// 英文界面是「Resets in 1d 18h」这类（走 Localizable.xcstrings）。分段规则同 `resetCountdown`。
+    public static func resetSentence(_ seconds: TimeInterval) -> String {
+        let p = countdownParts(seconds)
+        if p.hours < 1 && p.days < 1 { return tr("\(p.minutes)分后重置") }
+        if p.days < 1 { return tr("\(p.hours)小时 \(p.minutes)分后重置") }
+        return tr("\(p.days)天 \(p.hours)小时后重置")
+    }
+
+    /// 离 resetsAt 还有多久的整句；没有重置时间时是 nil（悬停时不显示胶囊）。
+    public static func resetSentence(_ quota: LiveQuota?, now: Date) -> String? {
+        guard let resetsAt = quota?.resetsAt else { return nil }
+        return resetSentence(resetsAt.timeIntervalSince(now))
+    }
+
+    /// 天、余下的小时（不到 1 天时是总小时）、余下的分钟。
+    static func countdownParts(_ seconds: TimeInterval) -> (days: Int, hours: Int, minutes: Int) {
+        guard seconds.isFinite, seconds > 0 else { return (0, 0, 0) }
+        let s = Int(min(seconds, 9_999 * 86_400))
+        let days = s / 86_400
+        return (days, days > 0 ? (s / 3600) % 24 : s / 3600, (s / 60) % 60)
+    }
+
+    /// 左下角百分比大字的字号：跟图标一起缩放，约为图标边长的 23%，但不小于 11pt。
+    public static func percentFontSize(side: Double) -> Double {
+        guard side.isFinite, side > 0 else { return 11 }
+        return max(11, side * 0.23)
     }
 
     /// 流光只在 Codex 真在干活时绕圈：工作中，或者一轮做到一半停下来等你批准。
@@ -150,7 +244,7 @@ public enum LiveIconUsage {
         }
     }
 
-    /// 右下角的百分比小字（显示剩余），四舍五入到整数。
+    /// 左下角的百分比大字（显示剩余），四舍五入到整数。
     public static func percentText(_ level: Double) -> String {
         guard level.isFinite else { return "" }
         return "\(Int((min(1, max(0, level)) * 100).rounded()))%"
@@ -194,9 +288,10 @@ public enum LiveIconMotion {
         switch (kind, lowPower) {
         case (.spin, false): return 1.0 / 60
         case (.flow, false): return 1.0 / 30
-        case (.water, false): return 1.0 / 20
+        case (.water, false): return 1.0 / 15
         case (.spin, true): return 1.0 / 24
-        case (.flow, true), (.water, true): return 1.0 / 10
+        case (.flow, true): return 1.0 / 10
+        case (.water, true): return 1.0 / 8
         }
     }
 

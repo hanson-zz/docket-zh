@@ -14,13 +14,15 @@ struct DockItemView: View {
     @Environment(\.colorScheme) private var scheme
     @State private var spacerHovered = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    // 动态图标：总开关默认关，访达、Chrome、ChatGPT/Codex 三个子开关默认开。
+    // 动态图标：总开关默认关，访达、Chrome、ChatGPT、Codex、Claude 子开关和「AI 额度水位」默认开。
     @AppStorage(LiveIconToggles.masterKey) private var liveIconsEnabled = false
     @AppStorage(LiveIconToggles.finderKey) private var liveFinder = true
     @AppStorage(LiveIconToggles.chromeKey) private var liveChrome = true
-    @AppStorage(LiveIconToggles.openAIKey) private var liveOpenAI = true
+    @AppStorage(LiveIconToggles.openAIKey) private var liveChatGPT = true
+    @AppStorage(LiveIconToggles.codexKey) private var liveCodex = true
     @AppStorage(LiveIconToggles.claudeKey) private var liveClaude = true
-    @AppStorage(LiveIconToggles.percentKey) private var liveOpenAIPercent = false
+    @AppStorage(LiveIconToggles.quotaKey) private var liveQuota = true
+    @AppStorage(LiveIconToggles.percentKey) private var liveQuotaPercent = false
     // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -62,8 +64,8 @@ struct DockItemView: View {
     }
 
     private var liveToggles: LiveIconToggles {
-        LiveIconToggles(master: liveIconsEnabled, finder: liveFinder, chrome: liveChrome, openAI: liveOpenAI,
-                        claude: liveClaude)
+        LiveIconToggles(master: liveIconsEnabled, finder: liveFinder, chrome: liveChrome, chatGPT: liveChatGPT,
+                        codex: liveCodex, claude: liveClaude, quota: liveQuota)
     }
 
     private func liveOn(_ app: LiveIconApp) -> Bool {
@@ -91,10 +93,12 @@ struct DockItemView: View {
         ZStack {
             liveIcon
                 .overlay {
-                    if liveOn(.openAI) {
-                        LiveOpenAIOverlay(side: geo.icon, showPercent: liveOpenAIPercent)
-                    } else if liveOn(.claude) {
-                        LiveClaudeOverlay(side: geo.icon, showPercent: liveOpenAIPercent)
+                    if let app = liveApp, app == .chatGPT || app == .codex, liveToggles.isOn(app) {
+                        // 水位开关关着时只剩 Codex 干活时的流光。
+                        LiveOpenAIOverlay(side: geo.icon, tint: .of(app), showWater: liveToggles.showsQuota(app),
+                                          showPercent: liveQuotaPercent)
+                    } else if liveOn(.claude), liveToggles.showsQuota(.claude) {
+                        LiveClaudeOverlay(side: geo.icon, showPercent: liveQuotaPercent)
                     }
                 }
                 // Bottom shelves sit the icon slightly high so the running dot

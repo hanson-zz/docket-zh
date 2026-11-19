@@ -11,34 +11,93 @@ final class LiveIconUsageTests: XCTestCase {
     func testBundleIDsMapToApps() {
         XCTAssertEqual(LiveIconApp(bundleID: "com.apple.finder"), .finder)
         XCTAssertEqual(LiveIconApp(bundleID: "com.google.Chrome"), .chrome)
-        XCTAssertEqual(LiveIconApp(bundleID: "com.openai.chat"), .openAI)
-        XCTAssertEqual(LiveIconApp(bundleID: "com.openai.codex"), .openAI)
+        XCTAssertEqual(LiveIconApp(bundleID: "com.openai.chat"), .chatGPT)
+        XCTAssertEqual(LiveIconApp(bundleID: "com.openai.codex"), .codex)
         XCTAssertEqual(LiveIconApp(bundleID: "com.anthropic.claudefordesktop"), .claude)
         XCTAssertNil(LiveIconApp(bundleID: "com.apple.Safari"))
         XCTAssertNil(LiveIconApp(bundleID: "com.google.Chrome.canary"))
+        XCTAssertTrue(LiveIconApp.chatGPT.isAI)
+        XCTAssertTrue(LiveIconApp.codex.isAI)
+        XCTAssertTrue(LiveIconApp.claude.isAI)
+        XCTAssertFalse(LiveIconApp.finder.isAI)
+        XCTAssertFalse(LiveIconApp.chrome.isAI)
     }
 
     func testMasterSwitchGatesEverySubSwitch() {
+        let all: [LiveIconApp] = [.finder, .chrome, .chatGPT, .codex, .claude]
         let off = LiveIconToggles()
-        XCTAssertFalse(off.isOn(.finder))
-        XCTAssertFalse(off.isOn(.chrome))
-        XCTAssertFalse(off.isOn(.openAI))
-        XCTAssertFalse(off.isOn(.claude))
+        for app in all {
+            XCTAssertFalse(off.isOn(app))
+            XCTAssertFalse(off.showsQuota(app))
+        }
 
         let on = LiveIconToggles(master: true)
-        XCTAssertTrue(on.isOn(.finder))
-        XCTAssertTrue(on.isOn(.chrome))
-        XCTAssertTrue(on.isOn(.openAI))
-        XCTAssertTrue(on.isOn(.claude))
+        for app in all { XCTAssertTrue(on.isOn(app)) }
 
         let noChrome = LiveIconToggles(master: true, chrome: false)
         XCTAssertTrue(noChrome.isOn(.finder))
         XCTAssertFalse(noChrome.isOn(.chrome))
-        XCTAssertTrue(noChrome.isOn(.openAI))
+        XCTAssertTrue(noChrome.isOn(.chatGPT))
 
         let noClaude = LiveIconToggles(master: true, claude: false)
         XCTAssertFalse(noClaude.isOn(.claude))
-        XCTAssertTrue(noClaude.isOn(.openAI))
+        XCTAssertTrue(noClaude.isOn(.chatGPT))
+        XCTAssertTrue(noClaude.isOn(.codex))
+
+        // ChatGPT 和 Codex 各有各的勾选。
+        let noCodex = LiveIconToggles(master: true, codex: false)
+        XCTAssertFalse(noCodex.isOn(.codex))
+        XCTAssertTrue(noCodex.isOn(.chatGPT))
+        XCTAssertFalse(noCodex.showsQuota(.codex))
+    }
+
+    func testQuotaSwitchOnlyGatesTheWater() {
+        let on = LiveIconToggles(master: true)
+        XCTAssertTrue(on.showsQuota(.chatGPT))
+        XCTAssertTrue(on.showsQuota(.codex))
+        XCTAssertTrue(on.showsQuota(.claude))
+        XCTAssertFalse(on.showsQuota(.finder))
+        XCTAssertFalse(on.showsQuota(.chrome))
+
+        // 「AI 额度水位」关掉：没有水位，但 ChatGPT/Codex 的图标照样开着（流光还在）。
+        let dry = LiveIconToggles(master: true, quota: false)
+        XCTAssertFalse(dry.showsQuota(.chatGPT))
+        XCTAssertFalse(dry.showsQuota(.codex))
+        XCTAssertFalse(dry.showsQuota(.claude))
+        XCTAssertTrue(dry.isOn(.codex))
+    }
+
+    private func scratchDefaults() -> UserDefaults {
+        let name = "LiveIconUsageTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        defaults.removePersistentDomain(forName: name)
+        return defaults
+    }
+
+    func testTogglesReadFromDefaultsWithDefaults() {
+        let d = scratchDefaults()
+        XCTAssertEqual(LiveIconToggles(defaults: d), LiveIconToggles())
+        d.set(true, forKey: LiveIconToggles.masterKey)
+        d.set(false, forKey: LiveIconToggles.codexKey)
+        d.set(false, forKey: LiveIconToggles.quotaKey)
+        XCTAssertEqual(LiveIconToggles(defaults: d), LiveIconToggles(master: true, codex: false, quota: false))
+    }
+
+    func testCodexToggleMigratesFromTheSharedOne() {
+        let d = scratchDefaults()
+        // 从没碰过开关：什么也不写，Codex 走默认（开）。
+        LiveIconToggles.migrateCodexToggle(d)
+        XCTAssertNil(d.object(forKey: LiveIconToggles.codexKey))
+
+        // 以前关掉了 ChatGPT/Codex：Codex 跟着关。
+        d.set(false, forKey: LiveIconToggles.openAIKey)
+        LiveIconToggles.migrateCodexToggle(d)
+        XCTAssertEqual(d.object(forKey: LiveIconToggles.codexKey) as? Bool, false)
+
+        // 已经有 Codex 自己的值时不覆盖。
+        d.set(true, forKey: LiveIconToggles.codexKey)
+        LiveIconToggles.migrateCodexToggle(d)
+        XCTAssertEqual(d.object(forKey: LiveIconToggles.codexKey) as? Bool, true)
     }
 
     // MARK: 水位
@@ -106,6 +165,49 @@ final class LiveIconUsageTests: XCTestCase {
         XCTAssertEqual(q?.remaining ?? -1, 0.5, accuracy: 1e-9)
     }
 
+    func testPreferenceDefaultsToTighter() {
+        XCTAssertEqual(LiveQuotaPreference.default, .tighter)
+        XCTAssertEqual(LiveQuotaPreference(stored: nil), .tighter)
+        XCTAssertEqual(LiveQuotaPreference(stored: "nonsense"), .tighter)
+        XCTAssertEqual(LiveQuotaPreference(stored: "session"), .session)
+        XCTAssertEqual(LiveQuotaPreference(stored: "weekly"), .weekly)
+        XCTAssertEqual(LiveQuotaPreference.key, "liveIcons.aiWindow")
+    }
+
+    func testFixedWindowIgnoresTheTighterOne() {
+        let session = window("primary", used: 0.3, resetsIn: 3600)
+        let weekly = window("secondary", used: 0.9, resetsIn: 3 * 86_400)
+        let s = LiveIconUsage.quota(session: session, weekly: weekly, fetchedAt: t0, now: t0, preference: .session)
+        XCTAssertEqual(s?.window, .session)
+        XCTAssertEqual(s?.remaining ?? -1, 0.7, accuracy: 1e-9)
+        let w = LiveIconUsage.quota(session: session, weekly: weekly, fetchedAt: t0, now: t0, preference: .weekly)
+        XCTAssertEqual(w?.window, .weekly)
+        XCTAssertEqual(w?.remaining ?? -1, 0.1, accuracy: 1e-9)
+        XCTAssertEqual(LiveIconUsage.quota(session: session, weekly: weekly, fetchedAt: t0, now: t0,
+                                           preference: .tighter)?.window, .weekly)
+    }
+
+    func testFixedWindowMissingOrPastResetIsUnknown() {
+        let weekly = window("secondary", used: 0.5, resetsIn: 86_400)
+        // 固定 5 小时：没有 5 小时窗口就是未知，不拿每周顶上。
+        XCTAssertNil(LiveIconUsage.quota(session: nil, weekly: weekly, fetchedAt: t0, now: t0, preference: .session))
+        let stale = window("primary", used: 0.2, resetsIn: -60)
+        XCTAssertNil(LiveIconUsage.quota(session: stale, weekly: weekly, fetchedAt: t0, now: t0, preference: .session))
+        // 固定每周：同理。
+        let session = window("primary", used: 0.2)
+        XCTAssertNil(LiveIconUsage.quota(session: session, weekly: nil, fetchedAt: t0, now: t0, preference: .weekly))
+        let staleWeekly = window("secondary", used: 0.5, resetsIn: -1)
+        XCTAssertNil(LiveIconUsage.quota(session: session, weekly: staleWeekly, fetchedAt: t0, now: t0,
+                                         preference: .weekly))
+        // 报告过期时固定窗口也是未知。
+        XCTAssertNil(LiveIconUsage.quota(session: session, weekly: weekly, fetchedAt: t0,
+                                         now: t0.addingTimeInterval(31 * 60), preference: .weekly))
+        // 走报告的那一版同样按设置选。
+        let report = CodexUsageReport(windows: [session], fetchedAt: t0)
+        XCTAssertNil(LiveIconUsage.quota(report, now: t0, preference: .weekly))
+        XCTAssertEqual(LiveIconUsage.quota(report, now: t0, preference: .session)?.window, .session)
+    }
+
     func testQuotaClamps() {
         XCTAssertEqual(LiveQuota(remaining: 1.4, window: .session, resetsAt: nil).remaining, 1)
         XCTAssertEqual(LiveQuota(remaining: -0.2, window: .session, resetsAt: nil).remaining, 0)
@@ -128,6 +230,27 @@ final class LiveIconUsageTests: XCTestCase {
         let q = LiveQuota(remaining: 0.5, window: .session, resetsAt: t0.addingTimeInterval(19 * 3600))
         XCTAssertEqual(LiveIconUsage.resetCountdown(q, now: t0), "19h 0m")
         XCTAssertNil(LiveIconUsage.resetCountdown(LiveQuota(remaining: 0.5, window: .session, resetsAt: nil), now: t0))
+    }
+
+    func testResetSentence() {
+        // 测试包里没有本地化表，拿到的是中文原文。
+        XCTAssertEqual(LiveIconUsage.resetSentence(42 * 60 + 30), "42分后重置")
+        XCTAssertEqual(LiveIconUsage.resetSentence(19 * 3600 + 20), "19小时 0分后重置")
+        XCTAssertEqual(LiveIconUsage.resetSentence(86_400 + 18 * 3600 + 600), "1天 18小时后重置")
+        XCTAssertEqual(LiveIconUsage.resetSentence(-5), "0分后重置")
+
+        let q = LiveQuota(remaining: 0.5, window: .weekly, resetsAt: t0.addingTimeInterval(86_400 + 18 * 3600))
+        XCTAssertEqual(LiveIconUsage.resetSentence(q, now: t0), "1天 18小时后重置")
+        // 未知数据或没有重置时间：不显示胶囊。
+        XCTAssertNil(LiveIconUsage.resetSentence(nil, now: t0))
+        XCTAssertNil(LiveIconUsage.resetSentence(LiveQuota(remaining: 0.5, window: .session, resetsAt: nil), now: t0))
+    }
+
+    func testPercentFontScalesWithAReadableFloor() {
+        XCTAssertEqual(LiveIconUsage.percentFontSize(side: 100), 23, accuracy: 1e-9)
+        XCTAssertEqual(LiveIconUsage.percentFontSize(side: 20), 11)
+        XCTAssertEqual(LiveIconUsage.percentFontSize(side: .nan), 11)
+        XCTAssertLessThan(LiveIconUsage.percentFontSize(side: 60), LiveIconUsage.percentFontSize(side: 80))
     }
 
     func testSurfaceStaysInsideContent() {

@@ -16,6 +16,8 @@ final class TooltipWindow {
     private var panel: NSPanel?
     private var hosting: NSHostingView<TooltipLabel>?
     private var current: String?
+    /// AI 额度水位的重置倒计时，名称下面多一颗胶囊；没有时是 nil。
+    private var currentDetail: String?
     /// Measured once per label, not once per pointer move.
     private var currentSize: NSSize = .zero
     /// Last frame actually set, so an unchanged one costs nothing.
@@ -27,11 +29,13 @@ final class TooltipWindow {
     ///   - anchor: the point on the tile the label should point away from, in
     ///     screen coordinates.
     ///   - edge: which way to place the label.
-    func show(_ text: String, anchor: CGPoint, edge: DockPosition) {
+    ///   - detail: AI 图标的重置倒计时，名称标签和图标之间多一颗玻璃胶囊。
+    func show(_ text: String, detail: String? = nil, anchor: CGPoint, edge: DockPosition) {
         let panel = existingOrNew()
-        if current != text {
-            hosting?.rootView = TooltipLabel(text: text)
+        if current != text || currentDetail != detail {
+            hosting?.rootView = TooltipLabel(text: text, detail: detail, detailFirst: edge == .top)
             current = text
+            currentDetail = detail
             // A full SwiftUI sizing pass. It only depends on the text, so it
             // must not run on every pointer move - sweeping the row changed
             // the anchor constantly while the label stayed the same.
@@ -75,6 +79,7 @@ final class TooltipWindow {
         // blocked main thread per 5s of movement: the shelf's whole stutter.
         guard panel?.isVisible == true else { return }
         current = nil
+        currentDetail = nil
         currentFrame = .zero
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
@@ -216,10 +221,25 @@ final class LayoutToast {
 
 /// Matched to the Dock's own label: a capsule, ~21pt tall, 13pt text, with a
 /// hairline rim and a thin material that lets the background read through.
+///
+/// AI 额度水位开着时，名称下面（靠图标的一侧）多一颗玻璃胶囊：时钟加「1天 18小时后重置」。
+/// 带字的玻璃用 `readableGlass`，浅色深色外观下字都清楚。
 struct TooltipLabel: View {
     var text: String
+    var detail: String? = nil
+    /// 顶部扩展栏的标签在图标下面：胶囊放上面，同样挨着图标。
+    var detailFirst = false
 
     var body: some View {
+        VStack(spacing: 5) {
+            if detailFirst, let detail { countdown(detail) }
+            name
+            if !detailFirst, let detail { countdown(detail) }
+        }
+        .padding(6)   // room for the shadow inside the panel
+    }
+
+    private var name: some View {
         Text(text)
             .font(.system(size: 13))
             .foregroundStyle(.primary)
@@ -235,7 +255,26 @@ struct TooltipLabel: View {
                     }
                     .shadow(color: .black.opacity(0.22), radius: 5, y: 1)
             }
-            .padding(6)   // room for the shadow inside the panel
+    }
+
+    private func countdown(_ detail: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "clock")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+            Text(detail)
+                .font(.system(size: 13, weight: .medium).monospacedDigit())
+                .foregroundStyle(.primary)
+        }
+        .fixedSize()
+        .padding(.horizontal, 10)
+        .frame(height: 24)
+        .readableGlass(in: Capsule(style: .continuous))
+        .overlay {
+            Capsule(style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.16), radius: 4, y: 1)
     }
 }
 

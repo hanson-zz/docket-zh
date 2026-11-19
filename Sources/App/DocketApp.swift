@@ -59,6 +59,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let state = AppState()
         self.state = state
 
+        // 动态图标的 Codex 拆出了自己的开关：老用户照搬原来 ChatGPT/Codex 共用开关的值。
+        LiveIconToggles.migrateCodexToggle(.standard)
+
         // 新手引导只给全新安装：在装默认布局之前看一眼，已经有布局或状态文件的
         // 是升级上来的老用户，不弹。
         let hadSavedSetup = !state.state.profiles.isEmpty

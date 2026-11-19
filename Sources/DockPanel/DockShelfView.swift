@@ -1614,6 +1614,8 @@ struct DockShelfView: View {
         var id: UUID
         /// 正在运行的 App 格子才有，悬停窗口预览用。
         var runningBundleID: String? = nil
+        /// App 格子的 bundle id（不管在不在运行），悬停时给 AI 图标加重置倒计时用。
+        var appBundleID: String? = nil
     }
 
     /// How far the shelf sits inside its own panel, along the long axis.
@@ -1695,13 +1697,18 @@ struct DockShelfView: View {
         let centre = CGPoint(x: along, y: crossCentre)
         return HoverTarget(text: entry.item.isWidget ? nil : entry.label,
                            along: along, cross: cross, centre: centre, id: entry.id,
-                           runningBundleID: runningBundleID(entry.item))
+                           runningBundleID: runningBundleID(entry.item), appBundleID: appBundleID(entry.item))
     }
 
     /// 悬停窗口预览只看正在运行的 App 格子。
     private func runningBundleID(_ item: DockItem) -> String? {
         guard case .app(_, let bundleID, _) = item,
               AppCatalog.shared.isRunning(bundleID: bundleID) else { return nil }
+        return bundleID
+    }
+
+    private func appBundleID(_ item: DockItem) -> String? {
+        guard case .app(_, let bundleID, _) = item else { return nil }
         return bundleID
     }
 
@@ -1734,7 +1741,9 @@ struct DockShelfView: View {
                                     y: frame.maxY - target.centre.x)
         }
         if let text = target.text {
-            TooltipWindow.shared.show(text, anchor: anchor, edge: position)
+            // AI 图标开着额度水位时，名称下面加一颗重置倒计时胶囊；读不到重置时间就不加。
+            TooltipWindow.shared.show(text, detail: LiveQuotaHover.resetSentence(bundleID: target.appBundleID),
+                                      anchor: anchor, edge: position)
         } else {
             // Moving onto a widget has to take the previous tile's label with
             // it, the same way moving off the shelf does.

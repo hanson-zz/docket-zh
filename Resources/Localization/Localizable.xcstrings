@@ -18879,24 +18879,24 @@
         }
       }
     },
-    "ChatGPT/Codex" : {
+    "AI 额度水位" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ChatGPT/Codex"
+            "value" : "AI usage level"
           }
         }
       }
     },
-    "图标里的水位是 Codex 还剩多少额度，取 5 小时和每周里更紧的那个，没有数据时不画；Codex 正在干活时一道白光沿图标边缘绕圈。" : {
+    "ChatGPT、Claude、Codex 图标下部灌水，水位是还剩多少额度，没有数据时不画；鼠标停在图标上时，名称下面显示多久后重置。ChatGPT 和 Codex 共用同一份 Codex 额度数据。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The water level inside the icon shows how much of your Codex limit is left, using whichever of the 5-hour and weekly limits is tighter, and is hidden when there is no data; while Codex is working, a soft white light travels around the icon's edge."
+            "value" : "Fills the lower part of the ChatGPT, Claude and Codex icons with water showing how much of your limit is left, and draws nothing when there is no data; when you hover over an icon, the time until the limit resets appears under its name. ChatGPT and Codex share the same Codex usage data."
           }
         }
       }
@@ -18912,24 +18912,101 @@
         }
       }
     },
-    "图标里的水位是 Claude 还剩多少额度，取 5 小时和每周里更紧的那个。读本机 Claude 命令行已登录的账号，只读不上传，令牌只发给 Anthropic；没登录时不画。第一次读取时 macOS 可能弹框问是否允许码头使用钥匙串里的这一项。" : {
+    "勾掉的 App 图标不动。Codex 正在干活时，ChatGPT 和 Codex 图标边缘有一道白光绕圈。Claude 读本机 Claude 命令行已登录的账号，只读不上传，令牌只发给 Anthropic；没登录时不画。第一次读取时 macOS 可能弹框问是否允许码头使用钥匙串里的这一项。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The water level inside the icon shows how much of your Claude limit is left, using whichever of the 5-hour and weekly limits is tighter. It reads the account the Claude command-line tool is signed in to on this Mac, read-only with nothing uploaded, and the token goes only to Anthropic; nothing is drawn when you are not signed in. The first time it reads, macOS may ask whether Dockling may use this keychain item."
+            "value" : "Unchecked apps keep a still icon. While Codex is working, a soft white light travels around the edge of the ChatGPT and Codex icons. Claude reads the account the Claude command-line tool is signed in to on this Mac, read-only with nothing uploaded, and the token goes only to Anthropic; nothing is drawn when you are not signed in. The first time it reads, macOS may ask whether Dockling may use this keychain item."
           }
         }
       }
     },
-    "水位旁显示剩余百分比" : {
+    "5 小时" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show remaining percentage by the water level"
+            "value" : "5 hours"
+          }
+        }
+      }
+    },
+    "取更紧的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tighter"
+          }
+        }
+      }
+    },
+    "显示：" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show:"
+          }
+        }
+      }
+    },
+    "取更紧的：哪个窗口剩得少就看哪个。固定 5 小时或每周时，那个窗口没有数据就不画。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tighter shows whichever limit has less left. With 5 hours or Weekly fixed, nothing is drawn when that limit has no data."
+          }
+        }
+      }
+    },
+    "水位左下角显示剩余百分比" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show remaining percentage in the lower-left corner"
+          }
+        }
+      }
+    },
+    "%@分后重置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resets in %@m"
+          }
+        }
+      }
+    },
+    "%@小时 %@分后重置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resets in %@h %@m"
+          }
+        }
+      }
+    },
+    "%@天 %@小时后重置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resets in %@d %@h"
           }
         }
       }
