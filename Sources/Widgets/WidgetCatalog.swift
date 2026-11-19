@@ -1125,7 +1125,7 @@ public enum WidgetCatalog {
         case .watchlist: return CGSize(width: StockBoard.watchlistTileWidth, height: 176)
         case .photos:
             return cfg.string("layout", default: "standard") == "wide"
-                ? CGSize(width: 176, height: 62) : CGSize(width: 112, height: 62)
+                ? CGSize(width: 196, height: 62) : CGSize(width: 112, height: 62)
         // 最新一张大图加 2×2 四格缩略图。
         case .screenshots: return CGSize(width: 184, height: 62)
         case .downloads: return CGSize(width: 176, height: 62)

@@ -46,19 +46,54 @@ struct PhotoFrameTile: View {
     @ViewBuilder
     private var frame: some View {
         if context.isPreview {
-            SamplePicture()
-                .overlay(alignment: .bottomLeading) {
-                    if isWide {
-                        caption(headline: tr("那年今天"), line: tr("2024.10.18 · 杭州"), index: 1, count: 5)
-                    }
+            if isWide {
+                strip {
+                    SamplePicture()
+                        .overlay(alignment: .bottomLeading) {
+                            caption(headline: tr("那年今天"), line: tr("2024.10.18 · 杭州"), index: 1, count: 5)
+                        }
+                } next: {
+                    SamplePicture(symbol: "sun.max.fill").stripCell()
+                    SamplePicture(symbol: "leaf.fill").stripCell()
                 }
+            } else {
+                SamplePicture()
+            }
         } else {
             let current = self.album
             let order = current.order()
             let lookup = current.lookup
             let position = PhotoRotation.position(at: context.now, order: order, state: current.state,
                                                   interval: current.interval)
-            if let position, let item = lookup[order[position]] {
+            if let position, let item = lookup[order[position]], isWide {
+                let upcoming = PhotoRotation.upcoming(at: context.now, order: order, state: current.state,
+                                                      interval: current.interval, count: 2)
+                    .compactMap { lookup[$0] }
+                strip {
+                    ZStack {
+                        AlbumThumb(item: item, pixels: 520)
+                            .id(item.id)
+                            .transition(.opacity)
+                    }
+                    .animation(.easeInOut(duration: 0.9), value: item.id)
+                    .background { warmNext(order: order, lookup: lookup, album: current) }
+                    .overlay(alignment: .bottomLeading) { itemCaption(item, index: position, count: order.count) }
+                } next: {
+                    ForEach(Array(upcoming.prefix(2).enumerated()), id: \.offset) { _, next in
+                        AlbumThumb(item: next, pixels: 160)
+                            .stripCell()
+                            .id(next.id)
+                            .transition(.opacity)
+                    }
+                    // 只有一两张照片时，空出来的格子垫一层浅底，不留洞。
+                    ForEach(0..<max(0, 2 - upcoming.count), id: \.self) { _ in
+                        Color.panelShade.stripCell()
+                    }
+                }
+                .animation(.easeInOut(duration: 0.9), value: item.id)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(label(item))
+            } else if let position, let item = lookup[order[position]] {
                 ZStack {
                     AlbumThumb(item: item, pixels: 520)
                         .id(item.id)
@@ -66,9 +101,6 @@ struct PhotoFrameTile: View {
                 }
                 .animation(.easeInOut(duration: 0.9), value: item.id)
                 .background { warmNext(order: order, lookup: lookup, album: current) }
-                .overlay(alignment: .bottomLeading) {
-                    if isWide { itemCaption(item, index: position, count: order.count) }
-                }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(label(item))
             } else {
@@ -83,6 +115,24 @@ struct PhotoFrameTile: View {
         case .memory(let memory): tr("那年今天：\(PhotoMemory.caption(date: memory.date, place: nil))")
         }
     }
+
+    // MARK: 宽幅：胶片条
+
+    /// 宽幅是一条胶片：左边大图是正在放的这张，右边上下两格是接下来要放的两张，
+    /// 和标准那张纯照片一眼分得开。
+    private func strip<Main: View, Next: View>(@ViewBuilder _ main: () -> Main,
+                                               @ViewBuilder next: () -> Next) -> some View {
+        HStack(spacing: 2) {
+            main()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            VStack(spacing: 2) { next() }
+            .frame(width: Self.nextWidth)
+        }
+    }
+
+    /// 右边两格小图的宽度。
+    private static let nextWidth: CGFloat = 44
 
     // MARK: 宽幅：日期和地点
 
@@ -100,6 +150,11 @@ struct PhotoFrameTile: View {
                 caption(headline: PhotoMemory.headline(date: date, today: context.now),
                         line: PhotoMemory.caption(date: date, place: place),
                         index: index, count: count)
+            } else {
+                // 没有拍摄日期：写文件夹名和第几张，下沿始终有一行字。
+                caption(headline: nil,
+                        line: "\(file.url.deletingLastPathComponent().lastPathComponent) · \(index + 1)/\(count)",
+                        index: index, count: 1)
             }
         }
     }
@@ -172,5 +227,12 @@ struct PhotoFrameTile: View {
         } else {
             PandaEmptyTile(empty: .photos, title: tr("选择相册"), instance: instance, context: context)
         }
+    }
+}
+
+private extension View {
+    /// 胶片条右边的一格：撑满分到的地方，多出来的裁掉。
+    func stripCell() -> some View {
+        frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
     }
 }

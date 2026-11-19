@@ -178,7 +178,7 @@ final class MediaSplitTests: XCTestCase {
         let mini = WidgetCatalog.make(.music, overrides: ["mini": .bool(true)])!
         XCTAssertEqual(WidgetCatalog.naturalSize(mini).width, 64)
         let wide = WidgetCatalog.make(.photos, overrides: ["layout": .string("wide")])!
-        XCTAssertEqual(WidgetCatalog.naturalSize(wide).width, 176)
+        XCTAssertEqual(WidgetCatalog.naturalSize(wide).width, 196)
         XCTAssertEqual(WidgetCatalog.naturalSize(WidgetCatalog.make(.volume)!).width, 200)
         XCTAssertEqual(WidgetCatalog.naturalSize(WidgetCatalog.make(.appVolume)!).width, 196)
     }
