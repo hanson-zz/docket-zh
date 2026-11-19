@@ -180,8 +180,11 @@ struct QuickTodoCaptureView: View {
             } else {
                 // 只有玻璃时在浅色网页上几乎看不见：底下垫一层半透明底色，
                 // 再加描边，让输入条从任何背景里跳出来。
-                shape.fill(scheme == .dark ? Color.black.opacity(0.38) : Color.white.opacity(0.62))
-                    .glassEffect(.regular, in: shape)
+                // 底色放玻璃上面当兄弟层，不当玻璃的内容，免得玻璃在深色背景上把它翻深。
+                ZStack {
+                    Color.clear.glassEffect(.regular, in: shape)
+                    shape.fill(scheme == .dark ? Color.black.opacity(0.38) : Color.white.opacity(0.62))
+                }
             }
         }
         .clipShape(shape)

@@ -116,8 +116,13 @@ struct PanelGlassSurface: View {
             // 只有玻璃时，系统会按身后内容自动变深：浅色外观下卡片在深色壁纸或窗口上
             // 变成深色玻璃，深色字就看不清。底下垫一层跟外观走的半透明底色，玻璃颜色
             // 和字色始终一致（同快速待办输入条）。
-            shape.fill(scheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.62))
-                .glassEffect(.regular, in: shape)
+            // 底色不能放进 glassEffect 里当它的内容：玻璃在深色内容上会把自己的内容
+            // 一起翻成深色（实测浅色外观下整张卡变 #1C1C20），所以玻璃单独一层，
+            // 底色作为兄弟层盖在玻璃上面，玻璃动不到它。
+            ZStack {
+                Color.clear.glassEffect(.regular, in: shape)
+                shape.fill(scheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.72))
+            }
         }
     }
 }
