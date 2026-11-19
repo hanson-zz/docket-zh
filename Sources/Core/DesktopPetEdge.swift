@@ -207,6 +207,25 @@ public enum DesktopPetTracks {
         }
     }
 
+    /// 屏幕下边缘蜷着时让开码头扩展栏：扩展栏的窗口层级比小熊猫高，小熊猫待在它后面
+    /// 只会从玻璃条上沿露出几根草或一对耳朵，看着像落了东西。`blocked` 是扩展栏占的横向
+    /// 范围，`half` 是小熊猫半个身子宽；沿边范围切成左右两段，留在 `prefer` 那一侧，
+    /// 那侧放不下换另一侧，两侧都放不下返回 nil（这会儿不显示）。别的边、别的样式原样返回。
+    public static func avoiding(_ track: DesktopPetTrack, blocked: ClosedRange<Double>?,
+                                prefer: Double, half: Double) -> DesktopPetTrack? {
+        guard let blocked, track.edge == .bottom, track.style == .curl else { return track }
+        let low = blocked.lowerBound - half - 6
+        let high = blocked.upperBound + half + 6
+        guard high > track.lane.lowerBound, low < track.lane.upperBound else { return track }
+        let left: ClosedRange<Double>? = low >= track.lane.lowerBound ? track.lane.lowerBound...low : nil
+        let right: ClosedRange<Double>? = high <= track.lane.upperBound ? high...track.lane.upperBound : nil
+        let wantsLeft = prefer <= (blocked.lowerBound + blocked.upperBound) / 2
+        guard let pick = wantsLeft ? (left ?? right) : (right ?? left) else { return nil }
+        var next = track
+        next.lane = pick
+        return next
+    }
+
     private static func lane(_ low: Double, _ high: Double) -> ClosedRange<Double> {
         let mid = (low + high) / 2
         return low <= high ? low...high : mid...mid

@@ -506,4 +506,19 @@ final class DesktopPetEdgeTests: XCTestCase {
         XCTAssertEqual(left.peekFeet(along: 300, width: 80, reveal: 2).x, 40, accuracy: 0.0001, "最多整只露出来")
 
     }
+
+    func testBottomCurlStepsAsideFromShelf() {
+        let track = DesktopPetTrack(edge: .bottom, style: .curl, base: 80, lane: 40...1400)
+        let left = DesktopPetTracks.avoiding(track, blocked: 500...900, prefer: 600, half: 28)
+        XCTAssertEqual(left?.lane, 40...466)
+        let right = DesktopPetTracks.avoiding(track, blocked: 500...900, prefer: 800, half: 28)
+        XCTAssertEqual(right?.lane, 934...1400)
+        // 一侧放不下换另一侧，两侧都放不下不显示。
+        XCTAssertEqual(DesktopPetTracks.avoiding(track, blocked: 20...900, prefer: 100, half: 28)?.lane, 934...1400)
+        XCTAssertNil(DesktopPetTracks.avoiding(track, blocked: 0...1500, prefer: 100, half: 28))
+        // 不挨着、或者不是下边缘蜷着，原样。
+        XCTAssertEqual(DesktopPetTracks.avoiding(track, blocked: nil, prefer: 600, half: 28), track)
+        let dock = DesktopPetTrack(edge: .bottom, style: .stroll, base: 80, lane: 40...1400)
+        XCTAssertEqual(DesktopPetTracks.avoiding(dock, blocked: 500...900, prefer: 600, half: 28), dock)
+    }
 }

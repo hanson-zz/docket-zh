@@ -347,9 +347,16 @@ final class DesktopPetController: NSObject {
                 // 程序坞上沿但程序坞这会儿看不见（自动隐藏、在侧边）：先蜷在屏幕下边缘。
                 let anchor: DesktopPetAnchor = settings.anchor == .dock ? .bottom : settings.anchor
                 screen = targetScreen()
-                if let screen {
-                    next = DesktopPetTracks.edge(anchor, visible: screen.visibleFrame, length: petLength,
-                                                 spot: settings.spot)
+                if let screen, let edge = DesktopPetTracks.edge(anchor, visible: screen.visibleFrame,
+                                                                length: petLength, spot: settings.spot) {
+                    // 底边的码头扩展栏（收起时滑出来也一样）盖在小熊猫上面：让到它旁边去。
+                    var blocked: ClosedRange<Double>?
+                    if shelfShown, shelfPosition() == .bottom, let frame = shelfFrame,
+                       frame.intersects(screen.frame), frame.maxY > screen.visibleFrame.minY {
+                        blocked = Double(frame.minX)...Double(frame.maxX)
+                    }
+                    let prefer = state?.x ?? edge.along(fraction: settings.spot?.along ?? 0.75)
+                    next = DesktopPetTracks.avoiding(edge, blocked: blocked, prefer: prefer, half: petLength / 2)
                 }
             }
         }
@@ -392,6 +399,12 @@ final class DesktopPetController: NSObject {
             }
             trackKey = key
             lastStep = now
+        } else if !dragging, transit == nil, let current = state, shown,
+                  !next.lane.contains(current.x) {
+            // 同一条边但范围变了（扩展栏出现、挪了）：滑到范围里再落下。
+            transit = (drawnFeet, now, DesktopPetSnap.glideDuration)
+            state = DesktopPetBrain.landed(current, at: DesktopPetBrain.clamp(current.x, next.lane),
+                                           now: now, style: next.style)
         }
         track = next
     }
