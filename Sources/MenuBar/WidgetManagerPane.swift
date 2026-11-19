@@ -17,6 +17,8 @@ struct WidgetManagerPane: View {
     @State private var choices: [WidgetCategory: Bool] = [:]
     /// 点过“还有 N 个”的分类。
     @State private var showingAll: Set<WidgetCategory> = []
+    /// 等确认删除的小组件。
+    @State private var deleting: WidgetInstance?
 
     private var activeProfileIndex: Int? {
         guard let id = state.customDock.profileID else { return nil }
@@ -72,7 +74,7 @@ struct WidgetManagerPane: View {
                     }
                 }
             } footer: {
-                Text("关掉只是从扩展栏隐藏，设置保留。")
+                Text("关掉只是从扩展栏隐藏，设置保留；点垃圾桶才会删除。")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -102,6 +104,24 @@ struct WidgetManagerPane: View {
             }
         }
         .listStyle(.inset)
+        .confirmationDialog(tr("删除「\(deleting.map { WidgetNames.name($0.kind) } ?? "")」？"),
+                            isPresented: Binding(get: { deleting != nil },
+                                                 set: { if !$0 { deleting = nil } }),
+                            presenting: deleting) { widget in
+            Button(tr("删除"), role: .destructive) { remove(widget) }
+            Button(tr("取消"), role: .cancel) { deleting = nil }
+        } message: { _ in
+            Text("删除后这个小组件的设置也会一起清掉，想留着设置可以只关掉显示。")
+        }
+    }
+
+    private func remove(_ widget: WidgetInstance) {
+        deleting = nil
+        guard let index = activeProfileIndex else { return }
+        withAnimation(.smooth(duration: 0.2)) {
+            state.profiles[index].items = WidgetManagement.remove(id: widget.id,
+                                                                  from: state.profiles[index].items)
+        }
     }
 
     // MARK: 上半
@@ -146,6 +166,21 @@ struct WidgetManagerPane: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .labelsHidden()
+            Button {
+                deleting = widget
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(tr("从扩展栏删除"))
+            .accessibilityLabel(tr("从扩展栏删除"))
+        }
+        .contextMenu {
+            Button(tr("从扩展栏删除"), role: .destructive) { deleting = widget }
         }
         .padding(.vertical, 2)
     }

@@ -34,6 +34,11 @@ public enum WidgetManagement {
         }
     }
 
+    /// 从布局里删掉一个顶层小组件（连同它的设置）。找不到这个 id 时原样返回。
+    public static func remove(id: UUID, from items: [DockItem]) -> [DockItem] {
+        items.filter { $0.widget?.id != id }
+    }
+
     /// 在小组件之间挪动，语义和 SwiftUI 的 `onMove` 一样：`source` 是小组件列表里
     /// 的位置，`destination` 是挪过去之前的插入位置。非小组件的项目位置不变，
     /// 小组件依次填回原来属于小组件的那些格子。越界的位置原样返回。

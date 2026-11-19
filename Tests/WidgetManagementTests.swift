@@ -154,4 +154,13 @@ final class WidgetManagementTests: XCTestCase {
         XCTAssertEqual(few.more, 0)
         XCTAssertEqual(WidgetManagement.visible([], showAll: false).more, 0)
     }
+
+    func testRemoveDropsOnlyThatWidget() {
+        let a = WidgetInstance(kind: .weather, config: WidgetConfig())
+        let b = WidgetInstance(kind: .clock, config: WidgetConfig())
+        let items: [DockItem] = [.widget(a), .widget(b)]
+        let left = WidgetManagement.remove(id: a.id, from: items)
+        XCTAssertEqual(WidgetManagement.widgets(left).map(\.id), [b.id])
+        XCTAssertEqual(WidgetManagement.remove(id: UUID(), from: items).count, 2)
+    }
 }

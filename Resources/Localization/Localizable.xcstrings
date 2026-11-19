@@ -17251,13 +17251,46 @@
         }
       }
     },
-    "关掉只是从扩展栏隐藏，设置保留。" : {
+    "关掉只是从扩展栏隐藏，设置保留；点垃圾桶才会删除。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Turning one off only hides it from the shelf. Its settings are kept."
+            "value" : "Turning one off only hides it from the shelf and keeps its settings. Use the trash button to delete it."
+          }
+        }
+      }
+    },
+    "删除「%@」？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete \"%@\"?"
+          }
+        }
+      }
+    },
+    "删除后这个小组件的设置也会一起清掉，想留着设置可以只关掉显示。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting also clears this widget's settings. To keep them, just turn it off instead."
+          }
+        }
+      }
+    },
+    "从扩展栏删除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete from Shelf"
           }
         }
       }
