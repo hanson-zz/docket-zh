@@ -169,7 +169,7 @@ struct RadioPandaNote: View {
     }
 }
 
-/// 两段的小切换（地图 / 列表）：选中那段白底深色字。
+/// 两段的小切换（地图 / 列表）：选中那段白底深色字（浅色下加一道柔和阴影浮起来）。
 struct RadioTwoSegment<Value: Hashable>: View {
     var options: [(Value, String)]
     @Binding var selection: Value
@@ -190,7 +190,7 @@ struct RadioTwoSegment<Value: Hashable>: View {
                         .lineLimit(1)
                         .padding(.horizontal, 14)
                         .frame(height: 24)
-                        .background { if on { Capsule().fill(.white.opacity(0.9)) } }
+                        .background { if on { Capsule().fill(.white.opacity(0.9)).panelLift() } }
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -218,6 +218,16 @@ struct RadioWorldPage: View {
     enum Mode: String { case map, list }
 
     private var store: RadioWorldStore { RadioWorldStore.shared }
+
+    /// 面板深浅：浅色下暖黄点在近白底上看不清，压深到 3:1 当图形用。
+    @Environment(\.colorScheme) private var scheme
+    private var lamp: Color {
+        guard scheme == .light else { return RadioBrowseStyle.lamp }
+        return Color(nsColor: NSColor.panelDeepened(NSColor(RadioBrowseStyle.lamp),
+                                                     minContrast: PanelContrast.graphicContrast, atLeast: 0))
+    }
+    /// 地图上选中的国家：深色更亮一档；浅色用压深的暖黄，靠光晕和大一号的点区分。
+    private var lampHot: Color { scheme == .light ? lamp : RadioBrowseStyle.lampHot }
 
     @AppStorage("radio.world.mode") private var storedMode = Mode.map.rawValue
     @State private var selected: String? = "CN"
@@ -331,14 +341,14 @@ struct RadioWorldPage: View {
                         let color: Color
                         let radius: CGFloat
                         if let code = dot.code, code == chosen {
-                            color = RadioBrowseStyle.lampHot
+                            color = lampHot
                             radius = pitch * 0.42
                         } else {
                             switch RadioCountries.tier(dot.code.flatMap { counts[$0] } ?? 0) {
-                            case 3: color = RadioBrowseStyle.lamp.opacity(0.95); radius = pitch * 0.34
-                            case 2: color = RadioBrowseStyle.lamp.opacity(0.58); radius = pitch * 0.34
-                            case 1: color = RadioBrowseStyle.lamp.opacity(0.3); radius = pitch * 0.34
-                            default: color = .white.opacity(0.11); radius = pitch * 0.3
+                            case 3: color = lamp.opacity(0.95); radius = pitch * 0.34
+                            case 2: color = lamp.opacity(0.58); radius = pitch * 0.34
+                            case 1: color = lamp.opacity(0.3); radius = pitch * 0.34
+                            default: color = style.fg.opacity(0.11); radius = pitch * 0.3
                             }
                         }
                         context.fill(Path(ellipseIn: CGRect(x: x - radius, y: y - radius,
@@ -375,10 +385,10 @@ struct RadioWorldPage: View {
         .padding(6)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.white.opacity(0.035))
+                .fill(style.fg.opacity(0.035))
                 .overlay {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(.white.opacity(0.1), lineWidth: 0.5)
+                        .strokeBorder(style.fg.opacity(0.1), lineWidth: 0.5)
                 }
         }
         .accessibilityLabel(tr("世界电台地图"))
@@ -387,10 +397,10 @@ struct RadioWorldPage: View {
 
     private var legend: some View {
         HStack(spacing: 12) {
-            legendItem(RadioBrowseStyle.lamp.opacity(0.95), tr("500 台以上"))
-            legendItem(RadioBrowseStyle.lamp.opacity(0.58), "50-499")
-            legendItem(RadioBrowseStyle.lamp.opacity(0.3), "1-49")
-            legendItem(.white.opacity(0.11), tr("暂无"))
+            legendItem(lamp.opacity(0.95), tr("500 台以上"))
+            legendItem(lamp.opacity(0.58), "50-499")
+            legendItem(lamp.opacity(0.3), "1-49")
+            legendItem(style.fg.opacity(0.11), tr("暂无"))
         }
         .lineLimit(1)
         .minimumScaleFactor(0.9)
@@ -562,7 +572,7 @@ struct RadioWorldPage: View {
                     .frame(width: 72, height: 5)
                     .overlay(alignment: .leading) {
                         Capsule()
-                            .fill(RadioBrowseStyle.lamp.opacity(tier == 3 ? 0.9 : tier == 2 ? 0.55 : 0.3))
+                            .fill(lamp.opacity(tier == 3 ? 0.9 : tier == 2 ? 0.55 : 0.3))
                             .frame(width: max(3, 72 * RadioCountries.barFraction(country.count, max: top)), height: 5)
                     }
                 Text(verbatim: tr("约 \(RadioBrowseStyle.number(country.count))"))
@@ -576,10 +586,10 @@ struct RadioWorldPage: View {
             .background {
                 if on {
                     RoundedRectangle(cornerRadius: 9, style: .continuous)
-                        .fill(RadioBrowseStyle.lamp.opacity(0.16))
+                        .fill(lamp.opacity(0.16))
                         .overlay {
                             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .strokeBorder(RadioBrowseStyle.lamp.opacity(0.45), lineWidth: 0.8)
+                                .strokeBorder(lamp.opacity(0.45), lineWidth: 0.8)
                         }
                 }
             }

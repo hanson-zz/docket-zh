@@ -7,8 +7,7 @@ import SwiftUI
 // 设计稿 design/radio-skins2.png 第 4 列，配色和尺寸见 design/radio-skins2.py 的 skin_pixel / tile_pixel
 // （面板按 1.25 倍、卡片按 264 × 62 画，卡片落到 212 × 62 时按比例收窄）。
 //
-// 面板一律用暗色版（用户定的），所以面板上半部分和底都固定取掌机像素的暗色调色板和暗色液晶；
-// 卡片跟扩展栏深浅走 `model.tone`。
+// 面板跟面板窗口的浅色/深色走（暗色红字黑屏，浅色黑字红屏），卡片跟扩展栏深浅走，都看 `model.tone`。
 //
 // 数字和小熊猫都是自己用点阵画的，不用外部字体。动画只有两处，都很省：播放中小熊猫隔几秒眨一下眼，
 // 连接中倒三角一闪一闪；都用 TimelineView 按每秒 5 帧刷新，暂停、预览、减少动态效果时停住不刷新，
@@ -31,15 +30,6 @@ private enum PixelLook {
         case .light:
             Screen(glass: Color(hex: "#E8513F"), pixel: Color(hex: "#3B0905"), unlit: 0.10, bezel: Color(hex: "#D9D3CE"))
         }
-    }
-
-    /// 面板固定用暗色版：把模型换成暗色那组颜色。
-    static func dark(_ model: RadioSkinModel) -> RadioSkinModel {
-        guard model.tone != .dark, let palette = RadioSkinPalette.palette(.pixel, tone: .dark) else { return model }
-        var dark = model
-        dark.tone = .dark
-        dark.palette = palette
-        return dark
     }
 
     /// 像素小熊猫头 15 × 12，照设计稿 PANDA_ROWS：X 毛色（亮），. 白色脸斑（不亮），o 眼睛和鼻子（亮）。
@@ -234,24 +224,23 @@ private enum PixelLook {
 struct RadioSkinPixelPanel: RadioSkinPanelFace {
     var model: RadioSkinModel
 
-    /// 整张面板卡片的底：固定暗色版。
+    /// 整张面板卡片的底：跟 `model.tone`。
     static func backdrop(_ model: RadioSkinModel) -> some View {
-        RadioSkinBackdrop(model: PixelLook.dark(model))
+        RadioSkinBackdrop(model: model)
     }
 
     var body: some View {
-        let dark = PixelLook.dark(model)
         VStack(alignment: .leading, spacing: 12) {
-            RadioSkinHeader(model: dark)
-            PixelHandheld(model: dark)
+            RadioSkinHeader(model: model)
+            PixelHandheld(model: model)
                 .frame(height: 184)
                 .padding(.bottom, 2)
-            RadioSkinReadout(model: dark)
-            PixelTransport(model: dark)
+            RadioSkinReadout(model: model)
+            PixelTransport(model: model)
                 .padding(.vertical, 2)
-            PixelVolume(model: dark)
+            PixelVolume(model: model)
         }
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, model.tone == .dark ? .dark : .light)
     }
 }
 
@@ -260,7 +249,7 @@ private struct PixelHandheld: View {
     var model: RadioSkinModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var screen: PixelLook.Screen { PixelLook.screen(.dark) }
+    private var screen: PixelLook.Screen { PixelLook.screen(model.tone) }
     /// 播放中眨眼：正在出声、不在缓冲、不是预览、没开减少动态效果。
     private var blinking: Bool { model.playing && !model.buffering && !model.isPreview && !reduceMotion && model.canPlay }
     /// 连接中倒三角一闪一闪（减少动态效果时常亮）。
@@ -365,7 +354,7 @@ private struct PixelTransport: View {
                 .font(.system(size: main ? 18 : 13, weight: .bold))
                 .foregroundStyle(main ? colors.ink : colors.text)
                 .frame(width: size, height: size)
-                .background(shape.fill(main ? colors.accent : PixelLook.screen(.dark).bezel))
+                .background(shape.fill(main ? colors.accent : PixelLook.screen(model.tone).bezel))
                 .overlay(shape.strokeBorder(Color.black.opacity(0.2), lineWidth: 0.8))
                 .background(shape.fill(Color.black.opacity(0.35)).offset(y: main ? 3.5 : 3))
                 .contentShape(shape)

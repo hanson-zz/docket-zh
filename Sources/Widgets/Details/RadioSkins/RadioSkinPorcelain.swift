@@ -7,7 +7,7 @@ import SwiftUI
 // 设计稿 design/radio-skins2.png 第 3 列，配色和尺寸见 design/radio-skins2.py 的
 // skin_neu / tile_neu（面板按 1.25 倍、卡片按 264 × 62 画，卡片落到 212 × 62 按比例收窄）。
 //
-// 面板一律用暗色版（石墨灰），卡片跟扩展栏深浅走：浅色扩展栏用浅色主版（暖瓷白）。
+// 面板跟面板窗口的浅色/深色走（浅色是暖瓷白，深色是石墨灰），卡片跟扩展栏深浅走。
 // 只改这个文件；数据和回调见 RadioSkinKit.swift。
 
 /// 两版拟态用的高光、阴影和读数窗纸色（设计稿 skin_neu 的 HI / SH / win）。
@@ -44,30 +44,18 @@ private struct PorcelainShade {
     }
 }
 
-extension RadioSkinModel {
-    /// 面板固定用暗色版：不管窗口深浅，都换成石墨灰那组颜色。
-    fileprivate var porcelainPanel: RadioSkinModel {
-        guard tone != .dark, let dark = RadioSkinPalette.palette(skin, tone: .dark) else { return self }
-        var model = self
-        model.tone = .dark
-        model.palette = dark
-        return model
-    }
-}
-
 // MARK: - 面板
 
 /// 瓷白圆盘：面板上半部分（头一行、圆盘、台名、走带键、音量），宽 288pt。
 struct RadioSkinPorcelainPanel: RadioSkinPanelFace {
     var model: RadioSkinModel
 
-    /// 整张面板卡片的底：暗色版石墨灰。
+    /// 整张面板卡片的底：浅色暖瓷白，深色石墨灰（跟 `model.tone`）。
     static func backdrop(_ model: RadioSkinModel) -> some View {
-        RadioSkinBackdrop(model: model.porcelainPanel)
+        RadioSkinBackdrop(model: model)
     }
 
     var body: some View {
-        let model = self.model.porcelainPanel
         let shade = PorcelainShade(model.tone, palette: model.palette)
         VStack(alignment: .leading, spacing: 0) {
             RadioSkinHeader(model: model)

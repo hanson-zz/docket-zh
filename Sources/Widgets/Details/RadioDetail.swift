@@ -101,27 +101,33 @@ struct RadioDetail: View {
     /// 五款新外观（烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺），上半部分画在
     /// RadioSkins/ 下各自的文件里。
     private var modern: Bool { skin.isModern }
-    /// 面板一律用新外观的暗色版（卡片才跟扩展栏深浅），下半截收藏列表也跟着暗色画。
-    private var tone: RadioSkinTone { .dark }
+    /// 面板窗口的浅色/深色（设置里的外观，或这张卡片「外观」里选的）。
+    @Environment(\.colorScheme) private var scheme
+    /// 只有暗色设计的皮肤：三款复古（木纹、晶体管、卡座）和烟晶，整张面板保持暗色。
+    /// 经典（默认）和其余新外观跟着浅色/深色走。
+    private var darkOnlySkin: Bool { retro || skin == .smoke }
+    /// 这张面板最后画成深色。
+    private var darkPanel: Bool { darkOnlySkin || scheme == .dark }
+    /// 新外观用哪一版配色：跟面板深浅走，下半截收藏列表也跟着画。
+    private var tone: RadioSkinTone { darkPanel ? .dark : .light }
     /// 新外观这一版的配色，经典和复古皮肤是 nil。
     private var palette: RadioSkinPalette? { RadioSkinPalette.palette(skin, tone: tone) }
-    /// 面板里的字色：新外观跟调色板（浅色版是深色字），其余照旧白字。
-    private var fg: Color { palette.map { Color(code: $0.text) } ?? .white }
-    /// 新外观浅色版：卡片里的系统控件也要按浅色画。
-    private var lightSkin: Bool { palette?.isLight ?? false }
+    /// 面板里的字色：新外观跟调色板（浅色版是深色字），经典跟外观（浅色深字、深色白字），
+    /// 复古皮肤整张保持暗色，解析出来是白字。
+    private var fg: Color { palette.map { Color(code: $0.text) } ?? .panelPrimary }
 
     /// 复古皮肤用自己的琥珀、红、VFD 绿；新外观跟调色板；经典照旧跟颜色面板走。
     private var accent: Color {
         if let palette { return Color(code: palette.accent) }
         return retro ? skin.accent : panelTint.accent(or: RadioIcon.glow)
     }
-    /// 压在深色底上的小字用的强调色：晶体管的红换浅一档；经典跟主题色时
-    /// 按深色面板卡片调亮到 4.5:1，本来就够的颜色原样用。
+    /// 压在面板底上的小字用的强调色：晶体管的红换浅一档；经典跟主题色时
+    /// 按面板深浅调到 4.5:1（深色调亮、浅色压深），本来就够的颜色原样用。
     private var accentText: Color {
         if let palette { return Color(code: palette.accentText) }
         if retro { return skin.textAccent }
         guard let code = WidgetTintPicker.code(accent) else { return accent }
-        return Color(code: WidgetTint.readable(code, dark: true, minimum: 4.5))
+        return Color(code: WidgetTint.readable(code, dark: darkPanel, minimum: 4.5))
     }
     /// 收藏/搜索切换选中那一段：复古皮肤是皮肤强调色，经典跟主题色；字深色。
     private var segmentInk: Color {
@@ -151,7 +157,7 @@ struct RadioDetail: View {
     }
 
     private func content(now: Date) -> some View {
-        DetailCard(forceDark: true) {
+        DetailCard(forceDark: darkOnlySkin) {
             if let model = skinModel {
                 RadioModernBackdrop(model: model)
             } else {
@@ -167,7 +173,7 @@ struct RadioDetail: View {
                 } else {
                     header
                     readout
-                    RadioArcDial(count: stations.count, index: index, accent: accent, needle: Self.needle) { target in
+                    RadioArcDial(count: stations.count, index: index, accent: accent, needle: Self.needle, ink: fg) { target in
                         guard !context.isPreview else { return }
                         RadioRemote.tune(instance, to: target)
                     }
@@ -193,8 +199,6 @@ struct RadioDetail: View {
                 }
                 .buttonStyle(.plain)
             }
-            // DetailCard 把内容固定成深色；新外观浅色版换回浅色，输入框、菜单按浅底画。
-            .environment(\.colorScheme, lightSkin ? .light : .dark)
         }
     }
 
@@ -1548,7 +1552,7 @@ struct RadioArcDial: View {
     var index: Int
     var accent: Color
     var needle: Color
-    /// 刻度、表面和未选中的点的颜色；深色面板上是白色，新外观的浅色版传深色字。
+    /// 刻度、表面和未选中的点的颜色：面板传自己的字色（深色白、浅色深字）。
     var ink: Color = .white
     var onTune: (Int) -> Void
 

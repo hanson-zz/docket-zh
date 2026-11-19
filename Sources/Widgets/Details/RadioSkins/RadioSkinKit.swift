@@ -15,7 +15,7 @@ import SwiftUI
 // - `…Panel` 画面板上半部分：头一行、主视觉、台名和说明、走带键、音量（宽 288pt，
 //   面板 320 减两边 16）。下面的定时关闭、收藏/搜索、收藏列表由 RadioDetail 画，
 //   收藏当前行的标法跟 `RadioSkinPalette.rowStyle` 走，颜色跟调色板走。
-// - `…Panel.backdrop(_:)` 画面板底（整张深色卡片的背景），默认 `RadioSkinBackdrop`。
+// - `…Panel.backdrop(_:)` 画面板底（整张卡片的背景），默认 `RadioSkinBackdrop`。
 // - `…Card` 画 212 × 62 卡片里的内容（横排）或侧边竖排时的内容（`vertical`）。
 //   卡片外面的底板由 WidgetSurface 画，卡片上除两个按钮外的点击属于扩展栏（打开面板），
 //   所以按钮只占自己那么大。

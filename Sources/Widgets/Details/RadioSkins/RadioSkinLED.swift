@@ -6,8 +6,8 @@ import SwiftUI
 // 设计稿 design/radio-skins2.png 第 2 列，配色和尺寸见 design/radio-skins2.py 的 skin_led / tile_led
 // （面板按 1.25 倍、卡片按 264 × 62 画，卡片落到 212 × 62 时按比例收窄）。
 //
-// 面板一律用暗色版（用户定的），所以面板上半部分和底都固定取灯阵的暗色调色板；
-// 卡片跟扩展栏深浅走 `model.tone`。
+// 面板跟面板窗口的浅色/深色走（`model.tone`），只有黑色外壳里的 LED 窗和预设键是机身，
+// 固定取暗色调色板；卡片跟扩展栏深浅走 `model.tone`。
 //
 // 频谱不是真的读音频，是一组伪随机柱：只在正在播放、不在预览、没开“减少动态效果”时
 // 用 TimelineView 按每秒 10 帧刷新，暂停、预览、减少动态效果时静止，面板关上就停。
@@ -21,7 +21,7 @@ private enum LEDLook {
     /// 暗色外壳。
     static let chassis = Color(hex: "#0D0C0E")
 
-    /// 面板固定用暗色版。
+    /// 黑色外壳里的零件用暗色版。
     static func dark(_ model: RadioSkinModel) -> RadioSkinModel {
         guard model.tone != .dark, let palette = RadioSkinPalette.palette(.led, tone: .dark) else { return model }
         var dark = model
@@ -169,15 +169,16 @@ private enum LEDLook {
 struct RadioSkinLEDPanel: RadioSkinPanelFace {
     var model: RadioSkinModel
 
-    /// 整张面板卡片的底：固定暗色版。
+    /// 整张面板卡片的底：跟 `model.tone`。
     static func backdrop(_ model: RadioSkinModel) -> some View {
-        RadioSkinBackdrop(model: LEDLook.dark(model))
+        RadioSkinBackdrop(model: model)
     }
 
     var body: some View {
+        // 黑色外壳里的 LED 窗和预设键是机身，两版都是黑的，用暗色调色板。
         let dark = LEDLook.dark(model)
         VStack(alignment: .leading, spacing: 12) {
-            RadioSkinHeader(model: dark)
+            RadioSkinHeader(model: model)
             VStack(spacing: 10) {
                 LEDScreen(model: dark)
                     .frame(height: 118)
@@ -188,15 +189,15 @@ struct RadioSkinLEDPanel: RadioSkinPanelFace {
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8))
             .padding(.bottom, 2)
-            RadioSkinReadout(model: dark)
-            RadioSkinTransport(model: dark)
+            RadioSkinReadout(model: model)
+            RadioSkinTransport(model: model)
                 .background(
                     Circle()
-                        .fill(LEDLook.lamp.opacity(dark.playing ? 0.30 : 0.12))
+                        .fill(LEDLook.lamp.opacity(model.playing ? 0.30 : 0.12))
                         .frame(width: 60, height: 60)
                         .blur(radius: 9)
                         .allowsHitTesting(false))
-            RadioSkinVolume(model: dark)
+            RadioSkinVolume(model: model)
         }
     }
 }

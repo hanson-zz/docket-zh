@@ -7,21 +7,12 @@ import SwiftUI
 // （面板按 1.25 倍、卡片按 264 × 62 画，卡片落到 212 × 62 时按比例收窄）。
 //
 // 只改这个文件。数据和回调都在 `RadioSkinModel`（见 RadioSkinKit.swift）。
-// 面板一律用暗色版（用户定的），卡片跟扩展栏深浅走 `model.tone`。
+// 面板跟面板窗口的浅色/深色走，卡片跟扩展栏深浅走，都看 `model.tone`。
 
 /// 墨白直尺自己的装饰色：指针、音量钮的红。
 private enum RulerInk {
     static func red(_ tone: RadioSkinTone) -> Color {
         tone == .dark ? Color(hex: "#FF4433") : Color(hex: "#D7261A")
-    }
-
-    /// 面板固定用暗色版：把模型换成暗色那组颜色。
-    static func darkModel(_ model: RadioSkinModel) -> RadioSkinModel {
-        guard model.tone != .dark, let palette = RadioSkinPalette.palette(.ruler, tone: .dark) else { return model }
-        var dark = model
-        dark.tone = .dark
-        dark.palette = palette
-        return dark
     }
 }
 
@@ -35,13 +26,12 @@ struct RadioSkinRulerPanel: RadioSkinPanelFace {
         self.model = model
     }
 
-    /// 整张面板卡片的底：和上半部分一样固定暗色。
+    /// 整张面板卡片的底：和上半部分一样跟 `model.tone`。
     static func backdrop(_ model: RadioSkinModel) -> some View {
-        RadioSkinBackdrop(model: RulerInk.darkModel(model))
+        RadioSkinBackdrop(model: model)
     }
 
     var body: some View {
-        let model = RulerInk.darkModel(self.model)
         VStack(alignment: .leading, spacing: 12) {
             RulerHeader(model: model)
             RulerHero(model: model)
@@ -51,7 +41,7 @@ struct RadioSkinRulerPanel: RadioSkinPanelFace {
                 .padding(.vertical, 2)
             RulerVolume(model: model)
         }
-        .environment(\.colorScheme, .dark)
+        .environment(\.colorScheme, model.tone == .dark ? .dark : .light)
     }
 }
 
