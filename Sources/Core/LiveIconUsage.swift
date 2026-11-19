@@ -57,7 +57,7 @@ public struct LiveIconToggles: Equatable, Sendable {
     public static let claudeKey = "liveIcons.claude"
     /// 「AI 额度水位」总开关。
     public static let quotaKey = "liveIcons.aiQuota"
-    /// 水位左下角的百分比大字，默认不显示。
+    /// 水位左下角的百分比大字，默认显示。
     public static let percentKey = "liveIcons.aiPercent"
 
     public var master: Bool

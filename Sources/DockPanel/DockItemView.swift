@@ -22,7 +22,7 @@ struct DockItemView: View {
     @AppStorage(LiveIconToggles.codexKey) private var liveCodex = true
     @AppStorage(LiveIconToggles.claudeKey) private var liveClaude = true
     @AppStorage(LiveIconToggles.quotaKey) private var liveQuota = true
-    @AppStorage(LiveIconToggles.percentKey) private var liveQuotaPercent = false
+    @AppStorage(LiveIconToggles.percentKey) private var liveQuotaPercent = true
     // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false

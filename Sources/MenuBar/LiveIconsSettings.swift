@@ -11,7 +11,7 @@ struct LiveIconsSettingRow: View {
     @AppStorage(LiveIconToggles.codexKey) private var codex = true
     @AppStorage(LiveIconToggles.claudeKey) private var claude = true
     @AppStorage(LiveIconToggles.quotaKey) private var quota = true
-    @AppStorage(LiveIconToggles.percentKey) private var percent = false
+    @AppStorage(LiveIconToggles.percentKey) private var percent = true
     @AppStorage(LiveQuotaPreference.key) private var window = LiveQuotaPreference.default.rawValue
 
     var body: some View {
