@@ -980,7 +980,9 @@ private struct NotchIslandHangingFocus: View {
                             .offset(y: NotchIslandLayout.hangRope)
                             .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.18), radius: 6, y: 3)
                     }
-                    if pose == .sleep {
+                    // 自己的打盹图已经画了 zz，只在回退小熊猫时补一个。
+                    if pose == .sleep,
+                       NotchMascotArt.usesPandaFallback(mascot, .sleep, exists: { NotchIslandHanging.exists($0) }) {
                         Text(verbatim: "zZ")
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundStyle(NotchIslandPalette.accent(scheme))
