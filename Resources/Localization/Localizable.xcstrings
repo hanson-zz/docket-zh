@@ -71509,6 +71509,204 @@
           }
         }
       }
+    },
+    "相册 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Album · %@"
+          }
+        }
+      }
+    },
+    "完整显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Whole Photo"
+          }
+        }
+      }
+    },
+    "铺满裁切" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill and Crop"
+          }
+        }
+      }
+    },
+    "第 %@ / %@ 张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@"
+          }
+        }
+      }
+    },
+    "撤销排除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo Skip"
+          }
+        }
+      }
+    },
+    "打开原图" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Original"
+          }
+        }
+      }
+    },
+    "码头没有读取这个文件夹的权限，到隐私设置里允许后就能放。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling can't read this folder. Allow access in Privacy settings to show it."
+          }
+        }
+      }
+    },
+    "读不了这个文件夹，可能已被移动或删除。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't read this folder. It may have been moved or deleted."
+          }
+        }
+      }
+    },
+    "文件夹里还没有图片，放几张进去或换一个文件夹。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pictures in this folder yet. Add some or choose another folder."
+          }
+        }
+      }
+    },
+    "显示方式、放哪些照片、多久换一张" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display, which photos, how often to change"
+          }
+        }
+      }
+    },
+    "悬停点“…”可排除" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover and click … to skip"
+          }
+        }
+      }
+    },
+    "横向滑动看更多" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll sideways for more"
+          }
+        }
+      }
+    },
+    "换一个文件夹…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Another Folder…"
+          }
+        }
+      }
+    },
+    "显示方式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Display"
+          }
+        }
+      }
+    },
+    "整张照片都在，竖图两边垫一层同图模糊底，不裁人物" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The whole photo stays in view. Portrait photos get a blurred copy behind them, so no one is cropped out."
+          }
+        }
+      }
+    },
+    "铺满画面，超出的边缘会被裁掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fills the frame. Edges that do not fit are cropped."
+          }
+        }
+      }
+    },
+    "浏览时悬停在缩略图上，点右上角“…”选“排除”，就不再轮到它" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover over a thumbnail, click … in its corner and choose Skip to stop showing it."
+          }
+        }
+      }
+    },
+    "更多操作" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Actions"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

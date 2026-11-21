@@ -705,7 +705,7 @@ enum WidgetDetail {
         case .pullTooth: CGFloat(PullTooth.panelWidth)
         // 卜卦：和同组的扫雷、拔牙一样 340，内容按卡片真实内容宽排（Divination.panelContentWidth）。
         case .divination: CGFloat(Divination.panelWidth)
-        // 相册按第二批效果图改成 320。
+        // 相册按第二批效果图改成 320；标准、宽幅两套面板一样宽，换样式面板不跳。
         case .photos: 320
         // 最近截图改版：搜索、筛选、多选和标注，和下载一样 320。
         case .screenshots: 320

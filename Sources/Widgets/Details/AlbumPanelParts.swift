@@ -251,22 +251,24 @@ struct AlbumProTag: View {
 }
 
 /// 一张图片缩略图：文件用 `FileThumb`，照片图库里的用 `PhotoMemories` 的缩略图。
+/// `fill` 为 false 时整张放进去（不裁），四周透明，见 `AlbumPicture`。
 struct AlbumThumb: View {
     var item: PhotoAlbum.Item?
     var pixels = 240
+    var fill = true
 
     var body: some View {
         switch item {
         case .file(let file):
-            FileThumb(url: file.url, pixels: pixels)
+            FileThumb(url: file.url, pixels: pixels, fill: fill)
         case .memory(let memory):
-            Color.panelShade
+            Color.panelShade.opacity(fill ? 1 : 0)
                 .overlay {
                     if let image = PhotoMemories.shared.image(for: memory) {
                         Image(nsImage: image)
                             .resizable()
                             .interpolation(.high)
-                            .aspectRatio(contentMode: .fill)
+                            .aspectRatio(contentMode: fill ? .fill : .fit)
                     }
                 }
                 .clipped()
@@ -307,5 +309,89 @@ struct AlbumNote: View {
         }
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// 相册的一张大图，照设置里的显示方式画：
+///
+/// - 完整显示（默认）：整张照片都在，竖图、横图多出来的地方垫同一张照片放大
+///   模糊的底，不裁掉人物。
+/// - 铺满裁切：铺满，多出来的裁掉。
+///
+/// 小组件和两个面板的主图都用它，改了显示方式三处一起变。
+struct AlbumPicture: View {
+    var item: PhotoAlbum.Item?
+    var pixels = 520
+    var fit: PhotoAlbumPanel.Fit = PhotoAlbumPanel.defaultFit
+
+    var body: some View {
+        if fit == .fill || item == nil {
+            AlbumThumb(item: item, pixels: pixels)
+        } else {
+            ZStack {
+                // 同一张缩略图（缓存里已有），放大模糊当底。
+                AlbumThumb(item: item, pixels: pixels)
+                    .scaleEffect(1.2)
+                    .blur(radius: 14, opaque: true)
+                    .overlay(Color.black.opacity(0.12))
+                    .accessibilityHidden(true)
+                AlbumThumb(item: item, pixels: pixels, fill: false)
+            }
+            .clipped()
+        }
+    }
+}
+
+/// 缩略图右上角的小“…”：悬停时出现，点开是排除 / 撤销排除、打开原图。
+/// 代替原来盖住整张照片的“排除”遮罩。压在照片上，固定深色圆底白点。
+struct AlbumThumbMenu: View {
+    var actions: [PhotoAlbumPanel.ThumbAction]
+    var perform: (PhotoAlbumPanel.ThumbAction) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(actions, id: \.self) { action in
+                Button(PhotoAlbumPanel.thumbActionTitle(action)) { perform(action) }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(.black.opacity(0.5)))
+                .contentShape(Circle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(tr("更多操作"))
+        .accessibilityLabel(tr("更多操作"))
+    }
+}
+
+/// 大图下面一行：左边“第 12 / 300 张”，右边“8 分钟后换下一张”或“已暂停”。
+/// 标准和宽幅面板共用，位置一样。
+struct AlbumStatusRow: View {
+    var position: String?
+    var status: String?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if let position {
+                Text(verbatim: position)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+            }
+            Spacer(minLength: 0)
+            if let status {
+                Text(verbatim: status)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+            }
+        }
+        .monospacedDigit()
+        .lineLimit(1)
+        .accessibilityElement(children: .combine)
     }
 }

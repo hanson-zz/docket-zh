@@ -11,6 +11,9 @@ import SwiftUI
 /// 地点。照片图库里有往年今天拍的照片时轮播它们（`PhotoMemories`），没有或没给
 /// 权限时轮播文件夹，图片自带拍摄日期时同样写在下沿；地点反查不到就只写日期。
 ///
+/// 主图照设置里的显示方式画（`AlbumPicture`）：默认完整显示，竖图两边垫同一张
+/// 的模糊底，不裁人物；选了铺满裁切才铺满。面板里改了，卡片马上跟着变。
+///
 /// 轮到哪张由 `PhotoRotation` 从时钟和面板写下的锚点算（面板的上一张、暂停、
 /// 下一张、排除都写在配置里），卡片和面板永远是同一张。可以有多个文件夹；
 /// “那年今天优先”开着时往年今天的照片排在最前面。
@@ -71,7 +74,7 @@ struct PhotoFrameTile: View {
                     .compactMap { lookup[$0] }
                 strip {
                     ZStack {
-                        AlbumThumb(item: item, pixels: 520)
+                        AlbumPicture(item: item, pixels: 520, fit: current.fit)
                             .id(item.id)
                             .transition(.opacity)
                     }
@@ -95,7 +98,7 @@ struct PhotoFrameTile: View {
                 .accessibilityLabel(label(item))
             } else if let position, let item = lookup[order[position]] {
                 ZStack {
-                    AlbumThumb(item: item, pixels: 520)
+                    AlbumPicture(item: item, pixels: 520, fit: current.fit)
                         .id(item.id)
                         .transition(.opacity)
                 }

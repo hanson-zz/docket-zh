@@ -35,7 +35,9 @@ struct PhotoAlbum {
 
     var activeFolders: [String] { PhotoRotation.activeFolders(config) }
     var feeds: [FolderFeed] { activeFolders.map { FolderFeed.shared(.pictures($0)) } }
-    var interval: Double { PhotoRotation.interval(config) }
+    var interval: Double { PhotoAlbumPanel.interval(config) }
+    /// 完整显示还是铺满裁切，小组件和面板一起跟着。
+    var fit: PhotoAlbumPanel.Fit { PhotoAlbumPanel.fit(config) }
     var shuffle: Bool { config.bool(PhotoRotation.shuffleKey) }
     var memoriesFirst: Bool { config.bool(PhotoRotation.memoriesFirstKey, default: true) }
     var state: PhotoRotation.State { PhotoRotation.state(config) }

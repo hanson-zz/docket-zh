@@ -1,19 +1,25 @@
 import AppKit
 import SwiftUI
 
-/// 相册面板，照第二批效果图分两个状态：
+/// 相册面板。标准和宽幅各一套浏览页，设置页共用：
 ///
-/// - 浏览：大图（卡片正在放的那张，左下“8 分钟后换下一张”），上一张 / 暂停 /
-///   下一张，“接下来”八张小图，悬停一张点“排除”就不再轮到它（刚排除的那张
-///   标“已排除”，再点一下撤销）。点照片在默认 App（多半是预览）里打开，拖出去
-///   就是文件。
-/// - 设置：右上“设置”进入。轮播的文件夹（可以多个，免费；勾掉的暂时不放，
-///   右键移除或在访达中打开），“添加文件夹…”，已排除的照片（点右上角恢复这张，
-///   “全部恢复”），换一张的间隔（1 分钟、10 分钟、1 小时、每天），随机顺序，
-///   那年今天优先（照片图库里往年今天拍的排在最前面）。
+/// - 标准：单张为主。大图优先完整画面（显示方式见设置），下面“第 12 / 300 张”
+///   和真实剩余的换图时间，上一张 / 暂停 / 下一张，“接下来”4×2 八张小图。
+/// - 宽幅：和宽幅小组件的胶片条一个样子，主图旁边上下两张接下来的小图；下面
+///   拍摄日期、地点、那年今天（没有的字段不写），序号和倒计时、同样位置的三个
+///   按钮，最底下一行露 4 张预览，横着滑看更多。
 ///
-/// 轮到哪张、暂停、排除都写在卡片配置里（见 `PhotoRotation`），卡片和面板永远
-/// 是同一张，重启后也接着放。
+/// 两套都是：点照片在默认 App（多半是预览）里打开，拖出去就是文件；悬停缩略图
+/// 右上角出一个小“…”，里面是排除 / 撤销排除、打开原图（刚排除的那张留在原位
+/// 标“已排除”，点一下撤销）。
+///
+/// 设置：显示方式（完整显示 / 铺满裁切）、轮播的文件夹（可以多个，勾掉的暂时
+/// 不放，右键移除或在访达中打开）、已排除的照片（点右上角恢复这张，“全部恢复”）、
+/// 换一张的间隔、随机顺序、那年今天优先。
+///
+/// 轮到哪张、暂停、排除、显示方式都写在这张卡片自己的配置里（见 `PhotoRotation`、
+/// `PhotoAlbumPanel`），卡片和面板永远是同一张，两张相册卡片互不串，重启后也
+/// 接着放。标准、宽幅共用同一个锚点，换样式时正在放的那张和倒计时都不变。
 struct PhotoFrameDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -25,7 +31,7 @@ struct PhotoFrameDetail: View {
     @State private var mode: Mode = .browse
     /// 每写一次加一，面板跟着重读存着的配置。
     @State private var revision = 0
-    /// 这次打开面板后刚排除的，在“接下来”里留着标“已排除”，点一下撤销。
+    /// 这次打开面板后刚排除的，在预览里留着标“已排除”，点一下撤销。
     @State private var justExcluded: [String] = []
     @State private var hovered: String?
     /// 加文件夹满了之类的一行提示。
@@ -36,18 +42,26 @@ struct PhotoFrameDetail: View {
     private var accent: Color { panelTint.accent(or: Color(hex: Self.accentHex)) }
     private var ink: Color { panelTint.ink(or: Color(hex: Self.inkHex)) }
 
-    private static let pictureHeight: CGFloat = 196
+    /// 标准大图的高度。
+    private static let pictureHeight: CGFloat = 210
+    /// 宽幅胶片条的高度和右边小图的宽度。
+    private static let stripHeight: CGFloat = 176
+    private static let stripNextWidth: CGFloat = 78
+    private static let gap: CGFloat = 6
+    /// 宽幅底部横向预览一行的高度（约 4:3）。
+    private static let previewRowHeight: CGFloat = 52
 
     /// 写过之后面板拿到的仍可能是打开时的那份，读最新存着的。
     private var current: WidgetInstance {
         _ = revision
         return WidgetWriter.current(instance.id) ?? instance
     }
-    private var album: PhotoAlbum {
-        PhotoAlbum(config: current.config, wide: current.config.string("layout", default: "standard") == "wide")
-    }
+    private var layout: PhotoAlbumPanel.Layout { PhotoAlbumPanel.layout(current.config) }
+    private var album: PhotoAlbum { PhotoAlbum(config: current.config, wide: layout == .wide) }
+    private var memories: PhotoMemories { PhotoMemories.shared }
 
-    /// 面板跟浅色/深色外观走；压在照片上的字和黑胶囊保持白字（底是照片不是玻璃）。
+    /// 面板跟浅色/深色外观走（液态玻璃底，不铺固定深色）；压在照片上的字和
+    /// 小黑圆保持白字（底是照片不是玻璃）。
     var body: some View {
         DetailCard {
             MeshBackdrop(color: Color(hex: Self.accentHex))
@@ -61,10 +75,15 @@ struct PhotoFrameDetail: View {
         }
         .onAppear {
             guard !context.isPreview else { return }
+            var config = current.config
+            if PhotoAlbumPanel.migrate(&config) { write { _ = PhotoAlbumPanel.migrate(&$0) } }
             album.start(now: context.now)
             for feed in album.feeds { feed.refresh(force: true) }
         }
         .onChange(of: album.activeFolders) { _, _ in
+            if !context.isPreview { album.start(now: context.now) }
+        }
+        .onChange(of: layout) { _, _ in
             if !context.isPreview { album.start(now: context.now) }
         }
     }
@@ -104,97 +123,205 @@ struct PhotoFrameDetail: View {
         let album = self.album
         let order = album.order()
         let lookup = album.lookup
-        let state = album.state
         let now = context.now
-        let position = PhotoRotation.position(at: now, order: order, state: state, interval: album.interval)
+        let position = PhotoRotation.position(at: now, order: order, state: album.state, interval: album.interval)
         let shown = position.flatMap { lookup[order[$0]] }
 
-        AlbumHeader(title: tr("相册"), subtitle: subtitle(album, count: order.count)) {
+        AlbumHeader(title: PhotoAlbumPanel.title(layout), subtitle: subtitle(album, count: order.count)) {
             if !context.isPreview {
                 AlbumHeaderButton(title: tr("设置")) { switchTo(.edit) }
-                    .help(tr("放哪些照片、多久换一张"))
+                    .help(tr("显示方式、放哪些照片、多久换一张"))
             }
         }
 
         if context.isPreview {
-            SamplePicture()
-                .frame(height: Self.pictureHeight)
-                .clipShape(.rect(cornerRadius: 12, style: .continuous))
-            controls(enabled: false, paused: false, album: album, order: order)
-        } else if let shown {
-            bigPicture(shown, album: album, order: order)
-            controls(enabled: order.count > 1 || state.isPaused, paused: state.isPaused, album: album, order: order)
-            upcoming(album: album, order: order, lookup: lookup, now: now)
-            Text(verbatim: tr("点照片在预览里打开 · 拖出去就能用"))
-                .font(.system(size: 13))
-                .foregroundStyle(.panelSecondary)
-                .lineLimit(1)
+            previewBrowse(album: album)
+        } else if let position, let shown {
+            switch layout {
+            case .standard:
+                standardPicture(shown, album: album)
+            case .wide:
+                wideStrip(shown, album: album, order: order, lookup: lookup, now: now)
+                wideCaption(shown, now: now)
+            }
+            AlbumStatusRow(position: PhotoAlbumPanel.positionText(index: position, count: order.count),
+                           status: status(album: album, count: order.count))
+            controls(enabled: order.count > 1 || album.state.isPaused, paused: album.state.isPaused,
+                     album: album, order: order)
+            previews(album: album, order: order, lookup: lookup, now: now)
         } else {
             emptyContent(album: album)
         }
     }
 
+    /// 添加小组件时的样子：不读磁盘，画示意图。
+    @ViewBuilder
+    private func previewBrowse(album: PhotoAlbum) -> some View {
+        switch layout {
+        case .standard:
+            SamplePicture()
+                .frame(height: Self.pictureHeight)
+                .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        case .wide:
+            HStack(spacing: 3) {
+                SamplePicture().frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 3) {
+                    SamplePicture(symbol: "sun.max.fill").frame(maxWidth: .infinity, maxHeight: .infinity)
+                    SamplePicture(symbol: "leaf.fill").frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(width: Self.stripNextWidth)
+            }
+            .frame(height: Self.stripHeight)
+            .clipShape(.rect(cornerRadius: 12, style: .continuous))
+            captionLine(PhotoAlbumPanel.Caption(onThisDay: true, date: "2024.10.18", place: tr("杭州")))
+        }
+        AlbumStatusRow(position: PhotoAlbumPanel.positionText(index: 11, count: 248),
+                       status: PhotoRotation.countdownText(480))
+        controls(enabled: false, paused: false, album: album, order: [])
+    }
+
     private func subtitle(_ album: PhotoAlbum, count: Int) -> String {
         if context.isPreview { return tr("图片 · 248 张") }
         let folders = album.activeFolders
-        let name = folders.count == 1 ? PhotoAlbum.folderName(folders[0]) : tr("\(folders.count) 个文件夹")
+        let name: String
+        if folders.isEmpty {
+            name = tr("那年今天")
+        } else {
+            name = folders.count == 1 ? PhotoAlbum.folderName(folders[0]) : tr("\(folders.count) 个文件夹")
+        }
         if album.loading { return tr("\(name) · 正在读取") }
         return tr("\(name) · \(count) 张")
     }
 
-    private func bigPicture(_ item: PhotoAlbum.Item, album: PhotoAlbum, order: [String]) -> some View {
-        AlbumThumb(item: item, pixels: 720)
-            .id(item.id)
-            .transition(.opacity)
+    private func status(album: PhotoAlbum, count: Int) -> String? {
+        PhotoAlbumPanel.statusText(
+            paused: album.state.isPaused,
+            secondsToNext: PhotoRotation.secondsToNext(at: context.now, count: count, state: album.state,
+                                                       interval: album.interval))
+    }
+
+    // MARK: 标准：单张大图
+
+    private func standardPicture(_ item: PhotoAlbum.Item, album: PhotoAlbum) -> some View {
+        mainPicture(item, album: album)
             .frame(maxWidth: .infinity)
             .frame(height: Self.pictureHeight)
             .clipShape(.rect(cornerRadius: 12, style: .continuous))
-            .animation(.easeInOut(duration: 0.6), value: item.id)
             .overlay(alignment: .bottomLeading) {
-                badge(album: album, count: order.count, item: item)
-                    .padding(10)
-            }
-            .contentShape(.rect(cornerRadius: 12))
-            .onTapGesture { open(item) }
-            .onDrag { dragProvider(item) }
-            .help(item.fileURL?.lastPathComponent ?? tr("那年今天"))
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(item.fileURL?.lastPathComponent ?? tr("那年今天"))
-            .accessibilityAddTraits(.isButton)
-    }
-
-    /// 大图左下的小胶囊：几分钟后换下一张，暂停时写“已暂停”。压在照片上，
-    /// 不跟面板深浅走，固定黑胶囊白字。
-    @ViewBuilder
-    private func badge(album: PhotoAlbum, count: Int, item: PhotoAlbum.Item) -> some View {
-        let text: String? = {
-            if album.state.isPaused { return tr("已暂停") }
-            guard let left = PhotoRotation.secondsToNext(at: context.now, count: count, state: album.state,
-                                                         interval: album.interval) else { return nil }
-            return PhotoRotation.countdownText(left)
-        }()
-        if let text {
-            HStack(spacing: 5) {
                 if case .memory = item {
                     Text(verbatim: tr("那年今天"))
                         .font(.system(size: 13, weight: .bold))
-                    Text(verbatim: "·").opacity(0.6)
+                        .foregroundStyle(.white.opacity(0.95))
+                        .padding(.horizontal, 12)
+                        .frame(height: 26)
+                        .background(Capsule().fill(.black.opacity(0.45)))
+                        .environment(\.colorScheme, .dark)
+                        .padding(10)
                 }
-                Text(verbatim: text)
-                    .font(.system(size: 13, weight: .semibold))
-                    .monospacedDigit()
             }
-            .foregroundStyle(.white.opacity(0.95))
-            .lineLimit(1)
-            .padding(.horizontal, 12)
-            .frame(height: 28)
-            .background(Capsule().fill(.black.opacity(0.45)))
-            .environment(\.colorScheme, .dark)
-        }
     }
 
+    /// 正在放的这张：照显示方式画，点开原图，拖出去就是文件；说明放在工具提示里。
+    private func mainPicture(_ item: PhotoAlbum.Item, album: PhotoAlbum) -> some View {
+        let name = item.fileURL?.lastPathComponent ?? tr("那年今天")
+        // 原来压在面板底部的一行说明，挪到工具提示里。
+        let tip = name + "\n" + tr("点照片在预览里打开 · 拖出去就能用")
+        return AlbumPicture(item: item, pixels: 720, fit: album.fit)
+            .id(item.id)
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.6), value: item.id)
+            .contentShape(.rect)
+            .onTapGesture { open(item) }
+            .onDrag { dragProvider(item) }
+            .help(tip)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(name)
+            .accessibilityAddTraits(.isButton)
+    }
+
+    // MARK: 宽幅：胶片条
+
+    /// 和宽幅小组件一样的胶片条：左边主图，右边上下两张接下来要放的。
+    private func wideStrip(_ item: PhotoAlbum.Item, album: PhotoAlbum, order: [String],
+                           lookup: [String: PhotoAlbum.Item], now: Date) -> some View {
+        let next = PhotoRotation.upcoming(at: now, order: order, state: album.state, interval: album.interval,
+                                          count: PhotoAlbumPanel.stripNext)
+        return HStack(spacing: 3) {
+            mainPicture(item, album: album)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            VStack(spacing: 3) {
+                ForEach(next, id: \.self) { id in
+                    thumbCell(id: id, item: lookup[id], excluded: false, album: album, order: order,
+                              aspect: nil, corner: 0)
+                }
+                // 只有一两张照片时，空出来的格子垫一层浅底，不留洞。
+                ForEach(0..<max(0, PhotoAlbumPanel.stripNext - next.count), id: \.self) { _ in
+                    Color.panelShade.frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(width: Self.stripNextWidth)
+        }
+        .frame(height: Self.stripHeight)
+        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+    }
+
+    /// 拍摄日期、地点、那年今天；照片没带的字段不写，一个都没有时整行不占地方。
+    @ViewBuilder
+    private func wideCaption(_ item: PhotoAlbum.Item, now: Date) -> some View {
+        let caption: PhotoAlbumPanel.Caption = {
+            switch item {
+            case .memory(let shown):
+                let place = memories.place(key: shown.id, latitude: shown.latitude, longitude: shown.longitude)
+                return PhotoAlbumPanel.caption(date: shown.date, place: place, today: now)
+            case .file(let file):
+                guard let meta = memories.meta(for: file.url) else { return PhotoAlbumPanel.Caption() }
+                let place = memories.place(key: file.url.path, latitude: meta.latitude, longitude: meta.longitude)
+                return PhotoAlbumPanel.caption(date: meta.date, place: place, today: now)
+            }
+        }()
+        if !caption.isEmpty { captionLine(caption) }
+    }
+
+    private func captionLine(_ caption: PhotoAlbumPanel.Caption) -> some View {
+        HStack(spacing: 8) {
+            if caption.onThisDay {
+                Text(verbatim: tr("那年今天"))
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(ink)
+                    .padding(.horizontal, 9)
+                    .frame(height: 22)
+                    .background(Capsule().fill(accent))
+            }
+            if let date = caption.date {
+                Label {
+                    Text(verbatim: date).monospacedDigit()
+                } icon: {
+                    Image(systemName: "calendar")
+                }
+                .foregroundStyle(.panelPrimary)
+            }
+            if let place = caption.place {
+                Label {
+                    Text(verbatim: place)
+                } icon: {
+                    Image(systemName: "mappin.and.ellipse")
+                }
+                .foregroundStyle(.panelSecondary)
+                .truncationMode(.tail)
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 13, weight: .semibold))
+        .labelStyle(.titleAndIcon)
+        .lineLimit(1)
+        .accessibilityElement(children: .combine)
+    }
+
+    // MARK: 控制
+
     private func controls(enabled: Bool, paused: Bool, album: PhotoAlbum, order: [String]) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Self.gap) {
             AlbumControlButton(title: tr("上一张"), symbol: nil, accent: accent, ink: ink,
                                enabled: enabled && order.count > 1) { step(-1, album: album, order: order) }
             AlbumControlButton(title: paused ? tr("继续") : tr("暂停"), symbol: nil, accent: accent, ink: ink,
@@ -219,70 +346,89 @@ struct PhotoFrameDetail: View {
     // MARK: 接下来
 
     @ViewBuilder
-    private func upcoming(album: PhotoAlbum, order: [String], lookup: [String: PhotoAlbum.Item], now: Date) -> some View {
+    private func previews(album: PhotoAlbum, order: [String], lookup: [String: PhotoAlbum.Item],
+                          now: Date) -> some View {
         // 刚排除的几张先当作还在，排在原来的位置上标“已排除”。
         let pending = justExcluded.filter { lookup[$0] != nil }
         let display = pending.isEmpty ? order : album.order(excluding: album.excluded.filter { !pending.contains($0) })
         let currentID = PhotoRotation.current(at: now, order: order, state: album.state, interval: album.interval)
-        let ids = Self.after(currentID, in: display, count: PhotoRotation.upcomingCount)
-        if !ids.isEmpty {
-            AlbumSection(label: tr("接下来"), right: tr("悬停可排除"))
-                .padding(.top, 2)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
-                ForEach(ids, id: \.self) { id in
-                    upcomingCell(id: id, item: lookup[id], excluded: pending.contains(id), album: album, order: order)
+        let others = max(0, display.count - 1)
+        switch layout {
+        case .standard:
+            let ids = PhotoAlbumPanel.after(currentID, in: display,
+                                            count: PhotoAlbumPanel.previewCount(.standard, others: others))
+            if !ids.isEmpty {
+                AlbumSection(label: tr("接下来"), right: tr("悬停点“…”可排除"))
+                    .padding(.top, 2)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Self.gap),
+                                         count: PhotoAlbumPanel.gridColumns),
+                          spacing: Self.gap) {
+                    ForEach(ids, id: \.self) { id in
+                        thumbCell(id: id, item: lookup[id], excluded: pending.contains(id), album: album,
+                                  order: order, aspect: 4 / 3, corner: 7)
+                    }
                 }
+            }
+        case .wide:
+            let offset = PhotoAlbumPanel.widePreviewOffset(others: others)
+            let count = PhotoAlbumPanel.previewCount(.wide, others: others - offset)
+            let ids = Array(PhotoAlbumPanel.after(currentID, in: display, count: offset + count).dropFirst(offset))
+            if !ids.isEmpty {
+                AlbumSection(label: tr("接下来"),
+                             right: ids.count > PhotoAlbumPanel.wideVisible ? tr("横向滑动看更多") : nil)
+                    .padding(.top, 2)
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: Self.gap) {
+                        ForEach(ids, id: \.self) { id in
+                            // 一行正好露 4 张，宽度跟面板走，高度固定。
+                            thumbCell(id: id, item: lookup[id], excluded: pending.contains(id), album: album,
+                                      order: order, aspect: nil, corner: 7)
+                                .containerRelativeFrame(.horizontal, count: PhotoAlbumPanel.wideVisible,
+                                                        spacing: Self.gap)
+                        }
+                    }
+                }
+                .scrollIndicators(.never)
+                .frame(height: Self.previewRowHeight)
             }
         }
     }
 
-    /// `display` 里 `id` 之后的几张（不含它自己）。
-    private static func after(_ id: String?, in display: [String], count: Int) -> [String] {
-        guard !display.isEmpty else { return [] }
-        let start = id.flatMap { display.firstIndex(of: $0) } ?? -1
-        let n = min(count, display.count - (start >= 0 ? 1 : 0))
-        guard n > 0 else { return [] }
-        return (1...n).map { display[(start + $0 + display.count) % display.count] }
-    }
-
-    private func upcomingCell(id: String, item: PhotoAlbum.Item?, excluded: Bool,
-                              album: PhotoAlbum, order: [String]) -> some View {
+    /// 一张缩略图：点开原图（已排除的点一下撤销），拖出去就是文件；悬停时右上角
+    /// 一个小“…”，不再盖一层大遮罩。`aspect` 为 nil 时撑满分到的地方（胶片条）。
+    private func thumbCell(id: String, item: PhotoAlbum.Item?, excluded: Bool, album: PhotoAlbum,
+                           order: [String], aspect: CGFloat?, corner: CGFloat) -> some View {
         let hover = hovered == id
         let name: String = item?.fileURL?.lastPathComponent ?? tr("那年今天")
         let tip: String = excluded ? tr("点一下撤销排除") : name
         let spoken: String = excluded ? tr("已排除") : name
-        let actionName: String = excluded ? tr("撤销") : tr("排除")
+        let actions = PhotoAlbumPanel.thumbActions(excluded: excluded, canOpen: item != nil)
         return AlbumThumb(item: item, pixels: 200)
-            .aspectRatio(4 / 3, contentMode: .fit)
-            .frame(maxWidth: .infinity)
-            .overlay {
+            .albumAspect(aspect)
+            .opacity(excluded ? 0.4 : 1)
+            .clipShape(.rect(cornerRadius: corner, style: .continuous))
+            .overlay(alignment: .bottomLeading) {
                 if excluded {
-                    Color.black.opacity(0.7)
                     Text(verbatim: tr("已排除"))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                } else if hover {
-                    Color.black.opacity(0.5)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .padding(.horizontal, 6)
+                        .frame(height: 20)
+                        .background(Capsule().fill(.black.opacity(0.55)))
+                        .environment(\.colorScheme, .dark)
+                        .padding(4)
                 }
             }
-            .clipShape(.rect(cornerRadius: 7, style: .continuous))
-            .overlay(alignment: .bottom) {
-                if hover, !excluded {
-                    Button { exclude(id, album: album, order: order) } label: {
-                        Text(verbatim: tr("排除"))
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Color(hex: "#222222"))
-                            .padding(.horizontal, 12)
-                            .frame(height: 24)
-                            .background(Capsule().fill(.white.opacity(0.92)))
-                            .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.bottom, 6)
-                    .help(tr("不再轮到这张，可在设置里恢复"))
+            .overlay(alignment: .topTrailing) {
+                AlbumThumbMenu(actions: actions) { action in
+                    perform(action, id: id, item: item, album: album, order: order)
                 }
+                .padding(4)
+                .opacity(hover ? 1 : 0)
+                .allowsHitTesting(hover)
             }
-            .contentShape(.rect(cornerRadius: 7))
+            .contentShape(.rect(cornerRadius: corner))
             .onHover { inside in
                 if inside { hovered = id } else if hovered == id { hovered = nil }
             }
@@ -297,9 +443,18 @@ struct PhotoFrameDetail: View {
             .help(tip)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(spoken)
-            .accessibilityAction(named: Text(verbatim: actionName)) {
+            .accessibilityAction(named: Text(verbatim: excluded ? tr("撤销排除") : tr("排除"))) {
                 if excluded { undoExclude(id) } else { exclude(id, album: album, order: order) }
             }
+    }
+
+    private func perform(_ action: PhotoAlbumPanel.ThumbAction, id: String, item: PhotoAlbum.Item?,
+                         album: PhotoAlbum, order: [String]) {
+        switch action {
+        case .exclude: exclude(id, album: album, order: order)
+        case .undo: undoExclude(id)
+        case .open: if let item { open(item) }
+        }
     }
 
     private func exclude(_ id: String, album: PhotoAlbum, order: [String]) {
@@ -320,28 +475,42 @@ struct PhotoFrameDetail: View {
 
     // MARK: 空的时候
 
+    private var emptyHeight: CGFloat { layout == .wide ? Self.stripHeight : Self.pictureHeight }
+
     @ViewBuilder
     private func emptyContent(album: PhotoAlbum) -> some View {
-        if album.activeFolders.isEmpty {
-            AlbumNote(symbol: "folder", text: tr("没有勾选的文件夹。点“设置”勾选一个，或添加文件夹。"))
-                .frame(height: Self.pictureHeight)
-        } else if let failure = album.failure {
-            AlbumNote(symbol: "lock", text: failure.text, privacy: failure.denied).frame(height: Self.pictureHeight)
-        } else if album.loading {
-            AlbumNote(symbol: "hourglass", text: tr("正在读取…")).frame(height: Self.pictureHeight)
-        } else if !album.files.isEmpty || !album.memories.isEmpty {
-            // 有图片，但都排除了。
+        let failure = album.failure
+        let empty = PhotoAlbumPanel.empty(activeFolders: album.activeFolders.count, loading: album.loading,
+                                          failed: failure != nil, denied: failure?.denied ?? false,
+                                          total: album.files.count + album.memories.count)
+        switch empty {
+        case .noFolder:
             VStack(spacing: 10) {
-                AlbumNote(symbol: "eye.slash", text: tr("这里的照片都排除了"))
-                AlbumHeaderButton(title: tr("全部恢复"), solid: true, accent: accent, ink: ink) {
-                    writeKeepingCurrent { PhotoRotation.restoreAll(in: &$0) }
-                    justExcluded = []
-                }
+                AlbumNote(symbol: "folder", text: PhotoAlbumPanel.emptyText(empty))
+                AlbumHeaderButton(title: tr("设置"), solid: true, accent: accent, ink: ink) { switchTo(.edit) }
             }
-            .frame(height: Self.pictureHeight)
-        } else {
-            PandaEmptyState(empty: .photos, title: tr("选择相册"), panel: true, action: addFolder)
-                .frame(height: Self.pictureHeight)
+            .frame(height: emptyHeight)
+        case .denied:
+            AlbumNote(symbol: "lock", text: PhotoAlbumPanel.emptyText(empty), privacy: true)
+                .frame(height: emptyHeight)
+        case .failed:
+            VStack(spacing: 10) {
+                AlbumNote(symbol: "exclamationmark.triangle", text: failure?.text ?? PhotoAlbumPanel.emptyText(empty))
+                AlbumHeaderButton(title: tr("换一个文件夹…"), solid: true, accent: accent, ink: ink, action: addFolder)
+            }
+            .frame(height: emptyHeight)
+        case .loading:
+            AlbumNote(symbol: "hourglass", text: PhotoAlbumPanel.emptyText(empty)).frame(height: emptyHeight)
+        case .allExcluded:
+            VStack(spacing: 10) {
+                AlbumNote(symbol: "eye.slash", text: PhotoAlbumPanel.emptyText(empty))
+                AlbumHeaderButton(title: tr("全部恢复"), solid: true, accent: accent, ink: ink) { restoreAll() }
+            }
+            .frame(height: emptyHeight)
+        case .emptyFolder:
+            PandaEmptyState(empty: .photos, title: tr("选择相册"), panel: true,
+                            message: PhotoAlbumPanel.emptyText(empty), action: addFolder)
+                .frame(minHeight: emptyHeight)
         }
     }
 
@@ -350,12 +519,27 @@ struct PhotoFrameDetail: View {
     @ViewBuilder
     private var edit: some View {
         let album = self.album
-        AlbumHeader(title: tr("相册设置"), subtitle: tr("放哪些照片 · 多久换一张")) {
+        AlbumHeader(title: tr("相册设置"), subtitle: PhotoAlbumPanel.title(layout)) {
             AlbumHeaderButton(title: tr("完成"), solid: true, accent: accent, ink: ink) { switchTo(.browse) }
         }
         .padding(.bottom, 4)
 
+        let fit = album.fit
+        AlbumSection(label: tr("显示方式"))
+        AlbumSegmented(labels: PhotoAlbumPanel.Fit.allCases.map(PhotoAlbumPanel.fitTitle),
+                       selected: PhotoAlbumPanel.Fit.allCases.firstIndex(of: fit),
+                       accent: accent, ink: ink) { index in
+            let chosen = PhotoAlbumPanel.Fit.allCases[index]
+            write { $0.set(PhotoAlbumPanel.fitKey, .string(chosen.rawValue)) }
+        }
+        Text(verbatim: fit == .fit ? tr("整张照片都在，竖图两边垫一层同图模糊底，不裁人物")
+                                   : tr("铺满画面，超出的边缘会被裁掉"))
+            .font(.system(size: 13))
+            .foregroundStyle(.panelSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+
         AlbumSection(label: tr("轮播文件夹"))
+            .padding(.top, 6)
         VStack(spacing: 6) {
             ForEach(PhotoRotation.folders(album.config), id: \.self) { path in
                 folderRow(path, config: album.config)
@@ -501,7 +685,7 @@ struct PhotoFrameDetail: View {
         AlbumSection(label: tr("已排除 \(ids.count) 张"), right: right, rightColor: accent.panelReadable, rightAction: action)
             .padding(.top, 6)
         if ids.isEmpty {
-            Text(verbatim: tr("浏览时悬停在照片上点“排除”，就不再轮到它"))
+            Text(verbatim: tr("浏览时悬停在缩略图上，点右上角“…”选“排除”，就不再轮到它"))
                 .font(.system(size: 13))
                 .foregroundStyle(.panelSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -599,5 +783,17 @@ struct PhotoFrameDetail: View {
         var added = true
         writeKeepingCurrent { added = PhotoRotation.addFolder(url.path, to: &$0) }
         notice = added ? nil : tr("最多 \(PhotoRotation.maxFolders) 个文件夹")
+    }
+}
+
+private extension View {
+    /// 网格和横向预览按 4:3 放；胶片条右边的小图撑满分到的地方，多出来的裁掉。
+    @ViewBuilder
+    func albumAspect(_ aspect: CGFloat?) -> some View {
+        if let aspect {
+            aspectRatio(aspect, contentMode: .fit).frame(maxWidth: .infinity)
+        } else {
+            frame(maxWidth: .infinity, maxHeight: .infinity).clipped()
+        }
     }
 }
