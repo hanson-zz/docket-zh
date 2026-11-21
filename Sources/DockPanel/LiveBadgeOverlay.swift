@@ -1,4 +1,6 @@
 import SwiftUI
+import AppKit
+import CoreImage
 
 /// 信息、微信、邮件图标的「消息未读」动态：只在码头自己画的图标上加，不改 App 本身的图标。
 ///
@@ -12,6 +14,9 @@ struct LiveBadgeModifier: ViewModifier {
     /// 设置里的预览：传入演示读数时不读程序坞。
     var demo: LiveBadgeReading?
     var demoPulse: Int = 0
+    /// 程序坞上的格子传入图标原图：换色用 Core Image 先画好一张盖上去，不靠 SwiftUI 的
+    /// hueRotation 滤镜（真机上码头扩展栏里这个滤镜不生效，图标一直是原色）。
+    var image: NSImage?
 
     @AppStorage(LiveBadgeStyle.key) private var styleRaw = LiveBadgeStyle.default.rawValue
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -27,7 +32,16 @@ struct LiveBadgeModifier: ViewModifier {
         let look = LiveBadgeLook.of(app, reading: reading, style: LiveBadgeStyle(stored: styleRaw))
         let trigger = demo == nil ? monitor.pulseGeneration(app) : demoPulse
         content
-            .hueRotation(.degrees(look.hueRotation))
+            .hueRotation(.degrees(image == nil ? look.hueRotation : 0))
+            .overlay {
+                if let image, look.hueRotation != 0, let tinted = LiveBadgeTint.shared.image(image, degrees: look.hueRotation) {
+                    Image(nsImage: tinted)
+                        .resizable()
+                        .interpolation(.high)
+                        .id(look.hueRotation)
+                        .transition(.opacity)
+                }
+            }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.8), value: look.hueRotation)
             .keyframeAnimator(initialValue: 1.0, trigger: reduceMotion ? 0 : trigger) { view, scale in
                 view.scaleEffect(scale, anchor: .bottom)
@@ -236,5 +250,30 @@ private struct LiveMailCornerBadge: View {
                                    startPoint: .top, endPoint: .bottom),
                     style: StrokeStyle(lineWidth: line, lineCap: .round))
             .padding(line * 1.3)
+    }
+}
+
+/// 消息未读换色：用 Core Image 的色相旋转把图标画成新的一张，按图标和角度缓存。
+@MainActor
+final class LiveBadgeTint {
+    static let shared = LiveBadgeTint()
+    private let context = CIContext()
+    private var cache: [String: NSImage] = [:]
+
+    func image(_ source: NSImage, degrees: Double) -> NSImage? {
+        let key = "\(ObjectIdentifier(source).hashValue)-\(Int(degrees.rounded()))"
+        if let hit = cache[key] { return hit }
+        var rect = CGRect(origin: .zero, size: source.size)
+        guard let cg = source.cgImage(forProposedRect: &rect, context: nil, hints: nil),
+              let filter = CIFilter(name: "CIHueAdjust") else { return nil }
+        filter.setValue(CIImage(cgImage: cg), forKey: kCIInputImageKey)
+        filter.setValue(degrees * .pi / 180, forKey: kCIInputAngleKey)
+        guard let output = filter.outputImage,
+              let rendered = context.createCGImage(output, from: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        else { return nil }
+        let result = NSImage(cgImage: rendered, size: source.size)
+        if cache.count > 40 { cache.removeAll() }
+        cache[key] = result
+        return result
     }
 }

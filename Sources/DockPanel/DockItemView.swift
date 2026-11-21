@@ -92,7 +92,7 @@ struct DockItemView: View {
         } else if let badgeApp, liveIconsEnabled, badgeOn(badgeApp) {
             icon
                 .frame(width: geo.icon, height: geo.icon)
-                .modifier(LiveBadgeModifier(app: badgeApp, side: geo.icon))
+                .modifier(LiveBadgeModifier(app: badgeApp, side: geo.icon, image: appIconImage))
         } else {
             icon
                 .frame(width: geo.icon, height: geo.icon)
@@ -124,6 +124,18 @@ struct DockItemView: View {
         case .wechat: liveWeChat
         case .mail: liveMail
         }
+    }
+
+    /// App 格子此刻画的那张图（含自定义图标），给消息未读换色用。
+    private var appIconImage: NSImage? {
+        guard case .app(_, let bundleID, let ref) = item else { return nil }
+        let unlocked = licenseUnlocked || supporter
+        if let url = ref.resolve() {
+            return DockAppIconStore.shared.icon(for: bundleID, fallback: AppCatalog.shared.icon(for: url),
+                                                unlocked: unlocked)
+        }
+        guard let image = AppCatalog.shared.icon(forBundleID: bundleID) else { return nil }
+        return DockAppIconStore.shared.icon(for: bundleID, fallback: image, unlocked: unlocked)
     }
 
     @ViewBuilder
