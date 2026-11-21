@@ -17,6 +17,10 @@ struct LiveBadgeModifier: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var monitor: LiveBadgeMonitor { .shared }
+    private var mail: MailActivityMonitor { .shared }
+    private var mailCorner: LiveMailActivity.Corner? {
+        app == .mail && demo == nil ? mail.activity.corner : nil
+    }
 
     func body(content: Content) -> some View {
         let reading = demo ?? monitor.reading(app)
@@ -41,10 +45,27 @@ struct LiveBadgeModifier: ViewModifier {
                 }
             }
             .animation(reduceMotion ? nil : .spring(duration: 0.4, bounce: 0.4), value: look.badgeText == nil)
+            .overlay {
+                // 邮件来新信时左上角闪三道光，跟未读数轻弹同一次。
+                if app == .mail, !reduceMotion {
+                    LiveMailSparkle(side: side, trigger: trigger)
+                }
+            }
+            .overlay {
+                if let mailCorner {
+                    LiveMailCornerBadge(corner: mailCorner, side: side, animate: !reduceMotion)
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: mailCorner)
             .task(id: demo == nil) {
                 guard demo == nil else { return }
                 monitor.retain()
-                defer { monitor.release() }
+                if app == .mail { mail.retain() }
+                defer {
+                    monitor.release()
+                    if app == .mail { mail.release() }
+                }
                 // 一直挂着，视图消失时任务取消才退出。
                 while !Task.isCancelled { try? await Task.sleep(for: .seconds(3600)) }
             }
@@ -129,5 +150,91 @@ private struct LiveBadgeChip: View {
             .fill(LinearGradient(colors: [Color(hex: "#E5242B"), Color(hex: "#C0141C")],
                                  startPoint: .top, endPoint: .bottom))
             .frame(width: width, height: height)
+    }
+}
+
+/// 新邮件：左上角三道暖白短光，0.9 秒内亮起再淡掉。平时完全透明。
+private struct LiveMailSparkle: View {
+    var side: CGFloat
+    var trigger: Int
+
+    var body: some View {
+        let g = LiveIconGeometry.content(side: Double(side))
+        let length = CGFloat(g.length)
+        let ray = max(3, length * 0.16)
+        let line = max(1.5, length * 0.045)
+        ZStack {
+            ForEach(0..<3, id: \.self) { i in
+                Capsule()
+                    .fill(Color(hex: "#FFE7A3"))
+                    .frame(width: line, height: ray)
+                    .offset(y: -ray * 0.9)
+                    .rotationEffect(.degrees(-80 + Double(i) * 32))
+            }
+        }
+        .shadow(color: Color(hex: "#FFC94D").opacity(0.7), radius: line)
+        .keyframeAnimator(initialValue: 0.0, trigger: trigger) { view, t in
+            view.opacity(t).scaleEffect(0.7 + 0.3 * t)
+        } keyframes: { _ in
+            KeyframeTrack {
+                LinearKeyframe(0.0, duration: 0.01)
+                SpringKeyframe(1.0, duration: 0.25, spring: .snappy)
+                LinearKeyframe(1.0, duration: 0.3)
+                LinearKeyframe(0.0, duration: 0.35)
+            }
+        }
+        .offset(x: -length * 0.42, y: -length * 0.42)
+        .frame(width: side, height: side)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// 邮件右下角：撰写中挂一支橙色铅笔，发送中挂一圈转动的小蓝环。
+private struct LiveMailCornerBadge: View {
+    var corner: LiveMailActivity.Corner
+    var side: CGFloat
+    var animate: Bool
+
+    var body: some View {
+        let g = LiveIconGeometry.content(side: Double(side))
+        let length = CGFloat(g.length)
+        let d = max(10, length * 0.38)
+        let line = max(1.5, d * 0.13)
+        ZStack {
+            Circle().fill(.white)
+                .shadow(color: .black.opacity(0.25), radius: d * 0.08, y: d * 0.04)
+            switch corner {
+            case .composing:
+                Image(systemName: "pencil")
+                    .font(.system(size: d * 0.56, weight: .bold))
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: "#FFB340"), Color(hex: "#FF7A1A")],
+                                                    startPoint: .top, endPoint: .bottom))
+            case .sending:
+                if animate {
+                    TimelineView(.animation(minimumInterval: LiveIconMotion.frameInterval(
+                        .spin, lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled))) { context in
+                        let head = LiveBrowserRing.head(at: context.date.timeIntervalSinceReferenceDate)
+                        sendingRing(line: line).rotationEffect(.degrees(head * 360))
+                    }
+                } else {
+                    sendingRing(line: line)
+                }
+            }
+        }
+        .frame(width: d, height: d)
+        .offset(x: length / 2 - d * 0.32, y: length / 2 - d * 0.32)
+        .frame(width: side, height: side)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func sendingRing(line: CGFloat) -> some View {
+        Circle()
+            .trim(from: 0, to: 0.7)
+            .stroke(LinearGradient(colors: [Color(hex: "#9AD4FF"), Color(hex: "#1F7BFF")],
+                                   startPoint: .top, endPoint: .bottom),
+                    style: StrokeStyle(lineWidth: line, lineCap: .round))
+            .padding(line * 1.3)
     }
 }

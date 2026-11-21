@@ -210,3 +210,35 @@ public struct LiveBadgePulse: Equatable, Sendable {
 public enum LiveBadgeDemo {
     public static let range = 0...9
 }
+
+// MARK: - 邮件：撰写中、发送中
+
+/// 邮件图标右下角的活动：有写信窗口开着时挂铅笔，发件箱里有信没发出去时挂一圈转动的小环。
+/// 读不到（没权限、邮件没开）时两样都是 false，什么都不挂。新邮件的闪光跟未读数的轻弹同一次触发。
+public struct LiveMailActivity: Equatable, Sendable {
+    public var composing = false
+    public var sending = false
+
+    public init(composing: Bool = false, sending: Bool = false) {
+        self.composing = composing
+        self.sending = sending
+    }
+
+    public enum Corner: Equatable, Sendable { case composing, sending }
+
+    /// 一次只挂一个，发送中优先。
+    public var corner: Corner? {
+        if sending { return .sending }
+        return composing ? .composing : nil
+    }
+
+    static let sendWords = ["send", "发送", "傳送", "寄送"]
+
+    /// 写信窗口工具栏上的「发送」按钮（只认按钮名字整句，不读信的内容）。
+    public static func isSendButton(_ texts: [String]) -> Bool {
+        texts.contains { text in
+            let t = text.trimmingCharacters(in: .whitespaces).lowercased()
+            return sendWords.contains(t) || sendWords.contains { t.hasPrefix($0 + " message") || t == $0 + "邮件" }
+        }
+    }
+}

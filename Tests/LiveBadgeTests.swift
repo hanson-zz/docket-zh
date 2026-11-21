@@ -127,4 +127,13 @@ final class LiveBrowserTests: XCTestCase {
         XCTAssertTrue(LiveSafariLoading.isStopButton(["停止载入此页面"]))
         XCTAssertFalse(LiveSafariLoading.isStopButton(["重新载入此页面", "Reload this page"]))
     }
+
+    func testMailActivity() {
+        XCTAssertNil(LiveMailActivity().corner)
+        XCTAssertEqual(LiveMailActivity(composing: true).corner, .composing)
+        XCTAssertEqual(LiveMailActivity(composing: true, sending: true).corner, .sending)
+        XCTAssertTrue(LiveMailActivity.isSendButton(["发送"]))
+        XCTAssertTrue(LiveMailActivity.isSendButton(["", "Send"]))
+        XCTAssertFalse(LiveMailActivity.isSendButton(["发送并归档到收件箱以外", "Get Mail"]))
+    }
 }

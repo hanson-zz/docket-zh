@@ -71,7 +71,7 @@ struct LiveIconsSettingRow: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tr("消息未读"))
-                    Text(tr("信息、微信、邮件图标右上角显示未读数，来新消息时轻弹一下。未读数取自系统程序坞上它们自己的角标，需要辅助功能权限；只读数字，不读消息内容，读不到时图标保持原样。"))
+                    Text(tr("信息、微信、邮件图标右上角显示未读数，来新消息时轻弹一下，邮件左上角再闪三道光。未读数取自系统程序坞上它们自己的角标，需要辅助功能权限；只读数字，不读消息内容，读不到时图标保持原样。邮件开着写信窗口时右下角挂铅笔，发件箱里有信在发时挂一圈小环（要允许码头控制邮件，只数封数）。"))
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

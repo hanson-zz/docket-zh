@@ -19022,13 +19022,13 @@
         }
       }
     },
-    "信息、微信、邮件图标右上角显示未读数，来新消息时轻弹一下。未读数取自系统程序坞上它们自己的角标，需要辅助功能权限；只读数字，不读消息内容，读不到时图标保持原样。" : {
+    "信息、微信、邮件图标右上角显示未读数，来新消息时轻弹一下，邮件左上角再闪三道光。未读数取自系统程序坞上它们自己的角标，需要辅助功能权限；只读数字，不读消息内容，读不到时图标保持原样。邮件开着写信窗口时右下角挂铅笔，发件箱里有信在发时挂一圈小环（要允许码头控制邮件，只数封数）。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Messages, WeChat and Mail show their unread count in the top-right corner and bounce once when something new arrives. The count comes from each app's own badge in the system Dock and needs Accessibility access; only the number is read, never the messages, and the icon stays as it is when no count can be read."
+            "value" : "Messages, WeChat and Mail show their unread count in the top-right corner and bounce once when something new arrives, and Mail flashes three short rays in its top-left corner. The count comes from each app's own badge in the system Dock and needs Accessibility access; only the number is read, never the messages, and the icon stays as it is when nothing can be read. Mail shows a pencil in the bottom-right corner while a compose window is open, and a small spinning ring while mail is sitting in the Outbox (needs permission for Dockling to control Mail; only the count is read)."
           }
         }
       }
