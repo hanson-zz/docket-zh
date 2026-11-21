@@ -101,7 +101,8 @@ enum LiveBrowserReader {
     static func downloads(now: Date) -> [LiveBrowser: LiveBrowserDownload] {
         let fm = FileManager.default
         guard let folder = fm.urls(for: .downloadsDirectory, in: .userDomainMask).first,
-              let items = try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.contentModificationDateKey],
+              // 不预取属性：下载文件夹可能有几千个文件，只给半截下载读修改时间。
+              let items = try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil,
                                                       options: [.skipsHiddenFiles]) else { return [:] }
         var parts: [LiveBrowser: [(done: Double, total: Double)?]] = [:]
         for item in items {
