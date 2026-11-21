@@ -1299,7 +1299,17 @@ final class DesktopPetController: NSObject {
         switch (edge, style) {
         case (.bottom, .sit):
             barCenter.y = rect.minY - gap - barSize.height / 2
-            if barCenter.y - barSize.height / 2 < visible.minY {
+            // 下面放不下，或会压到程序坞 / 码头扩展栏（会被盖住看不见）时，放到头顶。
+            let below = CGRect(x: barCenter.x - barSize.width / 2, y: barCenter.y - barSize.height / 2,
+                               width: barSize.width, height: barSize.height)
+            let presence = ShelfPresence.shared
+            var shelfRect = presence.isShown() && !presence.isTuckedAway() ? presence.revealedFrame() : nil
+            if var frame = shelfRect, shelfPosition() == .bottom {
+                frame.size.height = max(0, frame.height - presence.headroom)
+                shelfRect = frame
+            }
+            let underShelf = [dockRect, shelfRect].contains { $0.map { below.intersects($0) } ?? false }
+            if below.minY < visible.minY || underShelf {
                 barCenter.y = rect.maxY + gap + barSize.height / 2
             }
         case (.bottom, _):
