@@ -18978,6 +18978,83 @@
         }
       }
     },
+    "消息未读" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unread Messages"
+          }
+        }
+      }
+    },
+    "信息、微信、邮件图标右上角显示未读数，来新消息时轻弹一下。未读数取自系统程序坞上它们自己的角标，需要辅助功能权限；只读数字，不读消息内容，读不到时图标保持原样。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages, WeChat and Mail show their unread count in the top-right corner and bounce once when something new arrives. The count comes from each app's own badge in the system Dock and needs Accessibility access; only the number is read, never the messages, and the icon stays as it is when no count can be read."
+          }
+        }
+      }
+    },
+    "简洁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtle"
+          }
+        }
+      }
+    },
+    "趣味" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Playful"
+          }
+        }
+      }
+    },
+    "风格：" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Style:"
+          }
+        }
+      }
+    },
+    "简洁：保持原色，只有角标。趣味：未读越多颜色越热，2 到 3 条蓝、4 到 6 条紫、7 到 8 条紫粉、9 条及以上红粉，角标旁有闪光、火焰或液滴。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subtle keeps the app's own colours and just shows the badge. Playful warms the icon as unread messages pile up: blue for 2 to 3, purple for 4 to 6, magenta for 7 to 8 and red-pink for 9 or more, with a sparkle, flame or drip by the badge."
+          }
+        }
+      }
+    },
+    "预览：%lld 条未读" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preview: %lld unread"
+          }
+        }
+      }
+    },
     "%@分后重置" : {
       "extractionState" : "manual",
       "localizations" : {

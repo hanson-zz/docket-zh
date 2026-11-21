@@ -2,7 +2,8 @@ import SwiftUI
 
 /// 设置 ▸ 扩展栏：动态图标。总开关默认关；打开后访达、Chrome 各有子开关，
 /// 下面是「AI 额度水位」：一个总开关，ChatGPT、Claude、Codex 三个勾选，
-/// 和「显示：」5 小时 / 每周 / 取更紧的（默认取更紧的）。
+/// 和「显示：」5 小时 / 每周 / 取更紧的（默认取更紧的）；再下面是「消息未读」：信息、微信、邮件三个勾选，
+/// 风格简洁 / 趣味，和一个用演示未读数的预览。
 struct LiveIconsSettingRow: View {
     @AppStorage(LiveIconToggles.masterKey) private var enabled = false
     @AppStorage(LiveIconToggles.finderKey) private var finder = true
@@ -13,6 +14,11 @@ struct LiveIconsSettingRow: View {
     @AppStorage(LiveIconToggles.quotaKey) private var quota = true
     @AppStorage(LiveIconToggles.percentKey) private var percent = true
     @AppStorage(LiveQuotaPreference.key) private var window = LiveQuotaPreference.default.rawValue
+    @AppStorage(LiveBadgeApp.messages.toggleKey) private var messages = true
+    @AppStorage(LiveBadgeApp.wechat.toggleKey) private var wechat = true
+    @AppStorage(LiveBadgeApp.mail.toggleKey) private var mail = true
+    @AppStorage(LiveBadgeStyle.key) private var badgeStyle = LiveBadgeStyle.default.rawValue
+    @State private var demoCount = 4
 
     var body: some View {
         Toggle(isOn: $enabled) {
@@ -60,8 +66,58 @@ struct LiveIconsSettingRow: View {
                     Toggle(tr("水位左下角显示剩余百分比"), isOn: $percent)
                         .padding(.leading, 20)
                 }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(tr("消息未读"))
+                    Text(tr("信息、微信、邮件图标右上角显示未读数，来新消息时轻弹一下。未读数取自系统程序坞上它们自己的角标，需要辅助功能权限；只读数字，不读消息内容，读不到时图标保持原样。"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                VStack(alignment: .leading, spacing: 6) {
+                    aiApp($messages, tr("信息", context: "app"), bundleID: LiveBadgeApp.messages.bundleID)
+                    aiApp($wechat, tr("微信"), bundleID: LiveBadgeApp.wechat.bundleID)
+                    aiApp($mail, tr("邮件"), bundleID: LiveBadgeApp.mail.bundleID)
+                }
+                .padding(.leading, 20)
+                if messages || wechat || mail {
+                    Picker(selection: $badgeStyle) {
+                        Text(tr("简洁")).tag(LiveBadgeStyle.subtle.rawValue)
+                        Text(tr("趣味")).tag(LiveBadgeStyle.playful.rawValue)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(tr("风格："))
+                            Text(tr("简洁：保持原色，只有角标。趣味：未读越多颜色越热，2 到 3 条蓝、4 到 6 条紫、7 到 8 条紫粉、9 条及以上红粉，角标旁有闪光、火焰或液滴。"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.leading, 20)
+                    badgePreview
+                        .padding(.leading, 20)
+                }
             }
             .padding(.leading, 16)
+        }
+    }
+
+    /// 预览：用演示未读数看每一档的样子，不碰真实消息。
+    private var badgePreview: some View {
+        let app: LiveBadgeApp = wechat ? .wechat : (messages ? .messages : .mail)
+        return HStack(spacing: 14) {
+            if let image = AppCatalog.shared.icon(forBundleID: app.bundleID) {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 56, height: 56)
+                    .modifier(LiveBadgeModifier(app: app, side: 56, demo: .count(demoCount), demoPulse: demoCount))
+                    .frame(width: 64, height: 64)
+                    .accessibilityHidden(true)
+            }
+            Stepper(value: $demoCount, in: LiveBadgeDemo.range) {
+                Text(tr("预览：\(demoCount) 条未读"))
+            }
         }
     }
 

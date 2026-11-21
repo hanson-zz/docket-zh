@@ -23,6 +23,10 @@ struct DockItemView: View {
     @AppStorage(LiveIconToggles.claudeKey) private var liveClaude = true
     @AppStorage(LiveIconToggles.quotaKey) private var liveQuota = true
     @AppStorage(LiveIconToggles.percentKey) private var liveQuotaPercent = true
+    // 消息未读：信息、微信、邮件各一个子开关，默认开（总开关仍默认关）。
+    @AppStorage(LiveBadgeApp.messages.toggleKey) private var liveMessages = true
+    @AppStorage(LiveBadgeApp.wechat.toggleKey) private var liveWeChat = true
+    @AppStorage(LiveBadgeApp.mail.toggleKey) private var liveMail = true
     // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -82,9 +86,27 @@ struct DockItemView: View {
             icon
                 .frame(width: geo.icon, height: geo.icon)
                 .modifier(LiveChromeSpin(active: liveOn(.chrome) && !reduceMotion, isRunning: isRunning))
+        } else if let badgeApp, liveIconsEnabled, badgeOn(badgeApp) {
+            icon
+                .frame(width: geo.icon, height: geo.icon)
+                .modifier(LiveBadgeModifier(app: badgeApp, side: geo.icon))
         } else {
             icon
                 .frame(width: geo.icon, height: geo.icon)
+        }
+    }
+
+    /// 这个格子是不是按未读数动的消息 App（信息、微信、邮件）。
+    private var badgeApp: LiveBadgeApp? {
+        guard case .app(_, let bundleID, _) = item else { return nil }
+        return LiveBadgeApp(bundleID: bundleID)
+    }
+
+    private func badgeOn(_ app: LiveBadgeApp) -> Bool {
+        switch app {
+        case .messages: liveMessages
+        case .wechat: liveWeChat
+        case .mail: liveMail
         }
     }
 
