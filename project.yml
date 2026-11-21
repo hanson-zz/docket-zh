@@ -112,6 +112,11 @@ targets:
         optional: true
         excludes:
           - ".gitkeep"
+      # 桌面伙伴的图（desk-<吉祥物>-<动作>.png，可带 @2x）。现在只用 peek（指针旁探头），
+      # 缺图时回退专注面板的站姿图。小熊猫的 peek 素材待补。
+      - path: Resources/DeskCompanion
+        buildPhase: resources
+        optional: true
     # Linked explicitly rather than left to auto-linking. The Focus filter in
     # Sources/App/LayoutIntents.swift only appears in System Settings if the
     # build extracts its App Intents metadata, and a framework named here is

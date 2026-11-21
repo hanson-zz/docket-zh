@@ -24,11 +24,11 @@ final class DesktopPetPointerPeekTests: XCTestCase {
         let bounds = CGRect(x: 0, y: 0, width: 1000, height: 800)
         let size = CGSize(width: 54, height: 64)
         let normal = DesktopPetPointerPeek.frame(pointer: CGPoint(x: 500, y: 400), size: size, bounds: bounds)
-        XCTAssertEqual(normal.minX, 514)
+        XCTAssertEqual(normal.maxX, 486)
         XCTAssertEqual(normal.maxY, 386)
-        // 右下角放不下：翻到左边和上面。
-        let corner = DesktopPetPointerPeek.frame(pointer: CGPoint(x: 990, y: 20), size: size, bounds: bounds)
-        XCTAssertEqual(corner.maxX, 976)
+        // 左下角放不下：翻到右边和上面。
+        let corner = DesktopPetPointerPeek.frame(pointer: CGPoint(x: 10, y: 20), size: size, bounds: bounds)
+        XCTAssertEqual(corner.minX, 24)
         XCTAssertEqual(corner.minY, 34)
         XCTAssertTrue(bounds.contains(corner))
     }
