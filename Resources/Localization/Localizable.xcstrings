@@ -18879,13 +18879,13 @@
         }
       }
     },
-    "鼠标停上去时中间的彩色圆盘轻转一下弹回；当前标签页在加载时，图标边缘走一道细蓝弧，加载完淡出。读加载状态需要允许码头控制 Chrome，不允许时只有悬停效果。" : {
+    "鼠标停上去时中间的彩色圆盘轻转一下弹回；当前标签页在加载时，图标边缘走一道细蓝弧，加载完淡出。读加载状态需要允许码头控制 Chrome。「下载」文件夹里有正在下的文件时右下角挂下载徽标，在放声音时挂播放徽标。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When the pointer rests on it, the coloured disc gives a small turn and springs back; while the current tab is loading, a thin blue arc runs along the icon's edge and fades out when it finishes. Reading the loading state needs permission for Dockling to control Chrome; without it there is only the hover effect."
+            "value" : "On hover the colored disc turns slightly and springs back. While the current tab loads, a thin blue arc runs around the icon edge and fades when done. Reading the loading state needs permission for Dockling to control Chrome. A download badge appears while a file is downloading into the Downloads folder, and a play badge while it plays sound."
           }
         }
       }
@@ -18901,13 +18901,13 @@
         }
       }
     },
-    "鼠标停上去时表盘轻摆两下停住，外壳不动。Safari 没有可靠的加载信号，所以不画进度。" : {
+    "鼠标停上去时表盘轻摆两下停住，外壳不动；网页在加载时图标边缘走一道细蓝弧（要辅助功能权限）；「下载」文件夹里有正在下的文件时右下角挂下载徽标和真实进度，在放声音时挂播放徽标。读不到就不画。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "When the pointer rests on it, the compass dial sways twice and settles while the frame stays still. Safari has no reliable loading signal, so no progress is drawn."
+            "value" : "On hover the dial sways twice and settles while the frame stays still. While a page loads, a thin blue arc runs around the icon edge (needs Accessibility permission). A download badge with real progress appears while a file is downloading into the Downloads folder, and a play badge while it plays sound. Nothing is drawn when the state can't be read."
           }
         }
       }

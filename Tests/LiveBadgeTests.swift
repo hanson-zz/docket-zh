@@ -98,4 +98,33 @@ final class LiveBrowserTests: XCTestCase {
         XCTAssertEqual(LiveBrowserRing.head(at: 2.25), 0.25, accuracy: 1e-9)
         XCTAssertEqual(LiveBrowserRing.head(at: -0.25), 0.75, accuracy: 1e-9)
     }
+
+    func testDownloadSources() {
+        XCTAssertEqual(LiveBrowserDownload.browser(forExtension: "download"), .safari)
+        XCTAssertEqual(LiveBrowserDownload.browser(forExtension: "CRDOWNLOAD"), .chrome)
+        XCTAssertNil(LiveBrowserDownload.browser(forExtension: "zip"))
+        let now = Date()
+        XCTAssertTrue(LiveBrowserDownload.isActive(modified: now.addingTimeInterval(-5), now: now))
+        XCTAssertFalse(LiveBrowserDownload.isActive(modified: now.addingTimeInterval(-120), now: now))
+    }
+
+    func testSafariBytesAndCombine() {
+        let plist: [String: Any] = ["DownloadEntryProgressBytesSoFar": NSNumber(value: 25),
+                                    "DownloadEntryProgressTotalToLoad": NSNumber(value: 100)]
+        let bytes = LiveBrowserDownload.safariBytes(plist)
+        XCTAssertEqual(bytes?.done, 25)
+        XCTAssertNil(LiveBrowserDownload.safariBytes(["DownloadEntryProgressBytesSoFar": NSNumber(value: 3)]))
+        XCTAssertEqual(LiveBrowserDownload.combine([]), .none)
+        XCTAssertEqual(LiveBrowserDownload.combine([(25, 100), (75, 100)]), .fraction(0.5))
+        XCTAssertEqual(LiveBrowserDownload.combine([(25, 100), nil]), .indeterminate)
+    }
+
+    func testCornerAndStopButton() {
+        XCTAssertNil(LiveBrowserState().corner)
+        XCTAssertEqual(LiveBrowserState(playing: true).corner, .playing)
+        XCTAssertEqual(LiveBrowserState(download: .indeterminate, playing: true).corner, .download)
+        XCTAssertTrue(LiveSafariLoading.isStopButton(["", "Stop loading this page"]))
+        XCTAssertTrue(LiveSafariLoading.isStopButton(["停止载入此页面"]))
+        XCTAssertFalse(LiveSafariLoading.isStopButton(["重新载入此页面", "Reload this page"]))
+    }
 }

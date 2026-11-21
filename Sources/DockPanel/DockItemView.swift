@@ -87,7 +87,8 @@ struct DockItemView: View {
             icon
                 .frame(width: geo.icon, height: geo.icon)
                 .modifier(LiveBrowserModifier(browser: browser, side: geo.icon,
-                                              active: browserOn(browser) && !reduceMotion, isRunning: isRunning))
+                                              active: browserOn(browser) && !reduceMotion,
+                                              enabled: browserOn(browser), isRunning: isRunning))
         } else if let badgeApp, liveIconsEnabled, badgeOn(badgeApp) {
             icon
                 .frame(width: geo.icon, height: geo.icon)
