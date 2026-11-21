@@ -112,14 +112,23 @@ public struct DesktopPetTrack: Equatable, Sendable {
     public var lane: ClosedRange<Double>
     /// 废纸篓在沿边坐标上的位置（只有程序坞上有）。
     public var trashX: Double?
+    /// 随意放的那一点附近能走走的范围（中点就是 `lane` 那一点），见 `DesktopPetLively.wanderLane`。
+    /// 别的待法是 nil。
+    public var wander: ClosedRange<Double>?
 
     public init(edge: DesktopPetEdge, style: DesktopPetStyle, base: Double, lane: ClosedRange<Double>,
-                trashX: Double? = nil) {
+                trashX: Double? = nil, wander: ClosedRange<Double>? = nil) {
         self.edge = edge
         self.style = style
         self.base = base
         self.lane = lane
         self.trashX = trashX
+        self.wander = wander
+    }
+
+    /// 平时活动的范围：随意放的是附近那一小段，别的就是 `lane`。
+    public var roam: ClosedRange<Double> {
+        wander ?? lane
     }
 
     /// 脚底中点在屏幕上的位置；`lift` 是离开这条边多远。下边、程序坞、随意用这个；
@@ -203,7 +212,10 @@ public enum DesktopPetTracks {
             let x = DesktopPetBrain.lerp(horizontal, spot.along)
             let top = max(Double(visible.minY), Double(visible.maxY) - length * 1.4)
             let y = DesktopPetBrain.lerp(Double(visible.minY)...top, spot.across)
-            return DesktopPetTrack(edge: .bottom, style: .sit, base: y, lane: x...x)
+            // 附近能走走：两边各约一个多身长，不出可见区域（不压程序坞、不出屏幕）。
+            let wander = DesktopPetLively.wanderLane(home: x, radius: DesktopPetLively.wanderRadius(length: length),
+                                                     bounds: horizontal)
+            return DesktopPetTrack(edge: .bottom, style: .sit, base: y, lane: x...x, wander: wander)
         }
     }
 

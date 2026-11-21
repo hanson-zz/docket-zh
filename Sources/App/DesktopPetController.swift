@@ -404,7 +404,7 @@ final class DesktopPetController: NSObject {
             trackKey = key
             lastStep = now
         } else if !dragging, transit == nil, let current = state, shown,
-                  !next.lane.contains(current.x) {
+                  !next.roam.contains(current.x) {
             // 同一条边但范围变了（扩展栏出现、挪了）：滑到范围里再落下。
             transit = (drawnFeet, now, DesktopPetSnap.glideDuration)
             state = DesktopPetBrain.landed(current, at: DesktopPetBrain.clamp(current.x, next.lane),
@@ -450,7 +450,11 @@ final class DesktopPetController: NSObject {
     private func updateClock(now: Date) {
         // 屏幕睡着时别的地方（喝水提醒、救回结果、快捷键）也可能来画一帧，不重新开时钟。
         guard shown, !screensAsleep, let state else { return stopClocks() }
-        let moving = dragging || transit != nil || DesktopPetBrain.isMoving(state, now: now)
+        let style = track?.style ?? .stroll
+        let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        // 发呆时转、跳的小动作要顺，也按显示刷新画；低电量时不开，用慢计时器凑合。
+        let fidgeting = !lowPower && DesktopPetLively.needsSmooth(state, now: now, style: style, motion: Self.motion)
+        let moving = dragging || transit != nil || DesktopPetBrain.isMoving(state, now: now) || fidgeting
         if moving {
             restingTimer?.invalidate()
             restingTimer = nil
@@ -463,7 +467,7 @@ final class DesktopPetController: NSObject {
             displayLink?.isPaused = false
         } else {
             displayLink?.isPaused = true
-            let rate = DesktopPetBrain.tickRate(state, style: track?.style ?? .stroll)
+            let rate = DesktopPetBrain.tickRate(state, style: style, lowPower: lowPower)
             guard restingTimer == nil || restingRate != rate else { return }
             restingTimer?.invalidate()
             restingRate = rate
@@ -474,6 +478,11 @@ final class DesktopPetController: NSObject {
             RunLoop.main.add(timer, forMode: .common)
             restingTimer = timer
         }
+    }
+
+    /// 系统「减弱动态效果」打开时只换姿势，不呼吸、不转不跳。
+    private static var motion: DesktopPetMotion {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? .reduced : .full
     }
 
     private func stopClocks() {
@@ -736,7 +745,7 @@ final class DesktopPetController: NSObject {
         let wasDelivering: Bool = if case .fileDelivery = current.activity { true } else { false }
         let wasClimbing: Bool = if case .hugClimb = current.activity { true } else { false }
         let night = DesktopPetRhythm.isNight(hour: Calendar.current.component(.hour, from: now))
-        current = DesktopPetBrain.step(current, dt: dt, now: now, lane: track.lane,
+        current = DesktopPetBrain.step(current, dt: dt, now: now, lane: track.roam,
                                        userIdle: idle, focusing: focusing,
                                        style: track.style, attention: pointer,
                                        hangQuiet: now.timeIntervalSince(lastTouch),
@@ -841,6 +850,10 @@ final class DesktopPetController: NSObject {
         guard let track, let state, let panel, let view = spriteView else { return }
         var pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style,
                                         edge: track.edge)
+        // 呼吸、发呆时的张望歪头小跳（拖着时不叠）。
+        if !dragging {
+            pose = DesktopPetLively.decorate(pose, state: state, now: now, style: track.style, motion: Self.motion)
+        }
         // 选了别的吉祥物（已解锁 Pro）：换成那只的图，缺图时照旧画小熊猫。
         let mascot = FocusMascot.of(TimerStateProvider.shared.state, unlocked: ProAccess.isUnlocked)
         if mascot != .panda {

@@ -824,6 +824,13 @@ public enum DesktopPetBrain {
 
     /// 不在动时慢计时器每秒几次：睡着 2 次，其余 10 次（够看见眨眼）。
     /// 吊在上边缘时钟摆要顺，见 `DesktopPetHang.tickRate`。
+    /// 低电量模式（`lowPower`）时减半，最低不低于睡着的每秒 2 次。
+    public static func tickRate(_ state: DesktopPetState, style: DesktopPetStyle = .stroll,
+                                lowPower: Bool) -> Double {
+        let rate = tickRate(state, style: style)
+        return lowPower ? max(sleepingFPS, rate / 2) : rate
+    }
+
     public static func tickRate(_ state: DesktopPetState, style: DesktopPetStyle = .stroll) -> Double {
         let sleeping: Bool
         if case .sleep = state.activity { sleeping = true } else { sleeping = false }
@@ -902,6 +909,10 @@ public enum DesktopPetBrain {
         case .sit:
             if roll < 0.24 {
                 next.activity = .stretch(since: now)
+            } else if roll < 0.5, let target = DesktopPetLively.wanderTarget(from: next.x, lane: lane, random: random) {
+                // 随意放的：在附近走几步，下次再走回原处。
+                next.activity = .walk(to: target)
+                turn(&next, left: target < next.x, now: now)
             } else {
                 if roll > 0.7 { turn(&next, left: !next.facingLeft, now: now) }
                 next.activity = .idle(until: now.addingTimeInterval(lerp(idleRange, random())))
