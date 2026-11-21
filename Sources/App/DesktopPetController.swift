@@ -839,8 +839,14 @@ final class DesktopPetController: NSObject {
 
     private func render(now: Date) {
         guard let track, let state, let panel, let view = spriteView else { return }
-        let pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style,
+        var pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style,
                                         edge: track.edge)
+        // 选了别的吉祥物（已解锁 Pro）：换成那只的图，缺图时照旧画小熊猫。
+        let mascot = FocusMascot.of(TimerStateProvider.shared.state, unlocked: ProAccess.isUnlocked)
+        if mascot != .panda {
+            let skinned = DesktopPetSkin.apply(pose, mascot: mascot)
+            if DesktopPetArt.image(skinned.image) != nil { pose = skinned }
+        }
         let scale = CGFloat(settings.size.scale)
         let base = DesktopPetArt.size(pose)
         let size = CGSize(width: base.width * scale, height: base.height * scale)
