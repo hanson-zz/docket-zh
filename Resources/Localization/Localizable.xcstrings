@@ -24279,6 +24279,17 @@
         }
       }
     },
+    "查看额度用量" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Quota Usage"
+          }
+        }
+      }
+    },
     "在访达中显示或隐藏以“.”开头的文件" : {
       "extractionState" : "manual",
       "localizations" : {

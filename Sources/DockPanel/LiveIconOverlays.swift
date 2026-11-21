@@ -259,6 +259,8 @@ struct LiveQuotaTint: Equatable {
     static let chatGPT = LiveQuotaTint(top: Color(hex: "#59A8FF"), bottom: Color(hex: "#1B64DA"), opacity: 0.8)
     static let claude = LiveQuotaTint(top: Color(hex: "#C24A16"), bottom: Color(hex: "#86290A"), opacity: 0.84)
     static let codex = LiveQuotaTint(top: Color(hex: "#9A6BFF"), bottom: Color(hex: "#5B21D6"), opacity: 0.82)
+    /// 剩余低于 `LiveIconUsage.lowThreshold` 时换成的暖红：快用完了，一眼看得出。
+    static let low = LiveQuotaTint(top: Color(hex: "#FF6A55"), bottom: Color(hex: "#C8202F"), opacity: 0.86)
 
     static func of(_ app: LiveIconApp) -> LiveQuotaTint {
         switch app {
@@ -408,7 +410,8 @@ struct LiveQuotaWater: View {
             let rect = CGRect(x: g.inset, y: g.inset, width: g.length, height: g.length)
             let shape = Path(roundedRect: rect, cornerRadius: g.corner, style: .continuous)
             if let level {
-                LiveOpenAIDrawing.water(in: context, rect: rect, shape: shape, level: level, tint: tint, time: time)
+                LiveOpenAIDrawing.water(in: context, rect: rect, shape: shape, level: level,
+                                        tint: LiveIconUsage.isLow(level) ? .low : tint, time: time)
             }
             if working {
                 LiveOpenAIDrawing.flow(in: context, rect: rect, corner: g.corner, time: time)

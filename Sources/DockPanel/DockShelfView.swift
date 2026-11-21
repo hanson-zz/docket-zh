@@ -1520,6 +1520,21 @@ struct DockShelfView: View {
         open(entry)
     }
 
+    /// 右键 ChatGPT、Codex 图标「查看额度用量」用的临时 AI 用量卡片：id 固定，再点一次是收起。
+    private static let quotaPanelWidget = WidgetCatalog.make(.aiUsage)
+
+    private func showQuotaPanel() {
+        guard let widget = Self.quotaPanelWidget else { return }
+        TooltipWindow.shared.hide()
+        GroupWindow.shared.close()
+        FolderBrowserWindow.shared.close()
+        WidgetDetailWindow.shared.toggle(widget,
+                                         context: WidgetContext(position: position, now: app.now),
+                                         anchor: hoverAnchor ?? .zero,
+                                         edge: position,
+                                         host: shelfWindow?.frame ?? .zero)
+    }
+
     /// 按小组件 id 打开它的面板，锚点是那张卡片在扩展栏上的外沿正中（和悬停时
     /// 一样算），不靠指针在不在上面。几条扩展栏都有这张卡片时只开一次。
     private func openWidgetPanel(_ note: Notification, _ solved: Solved) {
@@ -1987,6 +2002,14 @@ struct DockShelfView: View {
                 // App 换了自定义图标、扩展栏还没跟上时手动刷新。平时会自己发现。
                 Button("刷新图标") { AppCatalog.shared.refreshIcons() }
             }
+        }
+        // ChatGPT、Codex 图标上画着额度水位时，右键直接看完整用量（和 AI 用量小组件同一个面板）。
+        // 左键照旧打开 App，不抢它。
+        if case .app(_, let bundleID, _) = entry.item,
+           let live = LiveIconApp(bundleID: bundleID), live == .chatGPT || live == .codex,
+           LiveIconToggles(defaults: .standard).showsQuota(live) {
+            Divider()
+            Button(tr("查看额度用量")) { showQuotaPanel() }
         }
         if let widget = entry.item.widget, widget.kind == .aiAssistant {
             Divider()

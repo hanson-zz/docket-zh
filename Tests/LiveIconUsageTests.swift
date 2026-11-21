@@ -411,4 +411,11 @@ final class LiveIconUsageTests: XCTestCase {
         spin.stop(at: s0)
         XCTAssertEqual(spin.phase, .resting)
     }
+
+    func testLowQuotaWarning() {
+        XCTAssertTrue(LiveIconUsage.isLow(0.1))
+        XCTAssertFalse(LiveIconUsage.isLow(0.15))
+        XCTAssertFalse(LiveIconUsage.isLow(0.8))
+        XCTAssertFalse(LiveIconUsage.isLow(.nan))
+    }
 }

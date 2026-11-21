@@ -244,6 +244,14 @@ public enum LiveIconUsage {
         }
     }
 
+    /// 剩余低于这个比例时水换成暖红色提醒（三个 AI App 一样）。
+    public static let lowThreshold = 0.15
+
+    /// 剩余额度是否已经低到要提醒。
+    public static func isLow(_ level: Double) -> Bool {
+        level.isFinite && level < lowThreshold
+    }
+
     /// 左下角的百分比大字（显示剩余），四舍五入到整数。
     public static func percentText(_ level: Double) -> String {
         guard level.isFinite else { return "" }
