@@ -81,6 +81,40 @@ struct AIPromptChipBar: View {
     }
 
     private var promptMenu: some View {
+        AIPromptMenu(prompts: prompts, runPrompt: runPrompt, managePrompts: managePrompts)
+    }
+
+    private func chip(_ title: String, symbol: String?, enabled: Bool, help: String, label: String,
+                      action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 3) {
+                if let symbol {
+                    Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
+                }
+                // 英文按钮比中文宽，挤的时候先缩小字号，不截成“Transl…”。
+                Text(title).font(.system(size: 13))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .padding(.horizontal, 7)
+            .frame(height: 22)
+        }
+        // 禁用（剪贴板里没有文字）时三级字色，浅色约 3.6:1，淡一档但认得出来。
+        .buttonStyle(PanelChipButtonStyle())
+        .disabled(!enabled)
+        .help(help)
+        .accessibilityLabel(label)
+    }
+}
+
+/// 「常用」菜单：常用提示词，最后一项进设置管理。刘海对话那一排和小组件提问
+/// 面板的快捷操作排共用。
+struct AIPromptMenu: View {
+    var prompts: [AIPrompt]
+    var runPrompt: (AIPrompt) -> Void
+    var managePrompts: () -> Void
+
+    var body: some View {
         Menu {
             if prompts.isEmpty {
                 Text("还没有常用提示词")
@@ -107,27 +141,5 @@ struct AIPromptChipBar: View {
         .fixedSize()
         .help("常用提示词：内容里的 {文本} 换成输入框或剪贴板里的文字")
         .accessibilityLabel("常用提示词")
-    }
-
-    private func chip(_ title: String, symbol: String?, enabled: Bool, help: String, label: String,
-                      action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 3) {
-                if let symbol {
-                    Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
-                }
-                // 英文按钮比中文宽，挤的时候先缩小字号，不截成“Transl…”。
-                Text(title).font(.system(size: 13))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-            }
-            .padding(.horizontal, 7)
-            .frame(height: 22)
-        }
-        // 禁用（剪贴板里没有文字）时三级字色，浅色约 3.6:1，淡一档但认得出来。
-        .buttonStyle(PanelChipButtonStyle())
-        .disabled(!enabled)
-        .help(help)
-        .accessibilityLabel(label)
     }
 }

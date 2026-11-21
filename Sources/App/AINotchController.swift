@@ -230,12 +230,21 @@ final class AINotchController {
         return true
     }
 
+    /// 刘海上正在显示、面板不能盖住的东西：刘海小岛（专注计时、下载、收音机、插电）
+    /// 和灵动提示。消息卡片不算：它自己会给 AI 面板让位（`NotchMessagePriority`）。
+    private var blockers: [CGRect] {
+        [NotchIslandOccupancy.shared.frame, IslandOccupancy.shared.frame].compactMap { $0 }
+    }
+
     private func show(below entry: CGRect, screen: CGRect) {
         let panel = existingOrNewPanel()
-        let frame = AINotchLayout.panelFrame(below: entry, screen: screen)
+        // 专注计时和系统活动优先：小岛正显示着时，面板挪到它下面，不压住它。
+        let placement = AINotchLayout.placement(below: entry, screen: screen, avoiding: blockers)
+        let frame = placement.frame
         panel.setFrame(frame, display: false)
-        panelModel.hangsFromNotch = AINotchLayout.hangsFromNotch(entry)
-        panelModel.notchBlend = AINotchLayout.notchBlend(entry: entry, panel: frame)
+        let hangs = !placement.clearedBlockers && AINotchLayout.hangsFromNotch(entry)
+        panelModel.hangsFromNotch = hangs
+        panelModel.notchBlend = hangs ? AINotchLayout.notchBlend(entry: entry, panel: frame) : nil
         panelModel.isOpen = true
         panelModel.session = UUID()
         // 收起的淡出可能还在走（刚收起又点开）：顶掉它，不然停在透明度 0。
@@ -248,6 +257,7 @@ final class AINotchController {
     func close() {
         guard panelModel.isOpen else { return }
         panelModel.isOpen = false
+        AIChatCenter.shared.holdNoticeOnce = false
         stopWatching()
         guard let panel, panel.isVisible else { return }
         let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion

@@ -32,6 +32,12 @@ final class AIChatCenter {
     private(set) var clipboardText: String?
     /// 快捷指令和常用提示词做完之后的一句话（网页模式下尤其要说清楚）。
     var notice: String?
+    /// 刘海对话里那一排快捷指令和常用提示词展开着。默认折叠，只留一行开关，
+    /// 对话区占更多地方；本次运行里记住，不存进设置。
+    var promptsExpanded = false
+    /// 小组件刚把问题交过来、刘海对话正要打开：这一次打开不清掉 `notice`
+    /// （网页模式那句「已复制，请粘贴」要留着给用户看）。
+    @ObservationIgnored var holdNoticeOnce = false
 
     @ObservationIgnored private var clipboardChangeCount = -1
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
@@ -41,6 +47,13 @@ final class AIChatCenter {
     private init() {}
 
     var isGenerating: Bool { !generating.isEmpty }
+
+    /// 正在生成的那个服务的名字（刘海下沿「DeepSeek 正在思考」用），没在生成时为 nil。
+    var generatingTitle: String? {
+        guard !generating.isEmpty else { return nil }
+        if let current, generating.contains(current.id) { return current.title }
+        return allServices.first { generating.contains($0.id) }?.title
+    }
 
     // MARK: 设置和服务
 
@@ -128,6 +141,41 @@ final class AIChatCenter {
         conversations[service.id, default: []].append(AIChatMessage(role: .user, text: question))
         draft = ""
         start(service)
+    }
+
+    /// 小组件交过来的结果。
+    enum Handoff: Equatable {
+        /// 交过来了（API 已经开始回答，网页已复制）。
+        case accepted
+        /// 这个服务还在回答，没交。
+        case busy
+        /// 刘海对话的服务列表里没有它（用的是另一张 AI 卡片），没交。
+        case unavailable
+    }
+
+    /// 小组件提问面板交过来的问题。先切到同一个服务（和小组件共用当前服务），
+    /// API 直接发出去，请求挂在这里，不挂在任何视图上，面板关了也照样答完；
+    /// 刘海输入框里写了一半的字不动。网页复制好问题、载入网页，提示用户粘贴，
+    /// 不假装已经发送。App 方式不经过这里。
+    func receive(_ question: String, for service: AIService) -> Handoff {
+        select(service.id)
+        guard current?.id == service.id else { return .unavailable }
+        switch mode(for: service) {
+        case .api:
+            guard !generating.contains(service.id) else { return .busy }
+            conversations[service.id, default: []].append(AIChatMessage(role: .user, text: question))
+            notice = nil
+            holdNoticeOnce = false
+            start(service)
+        case .web:
+            AIServiceOpener.copy(question)
+            _ = webView(for: service)
+            notice = AIHandoff.webNotice(service: service.title)
+            holdNoticeOnce = true
+        case .jump:
+            return .unavailable
+        }
+        return .accepted
     }
 
     /// 重新回答最后一个问题：去掉最后的回答（出错、停止或者已经答完的都算）。

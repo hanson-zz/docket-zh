@@ -67,10 +67,10 @@ final class AINotchLayoutTests: XCTestCase {
 
     func testStripContent() {
         XCTAssertNil(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: false, generating: false))
-        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: true, generating: false), .panda)
-        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: false, generating: true), .dots,
+        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: true, generating: false), .hint)
+        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: false, generating: true), .thinking,
                        "生成中不需要悬停")
-        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: true, generating: true), .dots)
+        XCTAssertEqual(AINotchLayout.stripContent(visible: true, panelOpen: false, hovering: true, generating: true), .thinking)
         XCTAssertNil(AINotchLayout.stripContent(visible: true, panelOpen: true, hovering: true, generating: true),
                      "面板开着时不显示")
         XCTAssertNil(AINotchLayout.stripContent(visible: false, panelOpen: false, hovering: true, generating: true))
@@ -168,6 +168,27 @@ final class AINotchLayoutTests: XCTestCase {
         let panel = AINotchLayout.panelFrame(below: entry, screen: external)
         XCTAssertLessThan(panel.maxY, entry.minY)
         XCTAssertEqual(panel.midX, external.midX)
+    }
+
+    func testPanelSitsBelowAShowingIslandInsteadOfCoveringIt() {
+        let entry = AINotchLayout.entry(for: laptopScreen(), shiduoRunning: false)!.frame
+        let plain = AINotchLayout.placement(below: entry, screen: laptop, avoiding: [])
+        XCTAssertFalse(plain.clearedBlockers)
+        XCTAssertEqual(plain.frame, AINotchLayout.panelFrame(below: entry, screen: laptop))
+
+        // 专注计时小岛从刘海往下长出 40pt：面板挪到它下面，不盖住它。
+        let island = CGRect(x: notch.minX - 40, y: notch.minY - 40, width: notch.width + 80, height: 72)
+        let moved = AINotchLayout.placement(below: entry, screen: laptop, avoiding: [island])
+        XCTAssertTrue(moved.clearedBlockers)
+        XCTAssertEqual(moved.frame.maxY, island.minY - AINotchLayout.blockerGap)
+        XCTAssertEqual(moved.frame.size, AINotchLayout.panelSize)
+        XCTAssertEqual(moved.frame.midX, plain.frame.midX)
+
+        // 只是碰到边（小岛正好在刘海那一段里）、在别的屏幕上的都不算挡着。
+        let flush = CGRect(x: notch.minX, y: notch.minY, width: notch.width, height: notch.height)
+        XCTAssertFalse(AINotchLayout.placement(below: entry, screen: laptop, avoiding: [flush]).clearedBlockers)
+        let elsewhere = CGRect(x: external.midX - 100, y: external.maxY - 60, width: 200, height: 60)
+        XCTAssertFalse(AINotchLayout.placement(below: entry, screen: laptop, avoiding: [elsewhere]).clearedBlockers)
     }
 
     func testPanelStaysOnScreen() {

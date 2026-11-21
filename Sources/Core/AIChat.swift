@@ -60,11 +60,14 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
     public var lastServiceID: String?
     /// 用户自己存的常用提示词，按显示顺序。见 `AIPrompts`。
     public var prompts: [AIPrompt] = []
+    /// 小组件提问面板显示哪几个快捷操作胶囊（`AIDockChip` 的 id）。nil 是没设置过，
+    /// 用 `AIDockChips.defaults`；空列表是一个都不显示。
+    public var panelChips: [String]?
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case enabled, mainScreenOnly, hotKey, modes, endpoints, appPaths, lastServiceID, prompts
+        case enabled, mainScreenOnly, hotKey, modes, endpoints, appPaths, lastServiceID, prompts, panelChips
     }
 
     public init(from decoder: any Decoder) throws {
@@ -79,6 +82,7 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
             .filter { !$0.value.trimmingCharacters(in: .whitespaces).isEmpty }
         lastServiceID = try? c.decodeIfPresent(String.self, forKey: .lastServiceID)
         prompts = AIPrompts.sanitized((try? c.decodeIfPresent([AIPrompt].self, forKey: .prompts)) ?? [])
+        panelChips = try? c.decodeIfPresent([String].self, forKey: .panelChips)
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -91,6 +95,7 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
         if !appPaths.isEmpty { try c.encode(appPaths, forKey: .appPaths) }
         try c.encodeIfPresent(lastServiceID, forKey: .lastServiceID)
         try c.encode(prompts, forKey: .prompts)
+        try c.encodeIfPresent(panelChips, forKey: .panelChips)
     }
 
     /// 只有带 Control、Option 或 Command 的组合才注册，Shift 单独不算。

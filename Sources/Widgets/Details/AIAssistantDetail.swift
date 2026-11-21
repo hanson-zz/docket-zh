@@ -2,15 +2,20 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// AI 助手的面板：迷你提问，或者管理字牌。
+/// AI 助手的面板：迷你提问，或者「助手设置」二级页。
 ///
-/// 提问：多行输入框，Enter 提交，Shift+Enter 换行，中文输入法选字时的
-/// Enter 只确认选字。下面选发给哪个服务（默认是蓝点那个）。主按钮的字很短：
-/// 装了 App 是“打开 豆包”（复制问题再开 App），没装是“去网页问”（能带问题的
-/// 带进网址，不能的先复制），API 方式是“发送”；具体会做什么写在下面的提示句里。
-/// App 方式不调用任何接口，也就不显示“已发送”“已回答”之类的状态，回答在那个服务里看。
+/// 提问页从上到下：顶栏是当前服务名、模式标签、「刘海对话 Pro」开关和设置入口；
+/// 中间的输入框是主角（Enter 提交，Shift+Enter 换行，中文输入法选字时的 Enter
+/// 只确认选字）；下面一排快捷操作胶囊（截图提问、处理剪贴板、翻译、总结，可在
+/// 设置页里换）；底部左边切换服务、写一句按提交会发生什么，右边发送。
 ///
-/// 两种模式用同一个高度：面板的大小在打开时量一次，之后切换模式不会重新量。
+/// 当前服务和刘海对话共用（`AIChatCenter.current`）。API 和网页方式的问题交给
+/// 刘海对话：先收起这个面板，再从刘海长出对话，两个窗口不同时出现；请求挂在
+/// `AIChatCenter` 上，面板关了也照样答完。App 方式只负责跳转，不显示「已发送」
+/// 「已回答」之类的状态，回答在那个服务里看。
+///
+/// 字牌、服务的打开方式和 API 密钥这些不常改的，收在设置页（齿轮）里。面板的
+/// 大小在打开时量一次，切换两页不会重新量。
 struct AIAssistantDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -26,51 +31,43 @@ struct AIAssistantDetail: View {
             MeshBackdrop(color: Color(hex: ShelfColor.redPanda.hex))
         } content: {
             VStack(alignment: .leading, spacing: 12) {
-                header
-                Group {
-                    if state.mode == .manage {
-                        AIManageView(instance: instance, context: context)
-                    } else {
-                        AIAskView(instance: instance, context: context, services: services)
-                    }
+                if state.mode == .manage {
+                    settingsHeader
+                    AIManageView(instance: instance, context: context)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                } else {
+                    AIAskView(instance: instance, context: context, services: services)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
             .frame(height: Self.bodyHeight, alignment: .top)
         }
     }
 
-    private var header: some View {
+    private var settingsHeader: some View {
         HStack(spacing: 8) {
-            AIPandaAvatar(size: 28)
-            if state.mode == .manage {
-                Text(tr("管理字牌"))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-            } else {
-                // 提问时顶栏不再写「问问 AI」（输入框里已经写着「想问点什么？」），
-                // 位置让给刘海对话开关。
-                AINotchSwitch(isPreview: context.isPreview)
-            }
+            AIPandaAvatar(size: 24)
+            Text(tr("助手设置"))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 0)
-            Button(state.mode == .manage ? tr("完成") : tr("管理字牌")) {
-                state.mode = state.mode == .manage ? .ask : .manage
-            }
-            .buttonStyle(.plain)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.panelPrimary)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.horizontal, 10)
-            .frame(height: 24)
-            .background(Capsule().fill(.panelFill))
-            .accessibilityLabel(state.mode == .manage ? tr("完成管理，回到提问") : tr("管理字牌"))
+            Button(tr("完成")) { state.mode = .ask }
+                .buttonStyle(.plain)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelPrimary)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 10)
+                .frame(height: 24)
+                .background(Capsule().fill(.panelFill))
+                .accessibilityLabel(tr("完成设置，回到提问"))
         }
     }
 }
 
-/// 顶栏里的「在刘海里对话 Pro」开关：已解锁时切换刘海入口（设置 ▸ AI 里「在刘海
-/// 显示 AI 助手」同一个键 `aiNotch.enabled`）；没解锁时开关画成关着，点了弹付费墙，
+/// 顶栏里的「刘海对话 Pro」开关：已解锁时切换刘海入口（设置 ▸ AI 里「在刘海
+/// 显示 AI 助手」同一个键 `aiNotch.enabled`）；没解锁时画一把小锁，点了弹付费墙，
 /// 不改设置（同设置页：没解锁时打开只弹付费墙）。Pro 标识固定显示。
 struct AINotchSwitch: View {
     var isPreview: Bool
@@ -84,17 +81,25 @@ struct AINotchSwitch: View {
 
     var body: some View {
         Button(action: toggle) {
-            HStack(spacing: 6) {
-                Text("在刘海里对话")
+            HStack(spacing: 5) {
+                ProBadge()
+                Text("刘海对话")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelPrimary)
                     .lineLimit(1)
                     .fixedSize()
-                ProBadge()
-                AIMiniSwitch(isOn: isOn)
+                if unlocked {
+                    AIMiniSwitch(isOn: isOn)
+                } else {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.panelSecondary)
+                        .frame(width: 16, height: 16)
+                        .accessibilityHidden(true)
+                }
             }
-            .padding(.leading, 10)
-            .padding(.trailing, 4)
+            .padding(.leading, 4)
+            .padding(.trailing, unlocked ? 4 : 8)
             .frame(height: 26)
             .background(Capsule().fill(.panelFill))
             .contentShape(Capsule())
@@ -107,7 +112,7 @@ struct AINotchSwitch: View {
               : tr("在刘海下面直接对话是码头 Pro 功能，点一下看看解锁。"))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tr("在刘海里对话，码头 Pro"))
-        .accessibilityValue(isOn ? tr("开") : tr("关"))
+        .accessibilityValue(unlocked ? (isOn ? tr("开") : tr("关")) : tr("未解锁"))
         .accessibilityAddTraits(.isToggle)
     }
 
@@ -145,17 +150,23 @@ private struct AIMiniSwitch: View {
 private struct AIAskView: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var instance: WidgetInstance
     var context: WidgetContext
     var services: [AIService]
 
+    /// 这张卡片上选的服务。刘海对话的服务列表里有它时同时切过去（两边共用当前
+    /// 服务）；没有时（另一张 AI 卡片）只在这里记着。
     @State private var targetID: String?
     @State private var choosing = false
 
     private var state: AIPanelState { AIPanelState.shared }
+    private var center: AIChatCenter { AIChatCenter.shared }
 
     private var target: AIService? {
-        services.first { $0.id == targetID }
+        if let targetID, let picked = services.first(where: { $0.id == targetID }) { return picked }
+        let shared = center.current?.id
+        return services.first { $0.id == shared }
             ?? AIServices.defaultService(in: instance.config, enabled: services)
     }
 
@@ -168,126 +179,193 @@ private struct AIAskView: View {
         !context.isPreview && target != nil && AIAsk.question(state.draft(instance.id)) != nil
     }
 
+    private var chips: [AIDockChip] { AIDockChips.resolved(center.settings.panelChips) }
+
     var body: some View {
-        if services.isEmpty {
-            empty
-        } else {
-            VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+            if services.isEmpty {
+                empty
+            } else {
                 input
-                promptBar
-                // 服务选择器占剩下的宽度（名字完整显示，太窄才截尾），右边两个按钮按内容定宽。
-                HStack(spacing: 8) {
-                    picker
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    shotButton
-                    Button(action: submitFromButton) {
-                        Text(buttonTitle)
-                            .font(.system(size: 13, weight: .semibold))
-                            .lineLimit(1)
-                            .padding(.horizontal, 14)
-                            .frame(height: 28)
-                    }
-                    // 可用：实心蓝白字；设了主题色按 PanelButtonLook.solid(for:) 配（白字不够就加深，
-                    // 太浅的改深色字），对比度不低于 4.5。空着时中性灰底 + 次级字色。
-                    .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex))))
-                    .fixedSize()
-                    .disabled(!canSubmit)
-                    .help(buttonHelp)
-                    .accessibilityLabel(buttonTitle)
-                    .accessibilityHint(buttonHelp)
-                }
+                chipRow
                 if let hint = state.hint(instance.id) {
                     Text(hint)
                         .font(.system(size: 13))
                         .foregroundStyle(.panelPrimary)
+                        .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityAddTraits(.updatesFrequently)
-                } else {
-                    Text(target.map { AIServiceOpener.installedApp($0) != nil } == true
-                         ? tr("Enter 提交，Shift+Enter 换行。会复制问题并打开 \(target?.title ?? "") App。")
-                         : target?.supportsAsk == true
-                         ? tr("Enter 提交，Shift+Enter 换行。会在浏览器打开 \(target?.title ?? "")。")
-                         : tr("Enter 提交，Shift+Enter 换行。\(target?.title ?? tr("这个服务"))不支持带问题打开，会先复制问题。"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(.panelTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
+                footer
+            }
+        }
+        // 面板开着时每秒看一眼剪贴板有没有变（只比较计数，变了才读内容），
+        // 和刘海对话共用同一份。
+        .task {
+            guard !context.isPreview else { return }
+            while !Task.isCancelled {
+                center.refreshClipboard()
+                try? await Task.sleep(for: .seconds(1))
             }
         }
     }
 
-    /// 「截图问 AI」：收起面板，框选屏幕上的一块，识别出的文字带进输入框，再打开面板。
-    /// 截的图识别完就删，不留副本。
-    private var shotButton: some View {
-        Button {
-            guard !context.isPreview else { return }
-            let id = instance.id
-            WidgetDetailWindow.shared.close()
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(250))
-                ShotEditor.askAIFromScreen(widget: id)
+    // MARK: 顶栏
+
+    /// 当前服务名、模式标签、刘海对话开关和设置入口。
+    private var header: some View {
+        HStack(spacing: 8) {
+            AIPandaAvatar(size: 24)
+            if let target {
+                Text(target.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Text(targetMode.title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 7)
+                    .frame(height: 20)
+                    .background(Capsule().fill(.panelFill))
+                    .help(center.modeLabel(for: target))
+                    .accessibilityLabel(tr("模式：\(center.modeLabel(for: target))"))
+            } else {
+                Text(tr("AI 助手"))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
             }
-        } label: {
-            Image(systemName: "text.viewfinder")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.panelPrimary)
-                .frame(width: 30, height: 28)
-                .background(Capsule().fill(.panelFill))
-                .contentShape(Capsule())
+            Spacer(minLength: 4)
+            AINotchSwitch(isPreview: context.isPreview)
+                .layoutPriority(1)
+            Button {
+                state.mode = .manage
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(.panelFill))
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .layoutPriority(1)
+            .help(tr("助手设置：快捷操作、字牌、打开方式和 API 密钥"))
+            .accessibilityLabel(tr("助手设置"))
         }
-        .buttonStyle(.plain)
-        .help(tr("截图问 AI：框选屏幕上的一块，识别出的文字带进输入框"))
-        .accessibilityLabel(tr("截图问 AI"))
     }
+
+    // MARK: 输入框
 
     private var input: some View {
         ZStack(alignment: .topLeading) {
             AskTextEditor(text: draft, onSubmit: submit,
                           onCancel: { WidgetDetailWindow.shared.close() })
-                .frame(height: 84)
+                .padding(.bottom, 20)
                 .accessibilityLabel("要问的问题")
             if state.draft(instance.id).isEmpty {
-                Text("想问点什么？")
+                Text("想让 AI 帮你做什么？")
                     .font(.system(size: 14))
-                    .foregroundStyle(.panelTertiary)
+                    .foregroundStyle(.panelSecondary)
                     .padding(.leading, 5)
                     .padding(.top, 1)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
         }
+        // 输入框占掉中间剩下的高度，字多了在框里滚动；最少放得下三行。
+        .frame(maxWidth: .infinity, minHeight: 76, maxHeight: .infinity, alignment: .topLeading)
+        .overlay(alignment: .bottomTrailing) {
+            Text("Enter 提交 · Shift+Enter 换行")
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(1)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
         .padding(10)
         .glassPane(cornerRadius: 12)
     }
 
-    // MARK: 剪贴板接力、快捷指令和常用提示词
+    // MARK: 快捷操作
 
-    /// 和刘海对话同一排按钮（`AIPromptChipBar`）。文字先取输入框，空着时取
-    /// 剪贴板，套好的提示词照平时提问交给选中的服务。提示写在下面那行
-    /// （`state.hint`），这一排的第二行只显示剪贴板预览。
-    private var promptBar: some View {
-        let center = AIChatCenter.shared
-        return AIPromptChipBar(
-            hasInput: true,
-            clipboardPreview: context.isPreview ? nil : center.clipboardPreview,
-            notice: nil,
-            prompts: center.prompts,
-            actionHelp: { actionHelp($0.title) },
-            clipboardHelp: tr("点一下带进输入框"),
-            paste: pasteClipboard,
-            runAction: { run(template: $0.template) },
-            runPrompt: { run(template: $0.content) },
-            managePrompts: managePrompts)
-            .disabled(context.isPreview)
-            // 面板开着时每秒看一眼剪贴板有没有变（只比较计数，变了才读内容），
-            // 和刘海对话共用同一份。
-            .task {
-                guard !context.isPreview else { return }
-                while !Task.isCancelled {
-                    center.refreshClipboard()
-                    try? await Task.sleep(for: .seconds(1))
+    /// 设置页里勾选的几个胶囊，后面是「常用」提示词菜单。文字先取输入框，空着时
+    /// 取剪贴板，套好的提示词照平时提问交给选中的服务。
+    private var chipRow: some View {
+        HStack(spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(chips, id: \.self) { chip in
+                        chipButton(chip)
+                    }
                 }
             }
+            .frame(height: 26)
+            AIPromptMenu(prompts: center.prompts,
+                         runPrompt: { run(template: $0.content) },
+                         managePrompts: openAISettings)
+        }
+        .disabled(context.isPreview)
+    }
+
+    private func chipButton(_ chip: AIDockChip) -> some View {
+        let clipboardEmpty = chip == .clipboard && center.clipboardPreview == nil
+        return Button {
+            run(chip)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: chip.symbol)
+                    .font(.system(size: 10, weight: .semibold))
+                Text(chip.title)
+                    .font(.system(size: 13))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .padding(.horizontal, 9)
+            .frame(height: 24)
+        }
+        .buttonStyle(PanelChipButtonStyle())
+        .disabled(clipboardEmpty)
+        .help(chipHelp(chip))
+        .accessibilityLabel(chip.title)
+    }
+
+    private func chipHelp(_ chip: AIDockChip) -> String {
+        switch chip {
+        case .screenshot:
+            return tr("截图问 AI：框选屏幕上的一块，识别出的文字带进输入框")
+        case .clipboard:
+            return center.clipboardPreview.map { tr("带进输入框：\($0)") } ?? tr("剪贴板里没有文字")
+        default:
+            return actionHelp(chip.title)
+        }
+    }
+
+    private func run(_ chip: AIDockChip) {
+        guard !context.isPreview else { return }
+        switch chip {
+        case .screenshot: askFromScreen()
+        case .clipboard: pasteClipboard()
+        default:
+            // 点按钮不会让输入法先确认选字，还有没确认的字时不交出去。
+            guard !AskTextView.keyWindowIsComposing, let action = chip.quickAction else { return }
+            run(template: action.template)
+        }
+    }
+
+    /// 「截图提问」：收起面板，框选屏幕上的一块，识别出的文字带进输入框，再打开面板。
+    /// 截的图识别完就删，不留副本。
+    private func askFromScreen() {
+        let id = instance.id
+        WidgetDetailWindow.shared.close()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            ShotEditor.askAIFromScreen(widget: id)
+        }
     }
 
     private func actionHelp(_ title: String) -> String {
@@ -301,7 +379,6 @@ private struct AIAskView: View {
 
     private func pasteClipboard() {
         guard !context.isPreview else { return }
-        let center = AIChatCenter.shared
         center.refreshClipboard()
         let clip = center.clipboardText
         if clip != nil {
@@ -312,7 +389,6 @@ private struct AIAskView: View {
 
     private func run(template: String) {
         guard !context.isPreview else { return }
-        let center = AIChatCenter.shared
         center.refreshClipboard()
         switch AIPromptStrip.outcome(template: template, draft: state.draft(instance.id),
                                      clipboard: center.clipboardText) {
@@ -323,36 +399,68 @@ private struct AIAskView: View {
         }
     }
 
-    private func managePrompts() {
-        guard !context.isPreview, let app = AIChatCenter.shared.app else { return }
+    private func openAISettings() {
+        guard !context.isPreview, let app = center.app else { return }
         WidgetDetailWindow.shared.close()
         SettingsWindow.shared.show(app: app, tab: "AI")
     }
 
-    /// 选发给哪个服务。不用 Menu：macOS 的 Menu 标签只取第一段文字，字牌里的
-    /// 「豆」被当成整个标题，后面的服务名丢了（真机截图）。改成按钮 + 弹出列表，
-    /// 标签照原样画，服务名完整显示，太窄时才截尾。
+    // MARK: 底栏
+
+    /// 左边切换服务和一句「按提交会怎样」，右边发送。
+    private var footer: some View {
+        HStack(spacing: 8) {
+            picker
+            if let target {
+                Text(AIHandoff.modeAction(targetMode,
+                                          appInstalled: AIServiceOpener.installedApp(target) != nil,
+                                          supportsAsk: target.supportsAsk))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            Spacer(minLength: 4)
+            Button(action: submitFromButton) {
+                Text(buttonTitle)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .padding(.horizontal, 14)
+                    .frame(height: 28)
+            }
+            // 可用：实心蓝白字；设了主题色按 PanelButtonLook.solid(for:) 配（白字不够就加深，
+            // 太浅的改深色字），对比度不低于 4.5。空着时中性灰底 + 次级字色。
+            .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex))))
+            .fixedSize()
+            .layoutPriority(1)
+            .disabled(!canSubmit)
+            .help(buttonHelp)
+            .accessibilityLabel(buttonTitle)
+            .accessibilityHint(buttonHelp)
+        }
+    }
+
+    /// 选发给哪个服务。不用 Menu：macOS 的 Menu 标签只取第一段文字（真机截图里
+    /// 服务名丢了）。改成按钮 + 弹出列表；服务名已经写在顶栏，这里只画字牌和箭头。
     private var picker: some View {
         Button {
             choosing.toggle()
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 if let target {
                     AIGlyph(initial: target.initial, size: 20, style: .panel)
-                    Text(tr("发给 \(target.title)"))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.panelPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
                 }
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(.panelSecondary)
             }
+            .padding(.horizontal, 6)
             .frame(height: 28)
-            .contentShape(.rect)
+            .background(Capsule().fill(.panelFill))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .fixedSize()
         .disabled(context.isPreview)
         .popover(isPresented: $choosing, arrowEdge: .top) { serviceList }
         .help(tr("选择提问的服务"))
@@ -364,6 +472,8 @@ private struct AIAskView: View {
             ForEach(services) { service in
                 Button {
                     targetID = service.id
+                    // 和刘海对话共用当前服务；刘海那边没有这个服务时 select 不改。
+                    center.select(service.id)
                     choosing = false
                 } label: {
                     HStack(spacing: 8) {
@@ -373,6 +483,9 @@ private struct AIAskView: View {
                             .foregroundStyle(.panelPrimary)
                             .lineLimit(1)
                         Spacer(minLength: 12)
+                        Text(center.mode(for: service).title)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.panelSecondary)
                         Image(systemName: "checkmark")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.panelPrimary)
@@ -383,12 +496,12 @@ private struct AIAskView: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(service.title)
+                .accessibilityLabel(tr("\(service.title)，\(center.mode(for: service).title)"))
                 .accessibilityAddTraits(service.id == target?.id ? .isSelected : [])
             }
         }
         .padding(6)
-        .frame(minWidth: 180)
+        .frame(minWidth: 200)
     }
 
     private var empty: some View {
@@ -401,12 +514,12 @@ private struct AIAskView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 这个服务在刘海对话里的打开方式。不是 App 方式时，问题交给刘海对话。
+    /// 这个服务的打开方式。不是 App 方式时，问题交给刘海对话。
     private var targetMode: AIOpenMode {
-        target.map { AIChatCenter.shared.mode(for: $0) } ?? .jump
+        target.map { center.mode(for: $0) } ?? .jump
     }
 
-    /// 主按钮的字要短（「打开 豆包」「去网页问」「发送」），会做什么写在下面的提示句里。
+    /// 主按钮的字要短（「打开 豆包」「去网页问」「发送」），会做什么写在左边那一句里。
     private var buttonTitle: String {
         AIAsk.buttonTitle(mode: targetMode, service: target,
                           appInstalled: target.map { AIServiceOpener.installedApp($0) != nil } ?? false)
@@ -428,6 +541,8 @@ private struct AIAskView: View {
         }
     }
 
+    // MARK: 提交
+
     /// 点按钮不会让输入法先确认选字，还有没确认的字时不交出去。
     private func submitFromButton() {
         guard AIAsk.canSubmit(state.draft(instance.id), hasMarkedText: AskTextView.keyWindowIsComposing) else { return }
@@ -437,32 +552,46 @@ private struct AIAskView: View {
     private func submit() { deliver(nil) }
 
     /// 交出去。`text` 是快捷指令或常用提示词套好的提示词，nil 时交输入框里的问题。
+    /// 交给谁见 `AIHandoff.plan`。
     private func deliver(_ text: String?) {
         guard !context.isPreview, let service = target else { return }
-        let mode = targetMode
         let asked = text ?? state.draft(instance.id)
-        // 网页和 API 在刘海对话里问，刘海对话是码头 Pro：没解锁时弹付费墙，问题留在框里。
-        if mode != .jump, !ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked),
-           AIAsk.question(asked) != nil {
+        let handoff = AIHandoff.plan(asked, mode: targetMode,
+                                     notchUnlocked: ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked))
+        switch handoff {
+        case .blocked:
+            state.setHint(AIAsk.hint(after: .blocked, service: service), for: instance.id)
+        case .paywall:
+            // 刘海对话是码头 Pro：没解锁时弹付费墙，问题留在框里。
             PaywallWindow.shared.show()
-            return
-        }
-        if mode != .jump, let question = AIAsk.question(asked) {
-            let center = AIChatCenter.shared
-            center.select(service.id)
-            center.draft = question
-            state.setDraft("", for: instance.id)
-            WidgetDetailWindow.shared.close()
-            AINotchController.shared.open()
-            if mode == .api {
-                center.send()
-            } else {
-                // 网页里没法替用户填字，复制好让用户粘贴。
-                AIServiceOpener.copy(question)
+        case .notchAPI(let question), .notchWeb(let question):
+            switch center.receive(question, for: service) {
+            case .accepted:
+                // 交过去了才清空草稿。先收起这个面板，再从刘海长出对话，不叠两个窗口。
+                state.setDraft("", for: instance.id)
+                WidgetDetailWindow.shared.close()
+                openNotchAfterPanelCloses()
+            case .busy:
+                state.setHint(tr("还在回答，先停止或等它答完。"), for: instance.id)
+            case .unavailable:
+                state.setHint(tr("\(service.title) 不在刘海对话的服务里：刘海对话用第一张 AI 卡片的字牌。"), for: instance.id)
             }
-            return
+        case .app:
+            jump(asked, service: service)
         }
-        // 「App」方式：装了 ChatGPT、Perplexity 这类 App 时复制问题再打开 App，没装才走浏览器。
+    }
+
+    /// 等小组件面板收起的淡出走完再打开刘海对话；减弱动态效果时马上打开。
+    private func openNotchAfterPanelCloses() {
+        let wait = reduceMotion ? 0 : 160
+        Task { @MainActor in
+            if wait > 0 { try? await Task.sleep(for: .milliseconds(wait)) }
+            AINotchController.shared.open()
+        }
+    }
+
+    /// 「App」方式：装了 ChatGPT、Perplexity 这类 App 时复制问题再打开 App，没装才走浏览器。
+    private func jump(_ asked: String, service: AIService) {
         let plan = AIAsk.plan(asked, service: service, appInstalled: AIServiceOpener.installedApp(service) != nil)
         switch plan {
         case .blocked:
@@ -504,6 +633,8 @@ private struct AIManageView: View {
         let custom = AIServices.custom(in: config)
         return ScrollView {
             VStack(alignment: .leading, spacing: 12) {
+                chipSection
+                serviceSettingsSection
                 Text(tr("勾选的显示在卡片上，最多 \(AIServices.maxCount) 个。点“设为默认”改蓝点。"))
                     .font(.system(size: 13))
                     .foregroundStyle(.panelSecondary)
@@ -551,6 +682,56 @@ private struct AIManageView: View {
         .disabled(context.isPreview)
         .onAppear(perform: openFormIfAsked)
         .onChange(of: state.wantsCustomForm) { _, _ in openFormIfAsked() }
+    }
+
+    /// 提问页输入框下面显示哪几个快捷操作，存在刘海对话的设置里（两边共用一份 AI 设置）。
+    private var chipSection: some View {
+        let center = AIChatCenter.shared
+        let raw = center.settings.panelChips
+        let shown = Set(AIDockChips.resolved(raw))
+        return section(tr("快捷操作")) {
+            Text(tr("显示在输入框下面，最多 \(AIDockChips.maxCount) 个。"))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(AIDockChip.allCases, id: \.self) { chip in
+                let on = shown.contains(chip)
+                Toggle(isOn: Binding(get: { on }, set: { _ in
+                    guard !context.isPreview else { return }
+                    center.updateSettings { $0.panelChips = AIDockChips.toggled(chip, in: $0.panelChips) }
+                })) {
+                    Label(chip.title, systemImage: chip.symbol)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelPrimary)
+                }
+                .toggleStyle(.checkbox)
+                .disabled(!AIDockChips.canToggle(chip, in: raw))
+                .frame(height: 24)
+                .accessibilityLabel(on ? tr("\(chip.title)，已显示") : tr("\(chip.title)，已隐藏"))
+            }
+        }
+    }
+
+    /// 打开方式（网页、API、App）、API 密钥和常用提示词在设置 ▸ AI 里，不在面板里重做一遍。
+    private var serviceSettingsSection: some View {
+        section(tr("服务与 API 密钥")) {
+            Text(tr("每个服务用网页、API 还是 App，API 密钥和常用提示词，都在设置 ▸ AI 里改。"))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                guard !context.isPreview, let app = AIChatCenter.shared.app else { return }
+                WidgetDetailWindow.shared.close()
+                SettingsWindow.shared.show(app: app, tab: "AI")
+            } label: {
+                Label(tr("打开 AI 设置…"), systemImage: "gearshape")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 2)
+            .accessibilityLabel(tr("打开设置里的 AI 页"))
+        }
     }
 
     private func openFormIfAsked() {

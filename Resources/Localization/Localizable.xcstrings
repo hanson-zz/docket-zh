@@ -31412,6 +31412,402 @@
         }
       }
     },
+    "截图提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask from Screenshot"
+          }
+        }
+      }
+    },
+    "处理剪贴板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Clipboard"
+          }
+        }
+      }
+    },
+    "问题已复制，请在 %@ 的输入框里粘贴（⌘V）后发送。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question copied. Paste it into the %@ input box (⌘V) and send it."
+          }
+        }
+      }
+    },
+    "在刘海里直接回答" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answered in the notch"
+          }
+        }
+      }
+    },
+    "复制后在刘海网页里粘贴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy, then paste in the notch web page"
+          }
+        }
+      }
+    },
+    "复制后打开 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy and open the app"
+          }
+        }
+      }
+    },
+    "带着问题打开网页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the web page with the question"
+          }
+        }
+      }
+    },
+    "复制后打开网页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy and open the web page"
+          }
+        }
+      }
+    },
+    "✦ AI 助手" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✦ AI Assistant"
+          }
+        }
+      }
+    },
+    "AI 正在思考" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI is thinking"
+          }
+        }
+      }
+    },
+    "%@ 正在思考" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is thinking"
+          }
+        }
+      }
+    },
+    "继续追问……" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask a follow-up…"
+          }
+        }
+      }
+    },
+    "想让 AI 帮你做什么？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What can AI do for you?"
+          }
+        }
+      }
+    },
+    "收起对话面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close the chat panel"
+          }
+        }
+      }
+    },
+    "模式：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode: %@"
+          }
+        }
+      }
+    },
+    "收起快捷指令和常用提示词" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide quick actions and saved prompts"
+          }
+        }
+      }
+    },
+    "展开快捷指令和常用提示词" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show quick actions and saved prompts"
+          }
+        }
+      }
+    },
+    "快捷指令和常用提示词" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick actions and saved prompts"
+          }
+        }
+      }
+    },
+    "已折叠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapsed"
+          }
+        }
+      }
+    },
+    "回答会一个字一个字流出来，每条回答下面可以复制、重新生成。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answers stream in word by word. Each answer can be copied or regenerated."
+          }
+        }
+      }
+    },
+    "重新生成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Regenerate"
+          }
+        }
+      }
+    },
+    "助手设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant Settings"
+          }
+        }
+      }
+    },
+    "完成设置，回到提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done, back to asking"
+          }
+        }
+      }
+    },
+    "刘海对话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch Chat"
+          }
+        }
+      }
+    },
+    "未解锁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locked"
+          }
+        }
+      }
+    },
+    "助手设置：快捷操作、字牌、打开方式和 API 密钥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant settings: quick actions, service tiles, open modes and API keys"
+          }
+        }
+      }
+    },
+    "Enter 提交 · Shift+Enter 换行" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter to send · Shift+Enter for a new line"
+          }
+        }
+      }
+    },
+    "%@ 不在刘海对话的服务里：刘海对话用第一张 AI 卡片的字牌。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is not in Notch Chat. Notch Chat uses the tiles on the first AI card."
+          }
+        }
+      }
+    },
+    "快捷操作" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Actions"
+          }
+        }
+      }
+    },
+    "显示在输入框下面，最多 %@ 个。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shown under the input box, up to %@."
+          }
+        }
+      }
+    },
+    "%@，已显示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, shown"
+          }
+        }
+      }
+    },
+    "服务与 API 密钥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Services & API Keys"
+          }
+        }
+      }
+    },
+    "每个服务用网页、API 还是 App，API 密钥和常用提示词，都在设置 ▸ AI 里改。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose web, API or app for each service, and manage API keys and saved prompts, in Settings ▸ AI."
+          }
+        }
+      }
+    },
+    "打开 AI 设置…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open AI Settings…"
+          }
+        }
+      }
+    },
+    "打开设置里的 AI 页" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the AI page in Settings"
+          }
+        }
+      }
+    },
+    "快捷指令与提示词" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Actions & Prompts"
+          }
+        }
+      }
+    },
     "意大利" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -40,15 +40,15 @@ public enum AINotchEntry: Equatable, Sendable {
 
 /// 刘海下沿那一条里显示什么。
 public enum AINotchStripContent: Equatable, Sendable {
-    /// 指针在刘海上：小熊猫。
-    case panda
-    /// 回答生成中：三个跳动的小点。
-    case dots
+    /// 指针在刘海上：低干扰的入口字样「✦ AI 助手」。
+    case hint
+    /// 回答生成中：「DeepSeek 正在思考」加三个小点（减弱动态效果时不跳）。
+    case thinking
 }
 
 public enum AINotchLayout {
-    /// 刘海下沿往下长出的那一条的高度。宽度和刘海一样。
-    public static let stripHeight: CGFloat = 18
+    /// 刘海下沿往下长出的那一条的高度。宽度和刘海一样。放得下一行 13pt 的字。
+    public static let stripHeight: CGFloat = 22
     /// 那一条里小熊猫的大小。
     public static let stripPandaSize: CGFloat = 14
     /// 指针离开刘海后，那一条过多久收回。
@@ -128,13 +128,14 @@ public enum AINotchLayout {
         return CGRect(x: screen.frame.midX, y: bar.minY, width: 0, height: bar.height)
     }
 
-    /// 刘海下沿那一条显示什么，nil 表示收起。回答生成中优先显示小点（不需要
-    /// 悬停）；否则指针在刘海上时显示小熊猫。入口隐藏或面板开着时不显示。
+    /// 刘海下沿那一条显示什么，nil 表示收起。回答生成中优先显示「正在思考」（不需要
+    /// 悬停）；否则指针在刘海上时显示入口字样。入口隐藏（小岛、消息卡片占着刘海）或
+    /// 面板开着时不显示。
     public static func stripContent(visible: Bool, panelOpen: Bool,
                                     hovering: Bool, generating: Bool) -> AINotchStripContent? {
         guard visible, !panelOpen else { return nil }
-        if generating { return .dots }
-        return hovering ? .panda : nil
+        if generating { return .thinking }
+        return hovering ? .hint : nil
     }
 
     /// 外接屏胶囊的不透明度。
@@ -170,6 +171,28 @@ public enum AINotchLayout {
     /// 玻璃上，不压在黑色上（浅色玻璃上的深色字压在黑上就看不见了）。
     public static func headerTopPadding(hangsFromNotch: Bool) -> CGFloat {
         hangsFromNotch ? notchBlendHeight : 10
+    }
+
+    /// 面板和小岛之间留的空。
+    public static let blockerGap: CGFloat = 6
+
+    /// 两块是不是真的叠在一起（只碰到边不算）。
+    static func overlaps(_ a: CGRect, _ b: CGRect) -> Bool {
+        let common = a.intersection(b)
+        return !common.isNull && common.width > 1 && common.height > 1
+    }
+
+    /// 面板最后放在哪：先照常从入口下面长出来；和正在显示的刘海小岛（专注计时、
+    /// 下载）或灵动提示重叠时，不盖住它们，整块往下挪到它们下沿下面。挪过之后面板
+    /// 不再接着刘海（`clearedBlockers` 为 true，顶上不画黑色过渡）。
+    public static func placement(below entry: CGRect, screen: CGRect, size: CGSize = panelSize,
+                                 avoiding blockers: [CGRect]) -> (frame: CGRect, clearedBlockers: Bool) {
+        let base = panelFrame(below: entry, screen: screen, size: size)
+        let hits = blockers.filter { overlaps($0, base) }
+        guard let lowest = hits.map(\.minY).min() else { return (base, false) }
+        var frame = base
+        frame.origin.y = max(lowest - blockerGap - size.height, screen.minY + margin)
+        return (frame, true)
     }
 
     /// 展开的面板：从入口正下方长出来，水平对着入口中间，超出屏幕时往里收。
