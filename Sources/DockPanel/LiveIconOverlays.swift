@@ -256,9 +256,9 @@ struct LiveQuotaTint: Equatable {
     /// 前一层水的不透明度：留一点透出图标本身的图案。
     var opacity: Double
 
-    static let chatGPT = LiveQuotaTint(top: Color(hex: "#59A8FF"), bottom: Color(hex: "#1B64DA"), opacity: 0.86)
-    static let claude = LiveQuotaTint(top: Color(hex: "#C24A16"), bottom: Color(hex: "#86290A"), opacity: 0.88)
-    static let codex = LiveQuotaTint(top: Color(hex: "#9A6BFF"), bottom: Color(hex: "#5B21D6"), opacity: 0.9)
+    static let chatGPT = LiveQuotaTint(top: Color(hex: "#59A8FF"), bottom: Color(hex: "#1B64DA"), opacity: 0.8)
+    static let claude = LiveQuotaTint(top: Color(hex: "#C24A16"), bottom: Color(hex: "#86290A"), opacity: 0.84)
+    static let codex = LiveQuotaTint(top: Color(hex: "#9A6BFF"), bottom: Color(hex: "#5B21D6"), opacity: 0.82)
 
     static func of(_ app: LiveIconApp) -> LiveQuotaTint {
         switch app {
@@ -382,7 +382,7 @@ struct LiveQuotaWater: View {
         .accessibilityHidden(true)
     }
 
-    /// 左下角的白色粗体百分比：剩余额度。字号跟图标缩放，不小于 11pt；
+    /// 左下角的白色粗体百分比：剩余额度。字号跟图标缩放，不小于 11pt，宽度不超过图标内容区，「100%」放不下时等比缩小；
     /// 一层很淡的阴影保证压在浅色水、白色图标上也读得出。
     @ViewBuilder
     private func percent(_ level: Double?) -> some View {
@@ -392,7 +392,9 @@ struct LiveQuotaWater: View {
             Text(LiveIconUsage.percentText(level))
                 .font(.system(size: size, weight: .heavy, design: .rounded).monospacedDigit())
                 .foregroundStyle(.white)
-                .fixedSize()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .frame(maxWidth: g.length * 0.84, alignment: .leading)
                 .shadow(color: .black.opacity(0.38), radius: max(0.8, size * 0.08), y: max(0.4, size * 0.04))
                 .padding(.leading, g.inset + g.length * 0.08)
                 .padding(.bottom, g.inset + g.length * 0.06)

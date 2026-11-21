@@ -247,15 +247,15 @@ final class LiveIconUsageTests: XCTestCase {
     }
 
     func testPercentFontScalesWithAReadableFloor() {
-        XCTAssertEqual(LiveIconUsage.percentFontSize(side: 100), 23, accuracy: 1e-9)
+        XCTAssertEqual(LiveIconUsage.percentFontSize(side: 100), 20, accuracy: 1e-9)
         XCTAssertEqual(LiveIconUsage.percentFontSize(side: 20), 11)
         XCTAssertEqual(LiveIconUsage.percentFontSize(side: .nan), 11)
         XCTAssertLessThan(LiveIconUsage.percentFontSize(side: 60), LiveIconUsage.percentFontSize(side: 80))
     }
 
     func testSurfaceStaysInsideContent() {
-        XCTAssertEqual(LiveIconUsage.surfaceFraction(0), 0.04, accuracy: 1e-9)
-        XCTAssertEqual(LiveIconUsage.surfaceFraction(1), 0.94, accuracy: 1e-9)
+        XCTAssertEqual(LiveIconUsage.surfaceFraction(0), 0.06, accuracy: 1e-9)
+        XCTAssertEqual(LiveIconUsage.surfaceFraction(1), 0.48, accuracy: 1e-9)
         XCTAssertEqual(LiveIconUsage.surfaceFraction(.infinity), 0)
         XCTAssertLessThan(LiveIconUsage.surfaceFraction(0.3), LiveIconUsage.surfaceFraction(0.6))
     }

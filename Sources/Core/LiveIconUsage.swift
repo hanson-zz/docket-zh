@@ -232,7 +232,7 @@ public enum LiveIconUsage {
     /// 左下角百分比大字的字号：跟图标一起缩放，约为图标边长的 23%，但不小于 11pt。
     public static func percentFontSize(side: Double) -> Double {
         guard side.isFinite, side > 0 else { return 11 }
-        return max(11, side * 0.23)
+        return max(11, side * 0.2)
     }
 
     /// 流光只在 Codex 真在干活时绕圈：工作中，或者一轮做到一半停下来等你批准。
@@ -250,12 +250,12 @@ public enum LiveIconUsage {
         return "\(Int((min(1, max(0, level)) * 100).rounded()))%"
     }
 
-    /// 液面在内容区里的高度（从底往上，0...1），level 是剩余比例。几乎用完也露一条水线，
-    /// 满额也留一线不顶到圆角最上沿，看起来还是「水」。
+    /// 液面在内容区里的高度（从底往上，0...1），level 是剩余比例。按效果图只占图标下半截：
+    /// 满额也只到约一半高，上半截的 App 标志始终露出来，一眼认得是哪个 App；几乎用完也露一条水线。
     public static func surfaceFraction(_ level: Double) -> Double {
         guard level.isFinite else { return 0 }
         let l = min(1, max(0, level))
-        return 0.04 + l * 0.90
+        return 0.06 + l * 0.42
     }
 }
 
