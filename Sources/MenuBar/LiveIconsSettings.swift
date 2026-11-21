@@ -8,6 +8,7 @@ struct LiveIconsSettingRow: View {
     @AppStorage(LiveIconToggles.masterKey) private var enabled = false
     @AppStorage(LiveIconToggles.finderKey) private var finder = true
     @AppStorage(LiveIconToggles.chromeKey) private var chrome = true
+    @AppStorage(LiveBrowser.safariKey) private var safari = true
     @AppStorage(LiveIconToggles.openAIKey) private var chatGPT = true
     @AppStorage(LiveIconToggles.codexKey) private var codex = true
     @AppStorage(LiveIconToggles.claudeKey) private var claude = true
@@ -34,7 +35,9 @@ struct LiveIconsSettingRow: View {
             Group {
                 sub($finder, tr("访达"), tr("访达图标整张换成小熊猫：两颗眼珠跟着鼠标指针看，指针停下几秒后慢慢回正，隔几秒眨一下眼。"))
                 sub($chrome, tr("Chrome"),
-                    tr("当前标签页在加载时 Chrome 图标匀速转，加载完慢慢停回原位。需要允许码头控制 Chrome；不允许时只在启动那一下转一圈。"))
+                    tr("鼠标停上去时中间的彩色圆盘轻转一下弹回；当前标签页在加载时，图标边缘走一道细蓝弧，加载完淡出。读加载状态需要允许码头控制 Chrome，不允许时只有悬停效果。"))
+                sub($safari, tr("Safari"),
+                    tr("鼠标停上去时表盘轻摆两下停住，外壳不动。Safari 没有可靠的加载信号，所以不画进度。"))
                 sub($quota, tr("AI 额度水位"),
                     tr("ChatGPT、Claude、Codex 图标下部灌水，水位是还剩多少额度，没有数据时不画；鼠标停在图标上时，名称下面显示多久后重置。ChatGPT 和 Codex 共用同一份 Codex 额度数据。"))
                 VStack(alignment: .leading, spacing: 6) {

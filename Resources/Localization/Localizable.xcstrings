@@ -18879,6 +18879,39 @@
         }
       }
     },
+    "鼠标停上去时中间的彩色圆盘轻转一下弹回；当前标签页在加载时，图标边缘走一道细蓝弧，加载完淡出。读加载状态需要允许码头控制 Chrome，不允许时只有悬停效果。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the pointer rests on it, the coloured disc gives a small turn and springs back; while the current tab is loading, a thin blue arc runs along the icon's edge and fades out when it finishes. Reading the loading state needs permission for Dockling to control Chrome; without it there is only the hover effect."
+          }
+        }
+      }
+    },
+    "Safari" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safari"
+          }
+        }
+      }
+    },
+    "鼠标停上去时表盘轻摆两下停住，外壳不动。Safari 没有可靠的加载信号，所以不画进度。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the pointer rests on it, the compass dial sways twice and settles while the frame stays still. Safari has no reliable loading signal, so no progress is drawn."
+          }
+        }
+      }
+    },
     "AI 额度水位" : {
       "extractionState" : "manual",
       "localizations" : {

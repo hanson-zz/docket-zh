@@ -78,3 +78,24 @@ final class LiveBadgeTests: XCTestCase {
         XCTAssertFalse(pulse.update(.count(9), now: t0.addingTimeInterval(21)), "从未知回来不弹")
     }
 }
+
+final class LiveBrowserTests: XCTestCase {
+    func testBundleIDs() {
+        XCTAssertEqual(LiveBrowser(bundleID: "com.google.Chrome"), .chrome)
+        XCTAssertEqual(LiveBrowser(bundleID: "com.apple.Safari"), .safari)
+        XCTAssertNil(LiveBrowser(bundleID: "com.apple.mail"))
+    }
+
+    func testHoverEndsUpright() {
+        for browser in LiveBrowser.allCases {
+            XCTAssertEqual(browser.hoverKeyframes.last, 0)
+            XCTAssertLessThanOrEqual(browser.hoverKeyframes.map(abs).max() ?? 0, 18)
+        }
+    }
+
+    func testRingHeadWraps() {
+        XCTAssertEqual(LiveBrowserRing.head(at: 0), 0, accuracy: 1e-9)
+        XCTAssertEqual(LiveBrowserRing.head(at: 2.25), 0.25, accuracy: 1e-9)
+        XCTAssertEqual(LiveBrowserRing.head(at: -0.25), 0.75, accuracy: 1e-9)
+    }
+}

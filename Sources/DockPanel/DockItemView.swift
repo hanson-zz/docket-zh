@@ -27,6 +27,7 @@ struct DockItemView: View {
     @AppStorage(LiveBadgeApp.messages.toggleKey) private var liveMessages = true
     @AppStorage(LiveBadgeApp.wechat.toggleKey) private var liveWeChat = true
     @AppStorage(LiveBadgeApp.mail.toggleKey) private var liveMail = true
+    @AppStorage(LiveBrowser.safariKey) private var liveSafari = true
     // 自定义 App 图标（Pro）跟着授权变：过期时画回默认图标，解锁后自动回来。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporter = false
@@ -76,16 +77,17 @@ struct DockItemView: View {
         liveApp == app && liveToggles.isOn(app)
     }
 
-    /// Chrome 的图标本身转（只给 Chrome 格子挂，别的格子不多一层）；
+    /// Chrome、Safari 悬停轻转、Chrome 加载细弧（只给这两个格子挂，别的格子不多一层）；
     /// 访达的图标整张换成小熊猫访达（缺图时照常画系统图标）。
     @ViewBuilder
     private var liveIcon: some View {
         if liveOn(.finder), LiveFinderPandaArt.available {
             LiveFinderPanda(side: geo.icon)
-        } else if liveApp == .chrome {
+        } else if let browser = browserApp {
             icon
                 .frame(width: geo.icon, height: geo.icon)
-                .modifier(LiveChromeSpin(active: liveOn(.chrome) && !reduceMotion, isRunning: isRunning))
+                .modifier(LiveBrowserModifier(browser: browser, side: geo.icon,
+                                              active: browserOn(browser) && !reduceMotion, isRunning: isRunning))
         } else if let badgeApp, liveIconsEnabled, badgeOn(badgeApp) {
             icon
                 .frame(width: geo.icon, height: geo.icon)
@@ -93,6 +95,19 @@ struct DockItemView: View {
         } else {
             icon
                 .frame(width: geo.icon, height: geo.icon)
+        }
+    }
+
+    /// 这个格子是不是 Chrome 或 Safari。
+    private var browserApp: LiveBrowser? {
+        guard case .app(_, let bundleID, _) = item else { return nil }
+        return LiveBrowser(bundleID: bundleID)
+    }
+
+    private func browserOn(_ browser: LiveBrowser) -> Bool {
+        switch browser {
+        case .chrome: liveOn(.chrome)
+        case .safari: liveIconsEnabled && liveSafari
         }
     }
 
