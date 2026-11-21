@@ -254,8 +254,8 @@ final class LiveIconUsageTests: XCTestCase {
     }
 
     func testSurfaceStaysInsideContent() {
-        XCTAssertEqual(LiveIconUsage.surfaceFraction(0), 0.06, accuracy: 1e-9)
-        XCTAssertEqual(LiveIconUsage.surfaceFraction(1), 0.48, accuracy: 1e-9)
+        XCTAssertEqual(LiveIconUsage.surfaceFraction(0), 0.18, accuracy: 1e-9)
+        XCTAssertEqual(LiveIconUsage.surfaceFraction(1), 0.60, accuracy: 1e-9)
         XCTAssertEqual(LiveIconUsage.surfaceFraction(.infinity), 0)
         XCTAssertLessThan(LiveIconUsage.surfaceFraction(0.3), LiveIconUsage.surfaceFraction(0.6))
     }

@@ -251,11 +251,11 @@ public enum LiveIconUsage {
     }
 
     /// 液面在内容区里的高度（从底往上，0...1），level 是剩余比例。按效果图只占图标下半截：
-    /// 满额也只到约一半高，上半截的 App 标志始终露出来，一眼认得是哪个 App；几乎用完也露一条水线。
+    /// 按效果图 37% 约到三分之一、满额约到六成高，上半截的 App 标志始终露出来，一眼认得是哪个 App；几乎用完也露一条水线。
     public static func surfaceFraction(_ level: Double) -> Double {
         guard level.isFinite else { return 0 }
         let l = min(1, max(0, level))
-        return 0.06 + l * 0.42
+        return 0.18 + l * 0.42
     }
 }
 
