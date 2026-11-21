@@ -6,10 +6,12 @@ import Foundation
 // Resources/Pet/sprites/pet-sprite-<吉祥物>-<peek|sit|walk1|walk2|sleep|cheer>.png（@2x，坐姿高 130 像素，
 // 脚底在图片底边、都朝右）。大脑照旧按小熊猫算动作，画之前把小熊猫的帧名换成最接近的那张：
 // 走、跑、叼东西是 walk1、walk2 交替加一点颠，睡觉、趴着团起来是 sleep，欢呼、挥手是 cheer，
-// 趴着探头是 peek，其余（坐、眨眼、伸懒腰、跳、吊着、贴边等）都是 sit。
+// 趴着探头是 peek，吊在上边是 hang / hang-sleep（前爪在图顶），抱左右边是 hug / hug-r（贴边那侧在图边），
+// 被拎起来是 drag，其余（坐、眨眼、伸懒腰、跳等）都是 sit。
 
 public enum DesktopPetSkinAction: String, CaseIterable, Sendable {
     case peek, sit, walk1, walk2, sleep, cheer
+    case hang, hangSleep = "hang-sleep", hug, hugR = "hug-r", drag
 }
 
 public enum DesktopPetSkin {
@@ -41,7 +43,17 @@ public enum DesktopPetSkin {
             return (frame / 8) % 2 == 0 ? .walk1 : .walk2
         case .run, .carry:
             return (frame / 2) % 2 == 0 ? .walk1 : .walk2
-        case .sleep, .fallAsleep, .lie, .hangSleep, .hugSleep, .hugSleepR, .frontSleep, .frontLie:
+        case .hang, .drop:
+            return .hang
+        case .hangSleep:
+            return .hangSleep
+        case .hug, .hugOut, .hugSleep, .hugClimb:
+            return .hug
+        case .hugR, .hugOutR, .hugSleepR, .hugClimbR:
+            return .hugR
+        case .drag:
+            return .drag
+        case .sleep, .fallAsleep, .lie, .frontSleep, .frontLie:
             return .sleep
         case .cheer, .frontWave:
             return .cheer
