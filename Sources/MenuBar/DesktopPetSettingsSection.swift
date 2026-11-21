@@ -67,6 +67,24 @@ struct DesktopPetSettingsSection: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                Toggle(isOn: $settings.pointerPeek) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("指针旁探头")
+                        Text("鼠标约 20 秒没动，所选吉祥物在指针旁探出头，一动鼠标、按键或点按就收起。正在打字时不出来。")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Toggle(isOn: $settings.quietInCalls) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("通话时藏起")
+                        Text("麦克风在用（通话、开会）时，桌宠和探头先藏起来，挂断后再出来。只看麦克风开没开，不录音。")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 LabeledContent {
                     HStack(spacing: 6) {
                         ShortcutRecorder(combo: settings.hotKey) { settings.hotKey = $0 }

@@ -30,10 +30,15 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
     public var stretchReminder: Bool = false
     /// 下载完成提示：下载文件夹里有文件下好时叼过来说一声。默认开。
     public var downloadNotice: Bool = true
+    /// 指针旁探头：鼠标约 20 秒没动，所选吉祥物在指针旁探出头，一动鼠标就收起。默认关。
+    public var pointerPeek: Bool = false
+    /// 通话时藏起：麦克风在用（开会、通话、共享屏幕讲解）时桌宠和探头都先藏起来。默认开。
+    public var quietInCalls: Bool = true
 
     public init(enabled: Bool = false, trashRescue: Bool = false, anchor: DesktopPetAnchor = .dock,
                 size: DesktopPetSize = .medium, bubbles: Bool = true, hotKey: KeyCombo? = nil,
-                spot: DesktopPetSpot? = nil, stretchReminder: Bool = false, downloadNotice: Bool = true) {
+                spot: DesktopPetSpot? = nil, stretchReminder: Bool = false, downloadNotice: Bool = true,
+                pointerPeek: Bool = false, quietInCalls: Bool = true) {
         self.enabled = enabled
         self.trashRescue = trashRescue
         self.anchor = anchor
@@ -43,13 +48,16 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         self.spot = spot
         self.stretchReminder = stretchReminder
         self.downloadNotice = downloadNotice
+        self.pointerPeek = pointerPeek
+        self.quietInCalls = quietInCalls
     }
 
     /// 救回真正在不在工作：总开关和子开关都开着。
     public var rescueActive: Bool { enabled && trashRescue }
 
     private enum CodingKeys: String, CodingKey {
-        case enabled, trashRescue, anchor, size, bubbles, hotKey, spot, stretchReminder, downloadNotice
+        case enabled, trashRescue, anchor, size, bubbles, hotKey, spot, stretchReminder, downloadNotice,
+             pointerPeek, quietInCalls
     }
 
     /// 宽松解码：老状态文件没有这一组或缺新加的键、以后多了认不出的键或值，都照常读。
@@ -66,6 +74,8 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         spot = (try? c.decodeIfPresent(DesktopPetSpot.self, forKey: .spot)) ?? nil
         stretchReminder = (try? c.decodeIfPresent(Bool.self, forKey: .stretchReminder)) ?? false
         downloadNotice = (try? c.decodeIfPresent(Bool.self, forKey: .downloadNotice)) ?? true
+        pointerPeek = (try? c.decodeIfPresent(Bool.self, forKey: .pointerPeek)) ?? false
+        quietInCalls = (try? c.decodeIfPresent(Bool.self, forKey: .quietInCalls)) ?? true
     }
 }
 

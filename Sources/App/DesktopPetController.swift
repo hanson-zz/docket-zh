@@ -144,6 +144,7 @@ final class DesktopPetController: NSObject {
         settings = next
         DesktopPetHotKey.shared.onPress = { DesktopPetController.shared.summon() }
         DesktopPetHotKey.shared.update(next.enabled ? next.hotKey : nil)
+        DesktopPetPointerPeekController.shared.apply(next)
         if next.enabled {
             start()
             if next.anchor != before.anchor || next.size != before.size || next.spot != before.spot {
@@ -177,6 +178,7 @@ final class DesktopPetController: NSObject {
         let before = settings
         settings = next
         onSettingsChange?(next)
+        DesktopPetPointerPeekController.shared.apply(next)
         if next.anchor != before.anchor || next.size != before.size { refreshPlacement() }
         if !next.enabled { stop() }
     }
@@ -363,7 +365,9 @@ final class DesktopPetController: NSObject {
         checkTrash()
         // 离开的判断：每 1.5 秒看一次系统空闲（动画那边离开着时每帧也看）。
         feedAway(.idle(Self.userIdleSeconds()))
-        guard let next, let screen else {
+        // 通话、开会时（麦克风在用）先藏起来，不出现在共享的屏幕上；挂断后下一轮再出来。
+        let quiet = settings.quietInCalls && MicrophoneActivity.inUse()
+        guard let next, let screen, !quiet else {
             hide()
             return
         }

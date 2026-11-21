@@ -3334,6 +3334,50 @@
         }
       }
     },
+    "指针旁探头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peek by Pointer"
+          }
+        }
+      }
+    },
+    "鼠标约 20 秒没动，所选吉祥物在指针旁探出头，一动鼠标、按键或点按就收起。正在打字时不出来。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the mouse stays still for about 20 seconds, your chosen mascot peeks out beside the pointer and hides as soon as you move, type, or click. It stays away while you are typing."
+          }
+        }
+      }
+    },
+    "通话时藏起" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide During Calls"
+          }
+        }
+      }
+    },
+    "麦克风在用（通话、开会）时，桌宠和探头先藏起来，挂断后再出来。只看麦克风开没开，不录音。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While the microphone is in use (calls, meetings), the desktop pet and the peek hide and come back after you hang up. Docket only checks whether the microphone is on and never records."
+          }
+        }
+      }
+    },
     "下载文件夹里有文件下好时，小熊猫叼着纸团过来说一声，单击它在访达中显示。第一次可能要允许码头访问下载文件夹。" : {
       "extractionState" : "manual",
       "localizations" : {
