@@ -3,6 +3,16 @@
 The 0.1.0 entry was written by hand. Everything after it is generated from the
 commits on `main`, which is why the voice changes partway down.
 
+## [1.1.0](https://github.com/hanson-zz/docket-zh/compare/v1.0.0...v1.1.0) (2026-11-21)
+
+
+### Features
+
+* add live icon status and display policy ([b1060f0](https://github.com/hanson-zz/docket-zh/commit/b1060f0e8d4827a58f8810292186a0022b16f200))
+* add live icon status and display policy ([20b3761](https://github.com/hanson-zz/docket-zh/commit/20b376185f03a71d7ac49f8c4fa5565168e0b36c))
+* add shelf live icon visual accents ([124411f](https://github.com/hanson-zz/docket-zh/commit/124411f98284c0104246a4b10b4bcac0f551ea7b))
+* display finder companion and chrome launch feedback in shelf ([1db47fe](https://github.com/hanson-zz/docket-zh/commit/1db47fe43e94204021cdf55a37079cfd64813e28))
+
 ## [0.1.9](https://github.com/nparashar150/dockset/compare/v0.1.8...v0.1.9) (2026-10-01)
 
 
