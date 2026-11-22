@@ -3,7 +3,8 @@ import SwiftUI
 /// 设置 ▸ 扩展栏：动态图标。总开关默认关；打开后访达、Chrome 各有子开关，
 /// 下面是「AI 额度水位」：一个总开关，ChatGPT、Claude、Codex 三个勾选，
 /// 和「显示：」5 小时 / 每周 / 取更紧的（默认取更紧的）；再下面是「消息未读」：信息、微信、邮件三个勾选，
-/// 风格简洁 / 趣味，和一个用演示未读数的预览。
+/// 风格简洁 / 趣味，和一个用演示未读数的预览；最后是「日历」子开关（默认开）和「提前开始：」
+/// 倒计时提前量（10 / 15 / 30 / 45 / 60 分钟，默认 30）。
 struct LiveIconsSettingRow: View {
     @AppStorage(LiveIconToggles.masterKey) private var enabled = false
     @AppStorage(LiveIconToggles.finderKey) private var finder = true
@@ -19,6 +20,8 @@ struct LiveIconsSettingRow: View {
     @AppStorage(LiveBadgeApp.wechat.toggleKey) private var wechat = true
     @AppStorage(LiveBadgeApp.mail.toggleKey) private var mail = true
     @AppStorage(LiveBadgeStyle.key) private var badgeStyle = LiveBadgeStyle.default.rawValue
+    @AppStorage(LiveIconToggles.calendarKey) private var calendar = true
+    @AppStorage(LiveCalendar.leadKey) private var calendarLead = LiveCalendar.defaultLeadMinutes
     @State private var demoCount = 4
 
     var body: some View {
@@ -99,6 +102,18 @@ struct LiveIconsSettingRow: View {
                     .padding(.leading, 20)
                     badgePreview
                         .padding(.leading, 20)
+                }
+                sub($calendar, tr("日历"),
+                    tr("日历图标换成今天的星期和日期。下一场日程开始前一段时间里，图标下部的液面随剩余时间从满降到底，底部小胶囊写倒计时，剩 5 分钟变暖橙，到点写「即将开始」「进行中」，随后整枚图标顺时针转一圈换到下一场；减弱动态效果时不转直接换。悬停显示今天剩下的日程。只读今天的定时日程（不含全天和已拒绝的），不读备注、不上传；没有日历权限或今天没有日程时图标保持原样。"))
+                if calendar {
+                    Picker(selection: $calendarLead) {
+                        ForEach(LiveCalendar.leadChoices, id: \.self) { minutes in
+                            Text(tr("\(minutes) 分钟")).tag(minutes)
+                        }
+                    } label: {
+                        Text(tr("提前开始："))
+                    }
+                    .padding(.leading, 20)
                 }
             }
             .padding(.leading, 16)

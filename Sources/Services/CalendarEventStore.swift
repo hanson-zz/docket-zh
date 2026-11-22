@@ -38,6 +38,31 @@ enum CalendarEventStore {
         return ClockPanelData.nextEvent(events, now: now)
     }
 
+    // MARK: 程序坞日历动态图标
+
+    /// 今天（本地日历的今天零点到明天零点）开始的日程，给程序坞日历图标的液位和悬停列表用。
+    /// 只读标题、起止时刻、是否全天、日历颜色和自己的回复状态，不读备注、地点、链接；
+    /// 已拒绝或已取消的标成 declined。没权限时是空的，不弹授权。
+    static func todayForLiveIcon(now: Date, calendar: Calendar = .current) -> [LiveCalendarEvent] {
+        guard hasAccess else { return [] }
+        let dayStart = calendar.startOfDay(for: now)
+        guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return [] }
+        let predicate = shared.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: nil)
+        return shared.events(matching: predicate).compactMap { event in
+            guard let start = event.startDate else { return nil }
+            let title = (event.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let mine = event.participants?.first(where: \.isCurrentUser)?.participantStatus
+            return LiveCalendarEvent(
+                id: "\(event.eventIdentifier ?? event.calendarItemIdentifier)-\(start.timeIntervalSinceReferenceDate)",
+                title: title.isEmpty ? tr("新日程") : title,
+                start: start,
+                end: event.endDate ?? start,
+                isAllDay: event.isAllDay,
+                colorHex: CalendarColorHex.hex(event.calendar?.color),
+                declined: mine == .declined || event.status == .canceled)
+        }
+    }
+
     // MARK: 日历面板：读一段时间、新建、改时间、删除
 
     /// 一段时间里选中日历的日程，拍平成 `WeekEntry`。空的筛选是全部日历，筛选里的日历都没了也是。

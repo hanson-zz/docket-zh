@@ -23,6 +23,8 @@ struct DockItemView: View {
     @AppStorage(LiveIconToggles.claudeKey) private var liveClaude = true
     @AppStorage(LiveIconToggles.quotaKey) private var liveQuota = true
     @AppStorage(LiveIconToggles.percentKey) private var liveQuotaPercent = true
+    // 日历：真实日程驱动的液位和倒计时，默认开（总开关仍默认关）。
+    @AppStorage(LiveIconToggles.calendarKey) private var liveCalendar = true
     // 消息未读：信息、微信、邮件各一个子开关，默认开（总开关仍默认关）。
     @AppStorage(LiveBadgeApp.messages.toggleKey) private var liveMessages = true
     @AppStorage(LiveBadgeApp.wechat.toggleKey) private var liveWeChat = true
@@ -70,7 +72,7 @@ struct DockItemView: View {
 
     private var liveToggles: LiveIconToggles {
         LiveIconToggles(master: liveIconsEnabled, finder: liveFinder, chrome: liveChrome, chatGPT: liveChatGPT,
-                        codex: liveCodex, claude: liveClaude, quota: liveQuota)
+                        codex: liveCodex, claude: liveClaude, quota: liveQuota, calendar: liveCalendar)
     }
 
     private func liveOn(_ app: LiveIconApp) -> Bool {
@@ -78,11 +80,17 @@ struct DockItemView: View {
     }
 
     /// Chrome、Safari 悬停轻转、Chrome 加载细弧（只给这两个格子挂，别的格子不多一层）；
-    /// 访达的图标整张换成小熊猫访达（缺图时照常画系统图标）。
+    /// 访达的图标整张换成小熊猫访达（缺图时照常画系统图标）；日历的图标在今天有日程要倒数时
+    /// 整张换成码头画的日历（液位、倒计时、换场转一圈），没权限或没日程时照常画系统图标。
     @ViewBuilder
     private var liveIcon: some View {
         if liveOn(.finder), LiveFinderPandaArt.available {
             LiveFinderPanda(side: geo.icon)
+        } else if liveOn(.calendar) {
+            LiveCalendarIcon(side: geo.icon) {
+                icon
+                    .frame(width: geo.icon, height: geo.icon)
+            }
         } else if let browser = browserApp {
             icon
                 .frame(width: geo.icon, height: geo.icon)

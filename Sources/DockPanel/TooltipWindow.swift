@@ -18,6 +18,8 @@ final class TooltipWindow {
     private var current: String?
     /// AI 额度水位的重置倒计时，名称下面多一颗胶囊；没有时是 nil。
     private var currentDetail: String?
+    /// 日历图标的今天剩余日程，名称标签另一侧多一张小卡片；没有时是空的。
+    private var currentAgenda: [TooltipAgendaRow] = []
     /// Measured once per label, not once per pointer move.
     private var currentSize: NSSize = .zero
     /// Last frame actually set, so an unchanged one costs nothing.
@@ -30,12 +32,15 @@ final class TooltipWindow {
     ///     screen coordinates.
     ///   - edge: which way to place the label.
     ///   - detail: AI 图标的重置倒计时，名称标签和图标之间多一颗玻璃胶囊。
-    func show(_ text: String, detail: String? = nil, anchor: CGPoint, edge: DockPosition) {
+    ///   - agenda: 日历图标的今天剩余日程，名称标签远离图标的一侧多一张小卡片。
+    func show(_ text: String, detail: String? = nil, agenda: [TooltipAgendaRow] = [], anchor: CGPoint,
+              edge: DockPosition) {
         let panel = existingOrNew()
-        if current != text || currentDetail != detail {
-            hosting?.rootView = TooltipLabel(text: text, detail: detail, detailFirst: edge == .top)
+        if current != text || currentDetail != detail || currentAgenda != agenda {
+            hosting?.rootView = TooltipLabel(text: text, detail: detail, agenda: agenda, detailFirst: edge == .top)
             current = text
             currentDetail = detail
+            currentAgenda = agenda
             // A full SwiftUI sizing pass. It only depends on the text, so it
             // must not run on every pointer move - sweeping the row changed
             // the anchor constantly while the label stayed the same.
@@ -80,6 +85,7 @@ final class TooltipWindow {
         guard panel?.isVisible == true else { return }
         current = nil
         currentDetail = nil
+        currentAgenda = []
         currentFrame = .zero
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
@@ -227,16 +233,53 @@ final class LayoutToast {
 struct TooltipLabel: View {
     var text: String
     var detail: String? = nil
-    /// 顶部扩展栏的标签在图标下面：胶囊放上面，同样挨着图标。
+    /// 日历图标的今天剩余日程（最多 4 条）；空的时不画卡片。
+    var agenda: [TooltipAgendaRow] = []
+    /// 顶部扩展栏的标签在图标下面：胶囊放上面，同样挨着图标；日程卡片放在最下面，离图标最远。
     var detailFirst = false
 
     var body: some View {
         VStack(spacing: 5) {
+            if !detailFirst, !agenda.isEmpty { agendaCard }
             if detailFirst, let detail { countdown(detail) }
             name
             if !detailFirst, let detail { countdown(detail) }
+            if detailFirst, !agenda.isEmpty { agendaCard }
         }
         .padding(6)   // room for the shadow inside the panel
+    }
+
+    /// 今天剩余日程：「今天」小标题，下面每行彩点（日历颜色）、时间、名称，13pt，带字的玻璃用 `readableGlass`。
+    private var agendaCard: some View {
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        return VStack(alignment: .leading, spacing: 5) {
+            Text(tr("今天"))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+            ForEach(agenda) { row in
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(row.colorHex.isEmpty ? Color.accentColor : Color(hex: row.colorHex))
+                        .frame(width: 8, height: 8)
+                    Text(verbatim: row.time)
+                        .font(.system(size: 13, weight: .medium).monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 38, alignment: .leading)
+                    Text(verbatim: row.title)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+        }
+        .frame(maxWidth: 240, alignment: .leading)
+        .fixedSize(horizontal: true, vertical: false)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .readableGlass(in: shape)
+        .overlay { shape.strokeBorder(Color.primary.opacity(0.14), lineWidth: 0.5) }
+        .shadow(color: .black.opacity(0.16), radius: 4, y: 1)
     }
 
     private var name: some View {
@@ -292,4 +335,13 @@ struct WindowReader: NSViewRepresentable {
     func updateNSView(_ view: NSView, context: Context) {
         DispatchQueue.main.async { onResolve(view.window) }
     }
+}
+
+/// 悬停卡片里的一条日程：彩点颜色、开始时间、名称。只带这三样，不带备注。
+struct TooltipAgendaRow: Identifiable, Equatable {
+    var id: String
+    var time: String
+    var title: String
+    /// 日历颜色 `#RRGGBB`，空串时用强调色。
+    var colorHex: String
 }

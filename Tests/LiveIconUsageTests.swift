@@ -14,6 +14,7 @@ final class LiveIconUsageTests: XCTestCase {
         XCTAssertEqual(LiveIconApp(bundleID: "com.openai.chat"), .chatGPT)
         XCTAssertEqual(LiveIconApp(bundleID: "com.openai.codex"), .codex)
         XCTAssertEqual(LiveIconApp(bundleID: "com.anthropic.claudefordesktop"), .claude)
+        XCTAssertEqual(LiveIconApp(bundleID: "com.apple.iCal"), .calendar)
         XCTAssertNil(LiveIconApp(bundleID: "com.apple.Safari"))
         XCTAssertNil(LiveIconApp(bundleID: "com.google.Chrome.canary"))
         XCTAssertTrue(LiveIconApp.chatGPT.isAI)
@@ -21,10 +22,11 @@ final class LiveIconUsageTests: XCTestCase {
         XCTAssertTrue(LiveIconApp.claude.isAI)
         XCTAssertFalse(LiveIconApp.finder.isAI)
         XCTAssertFalse(LiveIconApp.chrome.isAI)
+        XCTAssertFalse(LiveIconApp.calendar.isAI)
     }
 
     func testMasterSwitchGatesEverySubSwitch() {
-        let all: [LiveIconApp] = [.finder, .chrome, .chatGPT, .codex, .claude]
+        let all: [LiveIconApp] = [.finder, .chrome, .chatGPT, .codex, .claude, .calendar]
         let off = LiveIconToggles()
         for app in all {
             XCTAssertFalse(off.isOn(app))
@@ -49,6 +51,11 @@ final class LiveIconUsageTests: XCTestCase {
         XCTAssertFalse(noCodex.isOn(.codex))
         XCTAssertTrue(noCodex.isOn(.chatGPT))
         XCTAssertFalse(noCodex.showsQuota(.codex))
+
+        let noCalendar = LiveIconToggles(master: true, calendar: false)
+        XCTAssertFalse(noCalendar.isOn(.calendar))
+        XCTAssertTrue(noCalendar.isOn(.finder))
+        XCTAssertFalse(LiveIconToggles(master: true).showsQuota(.calendar))
     }
 
     func testQuotaSwitchOnlyGatesTheWater() {
@@ -81,6 +88,10 @@ final class LiveIconUsageTests: XCTestCase {
         d.set(false, forKey: LiveIconToggles.codexKey)
         d.set(false, forKey: LiveIconToggles.quotaKey)
         XCTAssertEqual(LiveIconToggles(defaults: d), LiveIconToggles(master: true, codex: false, quota: false))
+        d.set(false, forKey: LiveIconToggles.calendarKey)
+        XCTAssertEqual(LiveIconToggles(defaults: d),
+                       LiveIconToggles(master: true, codex: false, quota: false, calendar: false))
+        XCTAssertEqual(LiveIconToggles.calendarKey, "liveIcons.calendar")
     }
 
     func testCodexToggleMigratesFromTheSharedOne() {

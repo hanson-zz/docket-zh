@@ -1757,7 +1757,9 @@ struct DockShelfView: View {
         }
         if let text = target.text {
             // AI 图标开着额度水位时，名称下面加一颗重置倒计时胶囊；读不到重置时间就不加。
+            // 日历图标开着动态图标时，名称另一侧加一张今天剩余日程的小卡片；没有日程就不加。
             TooltipWindow.shared.show(text, detail: LiveQuotaHover.resetSentence(bundleID: target.appBundleID),
+                                      agenda: LiveCalendarHover.agenda(bundleID: target.appBundleID),
                                       anchor: anchor, edge: position)
         } else {
             // Moving onto a widget has to take the previous tile's label with

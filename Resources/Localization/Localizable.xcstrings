@@ -2014,6 +2014,17 @@
         }
       }
     },
+    "%@分" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@m"
+          }
+        }
+      }
+    },
     "%@已暂停，还剩 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2399,6 +2410,28 @@
         }
       }
     },
+    "即将" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soon"
+          }
+        }
+      }
+    },
+    "即将开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starting"
+          }
+        }
+      }
+    },
     "叮" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2685,6 +2718,17 @@
         }
       }
     },
+    "提前开始：" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start countdown:"
+          }
+        }
+      }
+    },
     "插上电源时显示闪电和电量，约 4 秒后收起。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2747,6 +2791,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Funk"
+          }
+        }
+      }
+    },
+    "日历图标换成今天的星期和日期。下一场日程开始前一段时间里，图标下部的液面随剩余时间从满降到底，底部小胶囊写倒计时，剩 5 分钟变暖橙，到点写「即将开始」「进行中」，随后整枚图标顺时针转一圈换到下一场；减弱动态效果时不转直接换。悬停显示今天剩下的日程。只读今天的定时日程（不含全天和已拒绝的），不读备注、不上传；没有日历权限或今天没有日程时图标保持原样。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Calendar icon shows today's weekday and date. Before your next event, a liquid level in the lower part drains from full to empty as the start approaches, with a countdown in a small capsule at the bottom that turns warm orange in the last 5 minutes and reads Starting, then In progress. The whole icon then turns once clockwise to the next event; with Reduce Motion on, it switches without turning. Hover to see the rest of today's events. Only today's timed events are read (no all-day or declined ones), never notes, and nothing is uploaded. Without calendar access, or with nothing left today, the icon stays as it is."
           }
         }
       }

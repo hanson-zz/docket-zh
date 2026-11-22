@@ -14,6 +14,8 @@ public enum LiveIconApp: Equatable, Sendable {
     case codex
     /// Claude 桌面 App：橙色水位，没有流光（没有可靠的「正在干活」信号）。
     case claude
+    /// 系统日历：真实日程驱动的液位和倒计时，换场时整圈旋转（见 `LiveCalendar`）。
+    case calendar
 
     public static let finderBundleID = "com.apple.finder"
     public static let chromeBundleID = "com.google.Chrome"
@@ -30,6 +32,7 @@ public enum LiveIconApp: Equatable, Sendable {
         case Self.chromeBundleID: self = .chrome
         case Self.chatGPTBundleID: self = .chatGPT
         case Self.claudeBundleID: self = .claude
+        case LiveCalendar.bundleID: self = .calendar
         default:
             guard Self.codexBundleIDs.contains(bundleID) else { return nil }
             self = .codex
@@ -40,7 +43,7 @@ public enum LiveIconApp: Equatable, Sendable {
     public var isAI: Bool {
         switch self {
         case .chatGPT, .codex, .claude: return true
-        case .finder, .chrome: return false
+        case .finder, .chrome, .calendar: return false
         }
     }
 }
@@ -59,6 +62,8 @@ public struct LiveIconToggles: Equatable, Sendable {
     public static let quotaKey = "liveIcons.aiQuota"
     /// 水位左下角的百分比大字，默认显示。
     public static let percentKey = "liveIcons.aiPercent"
+    /// 日历动态图标，默认开（总开关仍默认关）。
+    public static let calendarKey = "liveIcons.calendar"
 
     public var master: Bool
     public var finder: Bool
@@ -67,9 +72,10 @@ public struct LiveIconToggles: Equatable, Sendable {
     public var codex: Bool
     public var claude: Bool
     public var quota: Bool
+    public var calendar: Bool
 
     public init(master: Bool = false, finder: Bool = true, chrome: Bool = true, chatGPT: Bool = true,
-                codex: Bool = true, claude: Bool = true, quota: Bool = true) {
+                codex: Bool = true, claude: Bool = true, quota: Bool = true, calendar: Bool = true) {
         self.master = master
         self.finder = finder
         self.chrome = chrome
@@ -77,6 +83,7 @@ public struct LiveIconToggles: Equatable, Sendable {
         self.codex = codex
         self.claude = claude
         self.quota = quota
+        self.calendar = calendar
     }
 
     /// 从设置里读；没存过的键用各自的默认值。
@@ -85,7 +92,7 @@ public struct LiveIconToggles: Equatable, Sendable {
         self.init(master: flag(Self.masterKey, false), finder: flag(Self.finderKey, true),
                   chrome: flag(Self.chromeKey, true), chatGPT: flag(Self.openAIKey, true),
                   codex: flag(Self.codexKey, true), claude: flag(Self.claudeKey, true),
-                  quota: flag(Self.quotaKey, true))
+                  quota: flag(Self.quotaKey, true), calendar: flag(Self.calendarKey, true))
     }
 
     /// 这个 App 的动态图标开没开（AI App 开着时至少有流光）。
@@ -97,6 +104,7 @@ public struct LiveIconToggles: Equatable, Sendable {
         case .chatGPT: return chatGPT
         case .codex: return codex
         case .claude: return claude
+        case .calendar: return calendar
         }
     }
 
