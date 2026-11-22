@@ -1280,14 +1280,14 @@ private struct AIManageView: View {
                     guard !context.isPreview else { return }
                     center.updateSettings { $0.panelChips = AIDockChips.toggled(chip, in: $0.panelChips) }
                 })) {
-                    Label(Self.gridTitle(chip), systemImage: chip.symbol)
+                    Label(AIAskView.gridTitle(chip), systemImage: chip.symbol)
                         .font(.system(size: 13))
                         .foregroundStyle(.panelPrimary)
                 }
                 .toggleStyle(.checkbox)
                 .disabled(!AIDockChips.canToggle(chip, in: raw))
                 .frame(height: 24)
-                .accessibilityLabel(on ? tr("\(chip.title)，已显示") : tr("\(chip.title)，已隐藏"))
+                .accessibilityLabel(on ? tr("\(AIAskView.gridTitle(chip))，已显示") : tr("\(AIAskView.gridTitle(chip))，已隐藏"))
             }
         }
     }
