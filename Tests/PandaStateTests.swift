@@ -285,6 +285,26 @@ final class PandaStateTests: XCTestCase {
         XCTAssertEqual(PandaStateResolver.waterImageName(.parched, exists: all), "WaterPanda-skeleton")
     }
 
+    // MARK: 收音机
+
+    func testRadioOnlyWhilePlaying() {
+        // 暂停、停止：不画（原来没有小熊猫的地方不常驻），带着缓冲、出错标记也一样。
+        XCTAssertNil(PandaStateResolver.radio(playing: false, buffering: false, problem: false))
+        XCTAssertNil(PandaStateResolver.radio(playing: false, buffering: true, problem: true))
+        // 正在出声：戴耳机在听。
+        XCTAssertEqual(PandaStateResolver.radio(playing: true, buffering: false, problem: false), .scene(.record))
+        // 连接、缓冲：等着；连不上：提醒，优先于缓冲。
+        XCTAssertEqual(PandaStateResolver.radio(playing: true, buffering: true, problem: false), .state(.thinking))
+        XCTAssertEqual(PandaStateResolver.radio(playing: true, buffering: true, problem: true), .state(.alert))
+        XCTAssertEqual(PandaStateResolver.radio(playing: true, buffering: false, problem: true), .state(.alert))
+    }
+
+    func testRadioListeningFallsBackToIdle() {
+        let pose = PandaStateResolver.radio(playing: true, buffering: false, problem: false)!
+        XCTAssertEqual(PandaStateResolver.imageName(pose, exists: { _ in true }), "panda-scene-record")
+        XCTAssertEqual(PandaStateResolver.imageName(pose, exists: { $0 == "panda-state-idle" }), "panda-state-idle")
+    }
+
     // MARK: 专注
 
     func testFocusCompatibility() {

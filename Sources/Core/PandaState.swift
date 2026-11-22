@@ -64,7 +64,7 @@ public enum PandaExtra: String, CaseIterable, Sendable {
 }
 
 /// 场景图：和六状态同一母版、同画布、同底部锚点的七张（Resources/PandaStates/panda-scene-<名>.png）。
-/// 天气（晴、雨雪、冷、热）、喝水、待办记下、录音用；缺图时回退待机。
+/// 天气（晴、雨雪、冷、热）、喝水、待办记下、录音、收音机在听用；缺图时回退待机。
 public enum PandaScene: String, CaseIterable, Sendable {
     /// 晴天。
     case sunny
@@ -78,7 +78,7 @@ public enum PandaScene: String, CaseIterable, Sendable {
     case drink
     /// 拿笔记下（待办添加成功）。
     case write
-    /// 对着麦克风录音（正在录音）。
+    /// 戴着耳机对着麦克风（正在录音；收音机正在出声时也用它，当「在听电台」）。
     case record
 
     public var imageName: String { "panda-scene-\(rawValue)" }
@@ -390,6 +390,16 @@ public enum PandaStateResolver {
         default:
             return imageName(water(look), exists: exists)
         }
+    }
+
+    /// 收音机（面板和卡片原来没有小熊猫的地方，只在播放时出现，不常驻）：
+    /// 没在放（暂停、停止、添加小组件里的预览）nil，不画；连不上（重连中）alert；
+    /// 刚连上还没出声、中途缓冲 thinking（等着，不是出错）；正在出声戴耳机听（录音场景图）。
+    public static func radio(playing: Bool, buffering: Bool, problem: Bool) -> PandaPose? {
+        guard playing else { return nil }
+        if problem { return .state(.alert) }
+        if buffering { return .state(.thinking) }
+        return .scene(.record)
     }
 
     /// 专注只做状态兼容：等开始 idle、专注中 nil（用专注自己的动画：小熊猫爬竹竿、其他吉祥物的专注图）、

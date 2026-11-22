@@ -53,6 +53,8 @@ struct RadioSkinModel {
     /// 0 到 100。
     var volume: Double
     var isPreview: Bool
+    /// 面板里台名右边的小熊猫（播放中才有，见 `PandaStateResolver.radio`）；卡片不画，nil。
+    var panda: PandaPose? = nil
 
     /// 换到第 `index` 个收藏（保持原来的播放状态）。
     var onTune: (Int) -> Void
@@ -219,21 +221,30 @@ struct RadioSkinHeader: View {
 /// 台名（22pt）和下面一行说明（13pt）。
 struct RadioSkinReadout: View {
     var model: RadioSkinModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(verbatim: model.stationName)
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(model.colors.text)
-                .lineLimit(1)
-                .minimumScaleFactor(13.0 / 22.0)
-            Text(verbatim: model.detail)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(model.detailIsProblem ? model.colors.accentText : model.colors.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+        // 播放时右边空位出现小熊猫（40pt，不高过台名加一行说明，台名照旧缩字不截），暂停、停止不画。
+        HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verbatim: model.stationName)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(model.colors.text)
+                    .lineLimit(1)
+                    .minimumScaleFactor(13.0 / 22.0)
+                Text(verbatim: model.detail)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(model.detailIsProblem ? model.colors.accentText : model.colors.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if let pose = model.panda {
+                PandaStateView(pose: pose, size: PandaStage.regular.side)
+                    .transition(.opacity)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(reduceMotion ? nil : .easeInOut(duration: PandaMotion.transition), value: model.panda)
     }
 }
 

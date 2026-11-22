@@ -87,6 +87,17 @@ struct RadioDetail: View {
     private var station: RadioStation? { stations.isEmpty ? nil : stations[index] }
     private var volume: Double { dragging ?? instance.config.double("volume", default: 60) }
     private var playing: Bool { context.isPreview || player.plays(station) }
+    /// 正在播放时的小熊猫（见 `PandaStateResolver.radio`）：出声戴耳机在听，连接、缓冲等着，
+    /// 连不上举爪；暂停、停止和添加小组件里的预览 nil，不画（这块原来没有小熊猫，不常驻）。
+    private var pandaPose: PandaPose? {
+        guard !context.isPreview else { return nil }
+        return PandaStateResolver.radio(playing: playing, buffering: player.isBuffering,
+                                        problem: player.problem != nil)
+    }
+    /// 小熊猫出现、消失的淡入淡出；减弱动态效果时直接换。
+    private var pandaFade: Animation? {
+        reduceMotion ? nil : .easeInOut(duration: PandaMotion.transition)
+    }
     private var region: RadioRegion {
         if let pickedRegion { return pickedRegion }
         return context.isPreview ? RadioRegion.fallback : RadioRegion.stored(instance.config)
@@ -212,7 +223,7 @@ struct RadioDetail: View {
             playing: playing, buffering: !context.isPreview && playing && player.isBuffering,
             status: statusText, detail: retroSubline,
             detailIsProblem: player.problem != nil && playing && !context.isPreview,
-            caption: statusText, volume: volume, isPreview: context.isPreview,
+            caption: statusText, volume: volume, isPreview: context.isPreview, panda: pandaPose,
             onTune: { target in
                 guard !context.isPreview else { return }
                 RadioRemote.tune(instance, to: target)
@@ -320,9 +331,18 @@ struct RadioDetail: View {
                            RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
                        })
         .frame(maxWidth: .infinity, alignment: .center)
-        RadioRetroReadout(name: station?.name ?? tr("还没有电台"), detail: retroSubline,
-                          detailColor: player.problem != nil && playing && !context.isPreview
-                              ? accentText : fg.opacity(0.6))
+        // 台名右边的空位：播放时小熊猫戴耳机在听（40pt，不高过台名两行，不碰上面机身的指针刻度），
+        // 暂停、停止不画。复古皮肤整张暗色，小熊猫自带毛色，暗底上看得清。
+        HStack(alignment: .center, spacing: 8) {
+            RadioRetroReadout(name: station?.name ?? tr("还没有电台"), detail: retroSubline,
+                              detailColor: player.problem != nil && playing && !context.isPreview
+                                  ? accentText : fg.opacity(0.6))
+            if let pose = pandaPose {
+                PandaStateView(pose: pose, size: PandaStage.regular.side)
+                    .transition(.opacity)
+            }
+        }
+        .animation(pandaFade, value: pandaPose)
         RadioRetroTransport(skin: skin, playing: playing, canPlay: station != nil, canStep: stations.count > 1,
                             onPrevious: {
                                 guard !context.isPreview else { return }
@@ -433,7 +453,18 @@ struct RadioDetail: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
-            RadioIcon(size: 64, playing: playing, animated: !context.isPreview)
+            // 右边 64pt 那格：播放时换成戴耳机在听的小熊猫，暂停、停止回到收音机图标，大小不变不跳。
+            ZStack {
+                if let pose = pandaPose {
+                    PandaStateView(pose: pose, size: 64)
+                        .transition(.opacity)
+                } else {
+                    RadioIcon(size: 64, playing: playing, animated: !context.isPreview)
+                        .transition(.opacity)
+                }
+            }
+            .frame(width: 64, height: 64)
+            .animation(pandaFade, value: pandaPose)
         }
     }
 

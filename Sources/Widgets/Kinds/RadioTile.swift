@@ -18,6 +18,7 @@ struct RadioTile: View {
     /// 颜色面板里选的主题色，选过颜色时播放中的暖光跟着换。
     @Environment(\.widgetTint) private var theme
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     // 和喝水一样读 @AppStorage：购买或试用到期时皮肤马上换，不用等下次重绘。
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     @AppStorage(Supporter.key) private var supporterUnlocked = false
@@ -55,7 +56,7 @@ struct RadioTile: View {
                 retro
             } else if context.position.isVertical {
                 VStack(spacing: 4) {
-                    RadioIcon(size: 34, playing: playing, animated: !context.isPreview)
+                    iconOrPanda(size: PandaStage.small.side)
                     columnName
                     HStack(spacing: 2) {
                         playButton(size: 9)
@@ -64,7 +65,7 @@ struct RadioTile: View {
                 }
             } else {
                 HStack(spacing: 9) {
-                    RadioIcon(size: 40, playing: playing, animated: !context.isPreview)
+                    iconOrPanda(size: PandaStage.regular.side)
                     // 不用通用的 TileReading（第二行 11pt、整块可缩到 0.6）：
                     // 台名 15pt 最多缩到 13pt，第二行 13pt，放不下截断。
                     VStack(alignment: .leading, spacing: 2) {
@@ -88,6 +89,24 @@ struct RadioTile: View {
         .onChange(of: volume) { _, now in
             if !context.isPreview, player.plays(station) { player.setVolume(now) }
         }
+    }
+
+    /// 经典卡片左边那格：正在播放时换成小熊猫（出声戴耳机在听，连接、缓冲等着，连不上举爪，
+    /// 见 `PandaStateResolver.radio`），暂停、停止和预览照旧收音机图标；同一格大小，不挤台名和按钮。
+    private func iconOrPanda(size: CGFloat) -> some View {
+        let pose = context.isPreview ? nil
+            : PandaStateResolver.radio(playing: playing, buffering: player.isBuffering, problem: player.problem != nil)
+        return ZStack {
+            if let pose {
+                PandaStateView(pose: pose, size: size)
+                    .transition(.opacity)
+            } else {
+                RadioIcon(size: size, playing: playing, animated: !context.isPreview)
+                    .transition(.opacity)
+            }
+        }
+        .frame(width: size, height: size)
+        .animation(reduceMotion ? nil : .easeInOut(duration: PandaMotion.transition), value: pose)
     }
 
     // MARK: 新外观
