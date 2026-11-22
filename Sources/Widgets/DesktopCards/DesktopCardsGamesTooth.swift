@@ -2,10 +2,10 @@ import SwiftUI
 
 // MARK: - 钉在桌面 · 小游戏组 · 拔牙
 //
-// 拔牙钉在桌面时三档都能直接玩，河马按卡片大小缩放（Core 的 `DesktopCardsToothPlan`）：
-// 小 160×160 顶上一行重开、已拔几颗和最高连拔，下面河马（下排牙点击区约 14×27pt）；
-// 中 340×160 左边河马、右边名字、状态、大数字、重开和音效；大 340×340 顶上一行读数，
-// 下面整只大河马，合嘴时冒「啊呜！」。和扩展栏卡片、面板读写同一份卡片配置（ToothPlay），
+// 拔牙钉在桌面时三档都能直接玩，小熊猫按卡片大小缩放、裁到嘴附近（Core 的 `DesktopCardsToothPlan`），
+// 三档每颗牙点击区都至少 24pt：小 160×160 顶上一行重开、已拔几颗和最高连拔，下面只画嘴里两排牙；
+// 中 340×160 左边画嘴、右边名字、状态、大数字、重开和音效；大 340×340 顶上一行读数，下面眼睛到
+// 爪子的半身，合嘴时冒「啊呜！」。结束后三档都换成整张的被咬或欢呼表情。和扩展栏卡片、面板读写同一份卡片配置（ToothPlay），
 // 三边同时变。卡片底是桌面卡片自己的液态玻璃，这里只画内容。重开键放在左边：悬停时
 // 右上角会浮出桌面卡片的操作条。
 
@@ -38,8 +38,8 @@ private struct DeskPullToothCard: View {
         .frame(width: size.size.width, height: size.size.height, alignment: .top)
     }
 
-    private func hippo(_ game: ToothGame, layout: ToothLayout, ouch: Bool = false) -> some View {
-        HippoArt(game: game, layout: layout, interactive: true,
+    private func panda(_ game: ToothGame, layout: ToothLayout, ouch: Bool = false) -> some View {
+        ToothPandaArt(game: game, layout: layout, interactive: true,
                  onPull: { index in _ = ToothPlay.pull(index, in: widget) }, showsOuch: ouch)
             .frame(width: CGFloat(layout.width), height: CGFloat(layout.height))
     }
@@ -99,7 +99,7 @@ private struct DeskPullToothCard: View {
                 best
             }
             .frame(height: CGFloat(DesktopCardsToothPlan.headerHeight(size)))
-            hippo(game, layout: layout)
+            panda(game, layout: layout)
         }
     }
 
@@ -107,7 +107,7 @@ private struct DeskPullToothCard: View {
 
     private func medium(_ game: ToothGame, layout: ToothLayout) -> some View {
         HStack(alignment: .top, spacing: CGFloat(DesktopCardsToothPlan.mediumSpacing)) {
-            hippo(game, layout: layout)
+            panda(game, layout: layout)
             VStack(alignment: .leading, spacing: 4) {
                 Text(PullTooth.animalName)
                     .font(.system(size: 15, weight: .semibold))
@@ -150,7 +150,7 @@ private struct DeskPullToothCard: View {
                     .minimumScaleFactor(0.85)
             }
             .frame(height: CGFloat(DesktopCardsToothPlan.headerHeight(size)))
-            hippo(game, layout: layout, ouch: true)
+            panda(game, layout: layout, ouch: true)
                 .frame(maxWidth: .infinity)
         }
     }

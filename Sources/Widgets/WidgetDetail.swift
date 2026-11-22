@@ -817,9 +817,9 @@ enum WidgetDetail {
         case .cassette: 320
         // 扫雷：初级、中级棋盘一样宽，换难度面板不跳。
         case .minesweeper: CGFloat(Minesweeper.panelWidth)
-        // 拔牙：和同组的扫雷一样 340，河马按卡片真实内容宽画（PullTooth.panelContentWidth）。
+        // 拔牙：380（效果图里小熊猫占满面板宽，每颗牙点击区至少 24pt），按卡片真实内容宽画（PullTooth.panelContentWidth）。
         case .pullTooth: CGFloat(PullTooth.panelWidth)
-        // 卜卦：和同组的扫雷、拔牙一样 340，内容按卡片真实内容宽排（Divination.panelContentWidth）。
+        // 卜卦：和同组的扫雷一样 340，内容按卡片真实内容宽排（Divination.panelContentWidth）。
         case .divination: CGFloat(Divination.panelWidth)
         // 相册按第二批效果图改成 320；标准、宽幅两套面板一样宽，换样式面板不跳。
         case .photos: 320

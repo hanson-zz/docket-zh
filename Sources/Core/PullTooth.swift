@@ -6,7 +6,8 @@ import Foundation
 // 每局随机一颗是疼牙。一颗一颗点着拔，拔到疼牙小熊猫「啊呜」一下合嘴，这局结束；
 // 其余 11 颗都拔光算赢。记最高一局拔了几颗（最高连拔）和赢了几局。进行中的局、
 // 纪录和静音开关都存在卡片配置里；界面（扩展栏卡片、面板、桌面卡片）只调这里，
-// 测试也只测这里。小熊猫是用户画的素材，牙用代码画，音效代码合成。
+// 测试也只测这里。小熊猫是用户画的素材（张嘴没牙的待机图、被咬、胜利三张），
+// 牙用代码画在嘴里，音效代码合成。
 
 /// 一局拔牙。牙按位置编号：上排从左到右 0...5，下排从左到右 6...11。
 public struct ToothGame: Equatable, Sendable {
@@ -164,7 +165,7 @@ extension ToothGame: Codable {
 public enum ToothSound: String, CaseIterable, Sendable {
     /// 拔下一颗：「啵」。
     case pop
-    /// 河马合嘴：「咔嚓」。
+    /// 小熊猫合嘴：「咔嚓」。
     case snap
     /// 赢了：三个上行的音。
     case win
@@ -296,44 +297,84 @@ public enum PullTooth {
         tr("最高 \(best) 颗 · 赢 \(wins) 局")
     }
 
+    /// 面板头部的副标题：还没开局时是玩法，开局后是当前状态。
+    public static func subtitle(_ game: ToothGame) -> String {
+        game.status == .ready ? tr("点一颗牙拔下来，找到疼牙就合嘴！") : statusLine(game)
+    }
+
+    /// 面板信息卡右边「最高纪录」下面那行：「9 颗 · 赢 2 局」。
+    public static func recordValue(best: Int, wins: Int) -> String {
+        tr("\(best) 颗 · 赢 \(wins) 局")
+    }
+
+    /// 底部提示条左边：还没开局时「点一颗牙，试试手气！」，开局后剩几颗好牙；结束后面板换成「再来一局」，
+    /// 这里给读屏用的状态。
+    public static func hintLine(_ game: ToothGame) -> String {
+        switch game.status {
+        case .ready: return tr("点一颗牙，试试手气！")
+        case .playing: return tr("还剩 \(game.remaining) 颗好牙")
+        case .bitten, .won: return statusLine(game)
+        }
+    }
+
+    /// 底部提示条右边：「12 颗牙中有 1 颗疼牙」。
+    public static func ruleLine(count: Int = toothCount) -> String {
+        tr("\(count) 颗牙中有 1 颗疼牙")
+    }
+
     // MARK: 颜色
 
-    /// 大数字的强调色（树莓粉）：浅色玻璃上用压深的那份（过 4.5:1），深色玻璃上用提亮的那份。
-    public static let accentHex = "#E5487A"
-    public static let accentLightHex = "#C42A58"
-    public static let accentDarkHex = "#FF8FB0"
+    /// 大数字的强调色（糖果粉，效果图那种偏洋红的粉）：浅色玻璃上用压深的那份（白底、近白玻璃和
+    /// 浅紫雾上都过 4.5:1），深色玻璃上用提亮的那份。
+    public static let accentHex = "#E0559A"
+    public static let accentLightHex = "#B8267A"
+    public static let accentDarkHex = "#FF8CC6"
 
     // MARK: 尺寸（扩展栏卡片、面板、桌面卡片）
 
-    /// 扩展栏横排卡片宽：河马缩略图、两行读数、重开键。
+    /// 扩展栏横排卡片宽：小熊猫缩略图、两行读数、重开键。
     public static let tileWidth: Double = 188
     public static let tileHeight: Double = 62
     /// 左右两侧扩展栏的竖条高：缩略图在上，两行读数在下。
     public static let columnHeight: Double = 120
-    /// 面板宽：和同组的扫雷一样 340。
-    public static let panelWidth: Double = 340
+    /// 面板宽 380（比同组的扫雷宽 40）：效果图里小熊猫占满面板宽，嘴要宽到一排 6 颗牙每颗
+    /// 点击区至少 24pt，340 宽放不下。
+    public static let panelWidth: Double = 380
     /// 面板卡片（DetailCard）自己的内边距。
     public static let panelCardPadding: Double = 16
     /// 尾巴在侧边时让出的深度（PanelShape.arrowDepth）。
     public static let panelTailDepth: Double = 10
     /// 面板卡片里真正能放内容的宽：面板宽减面板内容区两侧边距（DetailPanelWidth.padding），
-    /// 按尾巴在侧边的最窄情况再减尾巴，最后减卡片自己的内边距。340 宽是 266。
+    /// 按尾巴在侧边的最窄情况再减尾巴，最后减卡片自己的内边距。380 宽是 306。
     public static var panelContentWidth: Double {
         Double(DetailPanelWidth.content(panel: CGFloat(panelWidth), tailDepth: CGFloat(panelTailDepth),
                                         tailOnSide: true)) - panelCardPadding * 2
     }
 
-    /// 面板里河马画多宽：就是内容宽，一点不多。
+    /// 面板里小熊猫画多宽：就是内容宽，一点不多。
     public static var panelArtWidth: Double { panelContentWidth }
+
+    /// 面板里的小熊猫：只画脸（`.face`），牙够大。
+    public static var panelArtLayout: ToothLayout { ToothLayout(width: panelArtWidth, crop: .face) }
+
+    /// 牙的点击区最窄不小于这个（面板、桌面三档都按它测）。
+    public static let minimumHitSide: Double = 24
+
+    /// 扩展栏横排、竖排的小熊猫缩略图宽（只看，不能点）。
+    public static let tileArtWidth: Double = 52
+    public static let columnArtWidth: Double = 60
 }
 
 // MARK: - 小熊猫和牙的位置
 
-/// 小熊猫是用户画的素材（Resources/PullTooth/tooth-*.png，正方形，张嘴那两张嘴里没有牙），
-/// 牙用代码画在嘴里。下面的比例都按整张素材的边长算（0…1，x 从左、y 从上）。
-/// `crop` 是这次画素材的哪一块：面板、扩展栏、大号桌面卡片画整只（`.full`）；小号、中号桌面卡片
-/// 只画嘴附近（`.mouth`），牙才够大、点得准。画在宽 `width`、高 `width × crop 高宽比` 的框里，
-/// 牙的位置和点击区也在这里算，测试保证点击区不重叠、不出框、够大。
+/// 小熊猫是用户画的素材（Resources/Pet/sprites/tooth-panda-open.png，正方形，张大嘴、嘴里没有牙，
+/// 双爪捧脸），牙用代码画在嘴里。下面的比例都按整张素材的边长算（0…1，x 从左、y 从上），
+/// 按这张图的嘴标定：嘴里最宽约 0.33…0.72，上唇内沿正中约 0.496、两角往下弯，下唇内沿
+/// 正中约 0.747、两角往上翘，所以两排牙的牙根顺着嘴形各弯一点（中间两颗最贴唇）。
+/// `crop` 是这次画素材的哪一块：面板和扩展栏缩略图画脸（`.face`），大号桌面卡片画半身（`.bust`），
+/// 中号画嘴（`.mouth`），小号只画嘴里那一块（`.closeUp`），牙才够大、点得准。画在宽 `width`、
+/// 高 `width × crop 高宽比` 的框里，牙的位置和点击区也在这里算，测试保证点击区不重叠、
+/// 不出框、每颗至少 `PullTooth.minimumHitSide`。
 public struct ToothLayout: Equatable, Sendable {
     public struct Box: Equatable, Sendable {
         public var x: Double
@@ -350,21 +391,38 @@ public struct ToothLayout: Equatable, Sendable {
 
         public var maxX: Double { x + width }
         public var maxY: Double { y + height }
+        public var midX: Double { x + width / 2 }
+        public var midY: Double { y + height / 2 }
 
         public func intersects(_ other: Box) -> Bool {
             x < other.maxX - 0.001 && other.x < maxX - 0.001 && y < other.maxY - 0.001 && other.y < maxY - 0.001
         }
+
+        public func contains(_ other: Box) -> Bool {
+            other.x >= x - 0.001 && other.maxX <= maxX + 0.001 && other.y >= y - 0.001 && other.maxY <= maxY + 0.001
+        }
     }
 
     /// 画素材的哪一块（素材边长的比例）。
-    public enum Crop: Equatable, Sendable {
+    public enum Crop: CaseIterable, Equatable, Sendable {
+        /// 整张。
         case full
+        /// 脸：耳朵尖和爪子外侧裁掉一点（面板、扩展栏缩略图）。
+        case face
+        /// 半身：眼睛到爪子（大号桌面卡片）。
+        case bust
+        /// 嘴和嘴唇（中号桌面卡片）。
         case mouth
+        /// 只有嘴里两排牙那一块（小号桌面卡片）。
+        case closeUp
 
         public var rect: Box {
             switch self {
             case .full: Box(x: 0, y: 0, width: 1, height: 1)
-            case .mouth: Box(x: 0.25, y: 0.45, width: 0.5, height: 0.47)
+            case .face: Box(x: 0.17, y: 0.09, width: 0.71, height: 0.69)
+            case .bust: Box(x: 0.225, y: 0.22, width: 0.60, height: 0.58)
+            case .mouth: Box(x: 0.335, y: 0.47, width: 0.38, height: 0.30)
+            case .closeUp: Box(x: 0.355, y: 0.475, width: 0.34, height: 0.294)
             }
         }
     }
@@ -387,23 +445,23 @@ public struct ToothLayout: Equatable, Sendable {
     }
 
     // 以下都是素材边长的比例。
-    /// 上牙根（上牙床下沿）。
-    static let upperRoot = 0.55
-    /// 下牙根（下牙床上沿）。
-    static let lowerRoot = 0.83
+    /// 两排牙的左右边（上下排一样宽，正对嘴里最宽的那段）。
+    static let span = (0.355, 0.695)
+    /// 上牙根：正中两颗贴着上唇内沿，往两边顺着嘴角往下弯。
+    static let upperRoot = 0.496
+    static let upperArc = 0.018
+    /// 下牙根（下唇内沿）：正中最低，往两边往上翘。
+    static let lowerRoot = 0.745
+    static let lowerArc = 0.030
     /// 牙高。
-    static let toothHeight = 0.085
-    /// 上排左右边。
-    static let upperSpan = (0.30, 0.70)
-    /// 下排左右边（嘴往下收，窄一点）。
-    static let lowerSpan = (0.34, 0.66)
+    static let toothHeight = 0.065
     /// 牙宽占一格的比例。
-    static let toothFill = 0.82
-    /// 点击区上沿（上牙床里）和下沿（下牙床里）。
-    static let hitTop = 0.52
-    static let hitBottom = 0.86
-    /// 合嘴（拔到疼牙）时换成合嘴那张素材，牙不画；这个值只给拔掉的牙往外飞的距离用。
-    static let closeTravel = 0.08
+    static let toothFill = 0.8
+    /// 点击区上沿（上唇里）和下沿（下唇里）。
+    static let hitTop = 0.48
+    static let hitBottom = 0.762
+    /// 拔掉的牙往外飞的距离。
+    static let closeTravel = 0.06
 
     /// 一个比例在框里多少点（只缩放，不平移）。
     public func value(_ fraction: Double) -> Double { fraction / crop.rect.width * width }
@@ -416,47 +474,57 @@ public struct ToothLayout: Equatable, Sendable {
     public var artSide: Double { value(1) }
     public var artOrigin: (x: Double, y: Double) { (x(0), y(0)) }
 
-    /// 上下两排的分界：两排牙尖的正中间。
-    public var hitSplit: Double {
-        y((Self.upperRoot + Self.toothHeight + Self.lowerRoot - Self.toothHeight) / 2)
+    /// 第几列离正中多远（0 是正中两颗附近，1 是最边上），按平方走，嘴角弯得快。
+    static func bend(_ column: Int) -> Double {
+        let offset = (Double(column) - Double(PullTooth.perRow - 1) / 2) / (Double(PullTooth.perRow - 1) / 2)
+        return offset * offset
     }
+
+    /// 这一列的牙根（素材比例）。
+    static func root(column: Int, upper: Bool) -> Double {
+        upper ? upperRoot + upperArc * bend(column) : lowerRoot - lowerArc * bend(column)
+    }
+
+    /// 上下两排的分界：上排最低的牙尖和下排最高的牙尖的正中间。
+    static var split: Double {
+        let upperTip = (0..<PullTooth.perRow).map { root(column: $0, upper: true) + toothHeight }.max() ?? 0
+        let lowerTip = (0..<PullTooth.perRow).map { root(column: $0, upper: false) - toothHeight }.min() ?? 1
+        return (upperTip + lowerTip) / 2
+    }
+
+    public var hitSplit: Double { y(Self.split) }
 
     public var closeTravel: Double { value(Self.closeTravel) }
 
-    private func span(upper: Bool) -> (Double, Double) {
-        upper ? Self.upperSpan : Self.lowerSpan
-    }
-
-    /// 一格多宽（上排或下排）。
-    public func pitch(upper: Bool) -> Double {
-        let (left, right) = span(upper: upper)
-        return value(right - left) / Double(PullTooth.perRow)
+    /// 一格多宽（上下排一样）。
+    public func pitch(upper: Bool = true) -> Double {
+        value(Self.span.1 - Self.span.0) / Double(PullTooth.perRow)
     }
 
     /// 张嘴时这颗牙画在哪。
     public func tooth(_ index: Int) -> Box {
         let upper = index < PullTooth.perRow
-        let column = Double(index % PullTooth.perRow)
+        let column = index % PullTooth.perRow
         let pitch = pitch(upper: upper)
         let w = pitch * Self.toothFill
         let h = value(Self.toothHeight)
-        let left = x(span(upper: upper).0) + column * pitch + (pitch - w) / 2
-        let top = upper ? y(Self.upperRoot) : y(Self.lowerRoot) - h
-        return Box(x: left, y: top, width: w, height: h)
+        let left = x(Self.span.0) + Double(column) * pitch + (pitch - w) / 2
+        let root = y(Self.root(column: column, upper: upper))
+        return Box(x: left, y: upper ? root : root - h, width: w, height: h)
     }
 
-    /// 这颗牙的点击区：整格宽，上排从上牙床到分界线，下排从分界线到下牙床。
+    /// 这颗牙的点击区：整格宽，上排从上唇里到分界线，下排从分界线到下唇里。
     public func hit(_ index: Int) -> Box {
         let upper = index < PullTooth.perRow
         let column = Double(index % PullTooth.perRow)
         let pitch = pitch(upper: upper)
-        let left = x(span(upper: upper).0) + column * pitch
+        let left = x(Self.span.0) + column * pitch
         let top = upper ? y(Self.hitTop) : hitSplit
         let bottom = upper ? hitSplit : y(Self.hitBottom)
         return Box(x: left, y: top, width: pitch, height: bottom - top)
     }
 
-    /// 点击区最窄的一边（下排更窄）。
+    /// 点击区最窄的一边。
     public var smallestHitSide: Double {
         (0..<PullTooth.toothCount).map { min(hit($0).width, hit($0).height) }.min() ?? 0
     }
@@ -468,37 +536,53 @@ public struct ToothLayout: Equatable, Sendable {
             return x >= box.x && x < box.maxX && y >= box.y && y < box.maxY
         }
     }
+
+    /// 结束后（被咬、赢了）换成整张的表情图，按比例完整放进框里、底边对齐：
+    /// 返回图画多大、左上角在哪。
+    public var wholeArt: Box {
+        let side = min(width, height)
+        return Box(x: (width - side) / 2, y: height - side, width: side, height: side)
+    }
 }
 
-/// 钉在桌面：拔牙小 / 中 / 大三档都能直接玩，河马按卡片大小缩放。卡片边距、读数行高放
-/// 这里，测试保证河马整只放得下、点击区不小于 `minimumHitSide`。
+/// 钉在桌面：拔牙小 / 中 / 大三档都能直接玩，小熊猫按卡片大小缩放、裁到嘴附近。卡片边距、
+/// 读数行高放这里，测试保证小熊猫放得下、点击区不小于 `minimumHitSide`。
 public enum DesktopCardsToothPlan {
     public static let kinds: Set<WidgetKind> = [.pullTooth]
 
     public static func handles(_ kind: WidgetKind) -> Bool { kinds.contains(kind) }
 
-    /// 牙的点击区最窄不小于这个（小号下排约 14pt 宽、26pt 高）。
-    public static let minimumHitSide: Double = 13
+    /// 牙的点击区最窄不小于这个（和面板一样 24pt）。
+    public static let minimumHitSide: Double = PullTooth.minimumHitSide
 
     public static func inset(_ size: DesktopPinSize) -> Double { size == .small ? 6 : 12 }
-    /// 顶上读数一行的高（小号、大号在河马上面；中号读数在右边一列）。
+    /// 顶上读数一行的高（小号、大号在小熊猫上面；中号读数在右边一列）。
     public static func headerHeight(_ size: DesktopPinSize) -> Double { size == .small ? 18 : 30 }
     public static func headerSpacing(_ size: DesktopPinSize) -> Double { size == .small ? 2 : 6 }
     /// 中号右边读数一列的宽。
     public static let mediumSideWidth: Double = 128
     public static let mediumSpacing: Double = 12
 
-    /// 这一档河马画多大。
+    /// 每一档画小熊猫的哪一块。
+    public static func crop(for size: DesktopPinSize) -> ToothLayout.Crop {
+        switch size {
+        case .small: .closeUp
+        case .medium: .mouth
+        case .large: .bust
+        }
+    }
+
+    /// 这一档小熊猫画多大。
     public static func layout(for size: DesktopPinSize) -> ToothLayout {
         let inset = inset(size)
         switch size {
         case .medium:
             return .fitting(maxWidth: size.width - inset * 2 - mediumSideWidth - mediumSpacing,
-                            maxHeight: size.height - inset * 2, crop: .mouth)
+                            maxHeight: size.height - inset * 2, crop: crop(for: size))
         case .small, .large:
             return .fitting(maxWidth: size.width - inset * 2,
                             maxHeight: size.height - inset * 2 - headerHeight(size) - headerSpacing(size),
-                            crop: size == .small ? .mouth : .full)
+                            crop: crop(for: size))
         }
     }
 }

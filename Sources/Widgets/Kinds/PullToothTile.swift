@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - 拔牙 · 扩展栏卡片
 //
-// 扩展栏卡片只有 58pt 高，12 颗牙放进去每颗不到 7pt，点不准，所以卡片上是河马缩略图、
+// 扩展栏卡片只有 58pt 高，12 颗牙放进去每颗不到 7pt，点不准，所以卡片上是小熊猫的脸、
 // 这局已拔几颗、最高连拔和重开键，点卡片打开面板玩；能直接点着玩的是面板和桌面卡片
 // （小 / 中 / 大三档，见 DesktopCardsGamesTooth）。规则和存法都在 Core 的 `PullTooth`。
 
@@ -39,7 +39,7 @@ struct PullToothTile: View {
 
     private func row(_ game: ToothGame) -> some View {
         HStack(spacing: 8) {
-            HippoArt(game: game, layout: ToothLayout(width: 52), interactive: false)
+            ToothPandaArt(game: game, layout: ToothLayout(width: PullTooth.tileArtWidth, crop: .face), interactive: false)
             VStack(alignment: .leading, spacing: 1) {
                 pulledCount(game, size: 20)
                 bestReadout(size: 13)
@@ -54,7 +54,7 @@ struct PullToothTile: View {
 
     private func column(_ game: ToothGame) -> some View {
         VStack(spacing: 4) {
-            HippoArt(game: game, layout: ToothLayout(width: 60), interactive: false)
+            ToothPandaArt(game: game, layout: ToothLayout(width: PullTooth.columnArtWidth, crop: .face), interactive: false)
             pulledCount(game, size: 17)
             bestReadout(size: 13)
         }
@@ -150,30 +150,29 @@ enum ToothSoundPlayer {
 
 // MARK: - 颜色
 
-/// 牙和小熊猫是固定的角色配色（浅色、深色玻璃上都一样），不铺背景、不发光；只有大数字用强调色。
+/// 牙是固定的角色配色（浅色、深色玻璃上都一样），不铺背景、不发光；只有大数字用强调色。
 enum ToothStyle {
-    static let body = Color(hex: "#B9A8E6")
-    static let bodyShade = Color(hex: "#A592DA")
-    static let edge = Color(hex: "#8471C4")
-    static let earInner = Color(hex: "#F2A6BE")
-    static let mouth = Color(hex: "#7A2A4C")
-    static let tongue = Color(hex: "#EE7F9C")
-    static let gum = Color(hex: "#F4A0B6")
     static let tooth = Color(hex: "#FFFFFF")
     static let toothHover = Color(hex: "#FFF3D6")
-    static let toothEdge = Color(hex: "#CFC4E3")
+    static let toothEdge = Color(hex: "#E2D6E8")
     static let sore = Color(hex: "#FFD5DC")
-    static let eye = Color(hex: "#2A2340")
-    static let nostril = Color(hex: "#8A76C8")
-    static let cheek = Color(hex: "#F58FB0")
     static let ouch = Color(hex: "#E5484D")
+    static let sparkle = Color(hex: "#FFC93C")
     /// 拔掉的牙在牙床上留下的坑。
-    static let pit = Color(hex: "#B83A55").opacity(0.55)
+    static let pit = Color(hex: "#5E0E1C").opacity(0.55)
 
     /// 大数字：浅色玻璃上压深到 4.5:1 以上，深色玻璃上提亮（Core 的 PullTooth.accent*）。
     static var accent: Color {
         Color.panelDynamic(dark: NSColor(Color(hex: PullTooth.accentDarkHex)),
                            light: NSColor(Color(hex: PullTooth.accentLightHex)))
+    }
+
+    /// 实心粉底上的白字（「再来一局」、头部牙齿徽章）：两种外观都用压深的那份，白字 5.8:1。
+    static var accentFill: Color { Color(hex: PullTooth.accentLightHex) }
+
+    /// 奖杯：浅色下压深的金，深色下亮金（只是图形）。
+    static var trophy: Color {
+        Color.panelDynamic(dark: NSColor(Color(hex: "#F5C451")), light: NSColor(Color(hex: "#B7791F")))
     }
 
     /// 扩展栏卡片按卡片自己的外观取。
@@ -187,39 +186,42 @@ enum ToothStyle {
 
 // MARK: - 小熊猫
 
-/// 张着大嘴的小熊猫「圆圆」：身子是用户画的素材（tooth-panda-*.png，正方形），嘴里的牙用代码画，
-/// 按 `ToothLayout` 的比例摆；`.mouth` 只画嘴附近那一块。能点时上面盖一层透明的 AppKit 点击层
-/// （面板、桌面卡片没在前台时第一下也算数），按 `ToothLayout.hitIndex` 认是哪颗牙。
-/// 平时张嘴；鼠标停在一颗牙上时闭眼忍着；拔到疼牙换成合嘴含泪那张再抖两下；赢了换成欢呼那张。
-/// 「减少动态效果」打开时直接换图，不抖、不飞。
-struct HippoArt: View {
+/// 张大嘴的小熊猫「圆圆」：身子是用户画的素材（tooth-panda-open.png，正方形，嘴里没有牙），嘴里的
+/// 牙用代码画，按 `ToothLayout` 的比例摆，`crop` 决定画脸、半身还是只画嘴。能点时上面盖一层透明的
+/// AppKit 点击层（面板、桌面卡片没在前台时第一下也算数），按 `ToothLayout.hitIndex` 认是哪颗牙。
+/// 鼠标停在一颗牙上时那颗牙微微翘起、变暖白；拔下一颗时那颗牙飞出、冒一小簇星星，小熊猫轻轻缩一下；
+/// 拔到疼牙换成合嘴皱眉那张（tooth-panda-bite）再抖两下；赢了换成戴皇冠欢呼那张（tooth-panda-cheer）。
+/// 结束的两张按比例整张放进框里、底边对齐（`ToothLayout.wholeArt`）。
+/// 「减少动态效果」打开时直接换图、牙只淡出，不抖、不飞、不冒星星。
+struct ToothPandaArt: View {
     var game: ToothGame
     var layout: ToothLayout
     var interactive = false
     var onPull: (Int) -> Void = { _ in }
     /// 拔到疼牙时头顶冒「啊呜！」（太小的卡片不冒）。
     var showsOuch = false
+    /// 四边柔和淡出（面板里画脸，裁掉的耳朵、爪子不留硬边）。
+    var softEdges = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var hovered: Int?
+    /// 刚拔下的那颗（冒星星的位置）和第几次拔（触发动画）。
+    @State private var popped: Int?
+    @State private var popTick = 0
 
     private var closed: Bool { game.status == .bitten }
     private var W: CGFloat { CGFloat(layout.width) }
+    private var H: CGFloat { CGFloat(layout.height) }
     private func u(_ fraction: Double) -> CGFloat { CGFloat(layout.value(fraction)) }
-
-    private var artName: String {
-        switch game.status {
-        case .bitten: "tooth-panda-bite"
-        case .won: "tooth-panda-cheer"
-        case .ready, .playing:
-            hovered != nil && interactive ? "tooth-panda-open-2" : "tooth-panda-open-1"
-        }
-    }
 
     var body: some View {
         let amplitude = W * 0.025
         ZStack(alignment: .topLeading) {
+            // 只给素材淡边，牙不淡。
             art
+                .frame(width: W, height: H, alignment: .topLeading)
+                .clipped()
+                .mask { edgeMask }
             if game.status == .ready || game.status == .playing {
                 ForEach(0..<PullTooth.toothCount, id: \.self) { index in
                     toothSlot(index, upper: index < PullTooth.perRow)
@@ -227,9 +229,19 @@ struct HippoArt: View {
             }
             if showsOuch && closed { ouchBubble }
         }
-        .frame(width: W, height: CGFloat(layout.height), alignment: .topLeading)
+        .frame(width: W, height: H, alignment: .topLeading)
         .clipped()
         .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: game.pulled)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: game.status)
+        // 拔下一颗：小熊猫往下轻轻缩一下再弹回（减少动态效果时触发器不变，不动）。
+        .keyframeAnimator(initialValue: 1.0, trigger: reduceMotion ? 0 : popTick) { view, squash in
+            view.scaleEffect(x: 1, y: CGFloat(squash), anchor: .bottom)
+        } keyframes: { _ in
+            KeyframeTrack {
+                CubicKeyframe(0.975, duration: 0.08)
+                SpringKeyframe(1.0, duration: 0.3, spring: .bouncy)
+            }
+        }
         .keyframeAnimator(initialValue: 0.0, trigger: shakeTrigger) { view, x in
             view.offset(x: CGFloat(x) * amplitude)
         } keyframes: { _ in
@@ -243,6 +255,12 @@ struct HippoArt: View {
             }
         }
         .overlay(alignment: .topLeading) {
+            // 一直挂着（平时透明），拔牙时换位置再播：第一下也播得出来。
+            if !reduceMotion && interactive {
+                sparkle(at: layout.tooth(popped ?? 0))
+            }
+        }
+        .overlay(alignment: .topLeading) {
             if interactive && !game.isOver {
                 ToothClickCatcher { point in
                     if let index = layout.hitIndex(x: Double(point.x), y: Double(point.y)),
@@ -250,7 +268,7 @@ struct HippoArt: View {
                         onPull(index)
                     }
                 }
-                .frame(width: W, height: CGFloat(layout.height))
+                .frame(width: W, height: H)
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let point):
@@ -261,6 +279,12 @@ struct HippoArt: View {
                     }
                 }
             }
+        }
+        .onChange(of: game.pulled) { old, new in
+            guard old.count == new.count,
+                  let index = new.indices.first(where: { new[$0] && !old[$0] }) else { return }
+            popped = index
+            popTick += 1
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tr("小熊猫圆圆，\(PullTooth.statusLine(game))"))
@@ -278,16 +302,47 @@ struct HippoArt: View {
         return game.endedAt ?? 1
     }
 
-    /// 整张素材按 `layout.artSide` 画，`.mouth` 时往左上挪，框外的裁掉。
+    // MARK: 素材
+
     @ViewBuilder private var art: some View {
-        let side = CGFloat(layout.artSide)
-        let origin = layout.artOrigin
-        if let image = ToothArtImages.image(artName) {
-            Image(nsImage: image)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: side, height: side)
-                .offset(x: CGFloat(origin.x), y: CGFloat(origin.y))
+        switch game.status {
+        case .ready, .playing:
+            // 张嘴那张按 `layout.artSide` 画，往左上挪到裁的那一块，框外的裁掉。
+            if let image = ToothArtImages.image("tooth-panda-open") {
+                let side = CGFloat(layout.artSide)
+                let origin = layout.artOrigin
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: side, height: side)
+                    .offset(x: CGFloat(origin.x), y: CGFloat(origin.y))
+            }
+        case .bitten, .won:
+            if let image = ToothArtImages.image(game.status == .won ? "tooth-panda-cheer" : "tooth-panda-bite") {
+                let box = layout.wholeArt
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: CGFloat(box.width), height: CGFloat(box.height))
+                    .offset(x: CGFloat(box.x), y: CGFloat(box.y))
+                    .transition(.opacity)
+            }
+        }
+    }
+
+    /// 面板里素材四边淡出（下边多淡一些，爪子融进底色）；别处整块不透明。
+    @ViewBuilder private var edgeMask: some View {
+        if softEdges {
+            LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.07),
+                                   .init(color: .black, location: 0.93), .init(color: .clear, location: 1)],
+                           startPoint: .leading, endPoint: .trailing)
+                .mask {
+                    LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.06),
+                                           .init(color: .black, location: 0.86), .init(color: .clear, location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
+        } else {
+            Rectangle()
         }
     }
 
@@ -309,9 +364,9 @@ struct HippoArt: View {
             if !game.isInMouth(index) {
                 Ellipse()
                     .fill(ToothStyle.pit)
-                    .frame(width: CGFloat(box.width) * 0.6, height: max(2, u(0.018)))
+                    .frame(width: CGFloat(box.width) * 0.6, height: max(2, u(0.012)))
                     .offset(x: CGFloat(box.x + box.width * 0.2),
-                            y: upper ? CGFloat(box.y) + u(0.004) : CGFloat(box.maxY) - u(0.022))
+                            y: upper ? CGFloat(box.y) + u(0.003) : CGFloat(box.maxY) - u(0.015))
             }
             if game.isInMouth(index) {
                 ToothShape(upper: upper)
@@ -324,28 +379,58 @@ struct HippoArt: View {
                                 .foregroundStyle(ToothStyle.ouch)
                         }
                     }
-                    .shadow(color: .black.opacity(0.12), radius: max(0.5, u(0.006)), y: upper ? 1 : -1)
+                    .shadow(color: .black.opacity(0.18), radius: max(0.5, u(0.005)), y: upper ? 1 : -1)
                     .frame(width: CGFloat(box.width), height: CGFloat(box.height))
                     .offset(x: CGFloat(box.x),
-                            y: CGFloat(box.y) + (lifted ? (upper ? u(0.01) : -u(0.01)) : 0))
+                            y: CGFloat(box.y) + (lifted && !reduceMotion ? (upper ? u(0.008) : -u(0.008)) : 0))
                     .transition(pullTransition)
             }
         }
     }
 
-    private var line: CGFloat { max(0.5, u(0.005)) }
+    private var line: CGFloat { max(0.5, u(0.004)) }
 
-    // MARK: 啊呜
+    // MARK: 星星和啊呜
+
+    /// 拔下一颗时在那颗牙的位置冒一小簇星星，往上飘着淡出（约 0.5 秒，每拔一次播一次）。
+    private func sparkle(at box: ToothLayout.Box) -> some View {
+        let size = max(13, CGFloat(box.width) * 0.9)
+        return Image(systemName: "sparkles")
+            .font(.system(size: size, weight: .bold))
+            .foregroundStyle(ToothStyle.sparkle)
+            .shadow(color: .black.opacity(0.2), radius: 1)
+            .keyframeAnimator(initialValue: SparkleFrame(), trigger: popTick) { view, frame in
+                view.scaleEffect(frame.scale).opacity(frame.opacity).offset(y: -frame.lift)
+            } keyframes: { _ in
+                KeyframeTrack(\.scale) {
+                    CubicKeyframe(1.1, duration: 0.18)
+                    CubicKeyframe(0.9, duration: 0.32)
+                }
+                KeyframeTrack(\.opacity) {
+                    LinearKeyframe(1, duration: 0.1)
+                    LinearKeyframe(1, duration: 0.18)
+                    LinearKeyframe(0, duration: 0.22)
+                }
+                KeyframeTrack(\.lift) {
+                    CubicKeyframe(Double(size) * 0.9, duration: 0.5)
+                }
+            }
+            .frame(width: size * 1.6, height: size * 1.6)
+            .offset(x: CGFloat(box.midX) - size * 0.8, y: CGFloat(box.midY) - size * 0.8)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
 
     private var ouchBubble: some View {
         Text(tr("啊呜！"))
-            .font(.system(size: max(13, u(0.06)), weight: .heavy, design: .rounded))
+            .font(.system(size: max(13, u(0.05)), weight: .heavy, design: .rounded))
             .foregroundStyle(ToothStyle.ouchText)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(Capsule().fill(Color.panelRaised).panelLift())
+            .readableGlass(in: Capsule())
             .overlay(Capsule().strokeBorder(Color.panelStroke, lineWidth: 0.5))
             .fixedSize()
+            .padding(6)
             .frame(width: W, alignment: .topTrailing)
             .transition(reduceMotion
                         ? AnyTransition.opacity
@@ -353,15 +438,22 @@ struct HippoArt: View {
     }
 }
 
-/// 拔牙小熊猫的四张素材，读一次存着。
+/// 星星动画的一帧：开始时透明、偏小、在牙上。
+private struct SparkleFrame {
+    var scale = 0.4
+    var opacity = 0.0
+    var lift = 0.0
+}
+
+/// 拔牙小熊猫的三张素材（张嘴、被咬、欢呼），读一次存着。用 `Bundle.image(forResource:)` 读，
+/// 同名的 @2x 一起认，Retina 屏上用大的那张。
 @MainActor
 enum ToothArtImages {
     private static var cache: [String: NSImage] = [:]
 
     static func image(_ name: String) -> NSImage? {
         if let hit = cache[name] { return hit }
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
-              let image = NSImage(contentsOf: url) else { return nil }
+        guard let image = Bundle.main.image(forResource: name) else { return nil }
         cache[name] = image
         return image
     }
@@ -381,32 +473,6 @@ struct ToothShape: Shape {
             topTrailingRadius: upper ? root : tip,
             style: .continuous)
         return shape.path(in: rect)
-    }
-}
-
-/// 眯着的眼：左眼「>」、右眼「<」。
-struct SquintEye: Shape {
-    var left: Bool
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let near = left ? rect.minX : rect.maxX
-        let far = left ? rect.maxX : rect.minX
-        path.move(to: CGPoint(x: near, y: rect.minY + rect.height * 0.1))
-        path.addLine(to: CGPoint(x: far, y: rect.midY))
-        path.addLine(to: CGPoint(x: near, y: rect.maxY - rect.height * 0.1))
-        return path
-    }
-}
-
-/// 笑着的眼：一道往上弯的弧。
-struct HappyEye: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.midY + rect.height * 0.2))
-        path.addQuadCurve(to: CGPoint(x: rect.maxX, y: rect.midY + rect.height * 0.2),
-                          control: CGPoint(x: rect.midX, y: rect.minY - rect.height * 0.3))
-        return path
     }
 }
 

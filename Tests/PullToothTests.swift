@@ -288,12 +288,29 @@ final class PullToothTests: XCTestCase {
         XCTAssertEqual(PullTooth.animalName, "小熊猫圆圆")
     }
 
+    func testPanelLines() {
+        let ready = ToothGame()
+        XCTAssertEqual(PullTooth.subtitle(ready), "点一颗牙拔下来，找到疼牙就合嘴！")
+        XCTAssertEqual(PullTooth.hintLine(ready), "点一颗牙，试试手气！")
+        XCTAssertEqual(PullTooth.ruleLine(), "12 颗牙中有 1 颗疼牙")
+        XCTAssertEqual(PullTooth.recordValue(best: 9, wins: 2), "9 颗 · 赢 2 局")
+        var game = ToothGame.fixed(sore: 3)
+        game.pull(0, now: 0)
+        XCTAssertEqual(PullTooth.subtitle(game), "还剩 10 颗好牙，哪颗是疼牙？")
+        XCTAssertEqual(PullTooth.hintLine(game), "还剩 10 颗好牙")
+        game.pull(3, now: 1)
+        XCTAssertEqual(PullTooth.subtitle(game), "啊呜！拔到疼牙了")
+        XCTAssertEqual(PullTooth.hintLine(game), "啊呜！拔到疼牙了")
+    }
+
     // MARK: 颜色
 
     func testAccentNumberIsReadableOnLightGlass() {
         let light = ColorCode(hex: PullTooth.accentLightHex)!
         XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(light, PanelContrast.lightGlass), 4.5)
         XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(light, ColorCode(red: 1, green: 1, blue: 1)), 4.5)
+        // 浅色面板底有一层淡紫雾，按最深的 #E6E0F0 算也要过。
+        XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(light, ColorCode(hex: "#E6E0F0")!), 4.5)
         // 深色玻璃按 #2C2C30 算。
         let dark = ColorCode(hex: PullTooth.accentDarkHex)!
         XCTAssertGreaterThanOrEqual(WidgetTint.contrastRatio(dark, ColorCode(hex: "#2C2C30")!), 4.5)
@@ -302,74 +319,122 @@ final class PullToothTests: XCTestCase {
     // MARK: 尺寸和点击区
 
     func testPanelArtFitsTheRealContentWidth() {
-        // 340 宽面板：减内容区两侧 16、侧边尾巴 10、卡片两侧 16，剩 266。
-        XCTAssertEqual(PullTooth.panelWidth, 340)
-        XCTAssertEqual(PullTooth.panelContentWidth, 266, accuracy: 0.001)
+        // 380 宽面板：减内容区两侧 16、侧边尾巴 10、卡片两侧 16，剩 306。
+        XCTAssertEqual(PullTooth.panelWidth, 380)
+        XCTAssertEqual(PullTooth.panelContentWidth, 306, accuracy: 0.001)
         XCTAssertLessThanOrEqual(PullTooth.panelArtWidth, PullTooth.panelContentWidth)
-        let layout = ToothLayout(width: PullTooth.panelArtWidth)
+        let layout = PullTooth.panelArtLayout
+        XCTAssertEqual(layout.crop, .face)
+        XCTAssertEqual(layout.width, PullTooth.panelArtWidth)
+        XCTAssertLessThanOrEqual(layout.height, 300, "面板里小熊猫不太高，整块面板放得进 560 的上限")
         for index in 0..<12 {
             let hit = layout.hit(index)
             XCTAssertGreaterThanOrEqual(hit.x, 0)
+            XCTAssertGreaterThanOrEqual(hit.y, 0)
             XCTAssertLessThanOrEqual(hit.maxX, layout.width + 0.001, "第 \(index) 颗点击区不出右边")
-            XCTAssertLessThanOrEqual(hit.maxY, layout.height)
+            XCTAssertLessThanOrEqual(hit.maxY, layout.height + 0.001)
         }
-        XCTAssertGreaterThanOrEqual(layout.smallestHitSide, 14, "面板里每颗牙的点击区至少 14pt 宽")
-        XCTAssertGreaterThanOrEqual(layout.hit(6).height, 24, "点击区够高")
+        XCTAssertEqual(PullTooth.minimumHitSide, 24)
+        XCTAssertGreaterThanOrEqual(layout.smallestHitSide, PullTooth.minimumHitSide, "面板里每颗牙的点击区至少 24pt")
     }
 
     func testTeethSitInsideTheirHitAreasWithoutOverlap() {
-        let layout = ToothLayout(width: 266)
-        for i in 0..<12 {
-            let tooth = layout.tooth(i), hit = layout.hit(i)
-            XCTAssertGreaterThanOrEqual(tooth.x, hit.x - 0.001)
-            XCTAssertLessThanOrEqual(tooth.maxX, hit.maxX + 0.001)
-            XCTAssertGreaterThanOrEqual(tooth.y, hit.y - 0.001)
-            XCTAssertLessThanOrEqual(tooth.maxY, hit.maxY + 0.001)
-            for j in (i + 1)..<12 {
-                XCTAssertFalse(layout.hit(i).intersects(layout.hit(j)), "\(i) 和 \(j) 点击区重叠")
-                XCTAssertFalse(layout.tooth(i).intersects(layout.tooth(j)), "\(i) 和 \(j) 牙重叠")
+        for crop in ToothLayout.Crop.allCases {
+            let layout = ToothLayout(width: 266, crop: crop)
+            for i in 0..<12 {
+                XCTAssertTrue(layout.hit(i).contains(layout.tooth(i)), "\(crop) 第 \(i) 颗牙在自己的点击区里")
+                for j in (i + 1)..<12 {
+                    XCTAssertFalse(layout.hit(i).intersects(layout.hit(j)), "\(crop) \(i) 和 \(j) 点击区重叠")
+                    XCTAssertFalse(layout.tooth(i).intersects(layout.tooth(j)), "\(crop) \(i) 和 \(j) 牙重叠")
+                }
+            }
+            // 上排在上、下排在下。
+            for column in 0..<6 {
+                XCTAssertLessThan(layout.tooth(column).maxY, layout.tooth(column + 6).y)
             }
         }
-        // 上排在上、下排在下。
-        XCTAssertLessThan(layout.tooth(0).maxY, layout.tooth(6).y)
+    }
+
+    func testTeethFollowTheMouthCurve() {
+        // 上唇两角往下弯、下唇两角往上翘：边上的牙比正中的牙更靠嘴里。
+        let layout = ToothLayout(width: 400)
+        XCTAssertGreaterThan(layout.tooth(0).y, layout.tooth(2).y)
+        XCTAssertGreaterThan(layout.tooth(5).y, layout.tooth(3).y)
+        XCTAssertLessThan(layout.tooth(6).maxY, layout.tooth(8).maxY)
+        XCTAssertLessThan(layout.tooth(11).maxY, layout.tooth(9).maxY)
+        // 左右对称。
+        XCTAssertEqual(layout.tooth(0).y, layout.tooth(5).y, accuracy: 0.0001)
+        XCTAssertEqual(layout.tooth(6).y, layout.tooth(11).y, accuracy: 0.0001)
+        // 牙都在嘴里（素材比例：嘴里约 0.33...0.72 宽，上唇内沿约 0.49，下唇内沿约 0.75）。
+        let full = ToothLayout(width: 1)
+        for i in 0..<12 {
+            let t = full.tooth(i)
+            XCTAssertGreaterThanOrEqual(t.x, 0.33)
+            XCTAssertLessThanOrEqual(t.maxX, 0.72)
+            XCTAssertGreaterThanOrEqual(t.y, 0.49)
+            XCTAssertLessThanOrEqual(t.maxY, 0.75)
+        }
     }
 
     func testHitIndexFindsEachTooth() {
-        for width in [266.0, 148, 165, 316] {
-            let layout = ToothLayout(width: width)
-            for i in 0..<12 {
-                let hit = layout.hit(i)
-                XCTAssertEqual(layout.hitIndex(x: hit.x + hit.width / 2, y: hit.y + hit.height / 2), i)
-                let tooth = layout.tooth(i)
-                XCTAssertEqual(layout.hitIndex(x: tooth.x + tooth.width / 2, y: tooth.y + tooth.height / 2), i)
+        for crop in ToothLayout.Crop.allCases {
+            for width in [266.0, 148, 172, 306] {
+                let layout = ToothLayout(width: width, crop: crop)
+                for i in 0..<12 {
+                    let hit = layout.hit(i)
+                    XCTAssertEqual(layout.hitIndex(x: hit.midX, y: hit.midY), i)
+                    let tooth = layout.tooth(i)
+                    XCTAssertEqual(layout.hitIndex(x: tooth.midX, y: tooth.midY), i)
+                }
+                XCTAssertNil(layout.hitIndex(x: width / 2, y: layout.hit(0).y - 1), "上唇以上不是牙")
+                XCTAssertNil(layout.hitIndex(x: width / 2, y: layout.hit(6).maxY + 1), "下唇以下不是牙")
             }
-            XCTAssertNil(layout.hitIndex(x: 1, y: 1), "头顶不是牙")
-            XCTAssertNil(layout.hitIndex(x: width / 2, y: layout.height - 1), "下巴不是牙")
         }
+        let full = ToothLayout(width: 266)
+        XCTAssertNil(full.hitIndex(x: 1, y: 1), "头顶不是牙")
+        XCTAssertNil(full.hitIndex(x: 133, y: full.height - 1), "肚子不是牙")
     }
 
     func testClosingStaysInsideTheFrame() {
-        let layout = ToothLayout(width: 266)
-        // 合嘴时上半边往下移，上牙最低处仍在河马框里。
+        let layout = PullTooth.panelArtLayout
         XCTAssertLessThanOrEqual(layout.tooth(0).maxY + layout.closeTravel, layout.height)
         XCTAssertGreaterThan(layout.closeTravel, 0)
     }
 
-    func testMouthCropZoomsIn() {
-        // 小号、中号桌面卡片只画嘴附近：同样宽，牙大一倍，点击区仍在框里。
-        let full = ToothLayout(width: 136), mouth = ToothLayout(width: 136, crop: .mouth)
-        XCTAssertEqual(mouth.pitch(upper: false), full.pitch(upper: false) * 2, accuracy: 0.0001)
-        for i in 0..<12 {
-            let hit = mouth.hit(i)
-            XCTAssertGreaterThanOrEqual(hit.x, 0)
-            XCTAssertGreaterThanOrEqual(hit.y, 0)
-            XCTAssertLessThanOrEqual(hit.maxX, mouth.width + 0.001)
-            XCTAssertLessThanOrEqual(hit.maxY, mouth.height + 0.001)
+    func testCropsZoomIn() {
+        // 同样宽，裁得越小牙越大，点击区都在框里。
+        let full = ToothLayout(width: 136)
+        for crop in ToothLayout.Crop.allCases {
+            let layout = ToothLayout(width: 136, crop: crop)
+            XCTAssertEqual(layout.pitch(upper: false), full.pitch(upper: false) / crop.rect.width, accuracy: 0.0001)
+            XCTAssertEqual(layout.artSide, 136 / crop.rect.width, accuracy: 0.0001)
+            XCTAssertEqual(layout.artOrigin.x, -crop.rect.x * layout.artSide, accuracy: 0.0001)
+            XCTAssertEqual(layout.artOrigin.y, -crop.rect.y * layout.artSide, accuracy: 0.0001)
+            // 每一块都在整张素材里。
+            XCTAssertTrue(ToothLayout.Crop.full.rect.contains(crop.rect), "\(crop)")
+            for i in 0..<12 {
+                let hit = layout.hit(i)
+                XCTAssertGreaterThanOrEqual(hit.x, -0.001, "\(crop)")
+                XCTAssertGreaterThanOrEqual(hit.y, -0.001, "\(crop)")
+                XCTAssertLessThanOrEqual(hit.maxX, layout.width + 0.001, "\(crop)")
+                XCTAssertLessThanOrEqual(hit.maxY, layout.height + 0.001, "\(crop)")
+            }
         }
-        XCTAssertEqual(mouth.artSide, 272, accuracy: 0.0001)
-        XCTAssertEqual(mouth.artOrigin.x, -68, accuracy: 0.0001)
-        XCTAssertEqual(DesktopCardsToothPlan.layout(for: .small).crop, .mouth)
-        XCTAssertEqual(DesktopCardsToothPlan.layout(for: .large).crop, .full)
+        XCTAssertEqual(DesktopCardsToothPlan.layout(for: .small).crop, .closeUp)
+        XCTAssertEqual(DesktopCardsToothPlan.layout(for: .medium).crop, .mouth)
+        XCTAssertEqual(DesktopCardsToothPlan.layout(for: .large).crop, .bust)
+    }
+
+    func testWholeArtFitsTheFrameBottomAligned() {
+        for crop in ToothLayout.Crop.allCases {
+            let layout = ToothLayout(width: 200, crop: crop)
+            let art = layout.wholeArt
+            XCTAssertEqual(art.width, art.height)
+            XCTAssertEqual(art.width, min(layout.width, layout.height), accuracy: 0.0001)
+            XCTAssertEqual(art.maxY, layout.height, accuracy: 0.0001, "底边对齐")
+            XCTAssertGreaterThanOrEqual(art.x, -0.0001)
+            XCTAssertLessThanOrEqual(art.maxX, layout.width + 0.0001)
+        }
     }
 
     func testFitting() {
@@ -385,9 +450,9 @@ final class PullToothTests: XCTestCase {
         XCTAssertEqual(PullTooth.tileWidth, 188)
         XCTAssertEqual(PullTooth.columnHeight, 120)
         // 横排缩略图 52 宽，高不超过 58pt 的卡片。
-        XCTAssertLessThanOrEqual(ToothLayout(width: 52).height, 58)
+        XCTAssertLessThanOrEqual(ToothLayout(width: PullTooth.tileArtWidth, crop: .face).height, 58)
         // 竖排缩略图 60 宽放进 76 宽的竖条。
-        XCTAssertLessThanOrEqual(ToothLayout(width: 60).width, 76)
+        XCTAssertLessThanOrEqual(ToothLayout(width: PullTooth.columnArtWidth, crop: .face).width, 76)
     }
 
     // MARK: 钉在桌面
@@ -395,10 +460,11 @@ final class PullToothTests: XCTestCase {
     func testDesktopPlanHandlesOnlyPullTooth() {
         XCTAssertTrue(DesktopCardsToothPlan.handles(.pullTooth))
         XCTAssertFalse(DesktopCardsToothPlan.handles(.minesweeper))
-        XCTAssertEqual(DesktopPinSupport.mode(.pullTooth, hasDetail: true, panelWidth: 340), .dedicated)
+        XCTAssertEqual(DesktopPinSupport.mode(.pullTooth, hasDetail: true, panelWidth: PullTooth.panelWidth), .dedicated)
     }
 
-    func testDesktopHippoFitsEverySizeAndStaysClickable() {
+    func testDesktopPandaFitsEverySizeAndStaysClickable() {
+        XCTAssertEqual(DesktopCardsToothPlan.minimumHitSide, 24)
         for size in DesktopPinSize.allCases {
             let layout = DesktopCardsToothPlan.layout(for: size)
             let inset = DesktopCardsToothPlan.inset(size)
@@ -410,7 +476,7 @@ final class PullToothTests: XCTestCase {
             case .small, .large:
                 XCTAssertLessThanOrEqual(layout.width + inset * 2, size.width, "\(size)")
                 XCTAssertLessThanOrEqual(layout.height + inset * 2 + DesktopCardsToothPlan.headerHeight(size)
-                                         + DesktopCardsToothPlan.headerSpacing(size), size.height, "\(size)")
+                                         + DesktopCardsToothPlan.headerSpacing(size), size.height + 0.001, "\(size)")
             }
             XCTAssertGreaterThanOrEqual(layout.smallestHitSide, DesktopCardsToothPlan.minimumHitSide, "\(size)")
         }

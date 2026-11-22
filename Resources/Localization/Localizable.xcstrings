@@ -70848,17 +70848,6 @@
         }
       }
     },
-    "点一颗牙拔下来，拔到疼牙小熊猫就合嘴；其余的牙都拔光就赢" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Click a tooth to pull it. Pull the sore one and the red panda snaps shut; pull all the others to win"
-          }
-        }
-      }
-    },
     "音效：开" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -70899,6 +70888,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Play again"
+          }
+        }
+      }
+    },
+    "点一颗牙拔下来，找到疼牙就合嘴！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull a tooth. Find the sore one and the mouth snaps shut!"
+          }
+        }
+      }
+    },
+    "安全拔牙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safe pulls"
+          }
+        }
+      }
+    },
+    "最高纪录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best record"
+          }
+        }
+      }
+    },
+    "%@ 颗 · 赢 %@ 局" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ teeth · %@ wins"
+          }
+        }
+      }
+    },
+    "点一颗牙，试试手气！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a tooth and try your luck!"
+          }
+        }
+      }
+    },
+    "还剩 %@ 颗好牙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ good teeth left"
+          }
+        }
+      }
+    },
+    "%@ 颗牙中有 1 颗疼牙" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 sore tooth among %@"
           }
         }
       }
