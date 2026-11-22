@@ -25,6 +25,8 @@ struct BatteryTile: View {
             } else {
                 switch layout {
                 case "icon": icons
+                // Four stable device slots, no matter when accessories connect.
+                case "multi": multiDeviceRings
                 // The single-device card keeps its look until an accessory
                 // connects; then the same space holds a row of gauges.
                 case "status" where slots.count == 1: status(slots[0])
@@ -45,6 +47,54 @@ struct BatteryTile: View {
     }
 
     // MARK: Layouts
+
+    /// Dedicated four-ring card. Absent devices show a dash, never a guessed
+    /// percentage. The same battery sampler powers tiles and detail panels.
+    private var multiDeviceRings: some View {
+        HStack(spacing: 8) {
+            ForEach(multiSlots) { slot in
+                let reading = reading(slot)
+                VStack(spacing: 7) {
+                    iconRing(slot, reading, diameter: 52)
+                    iconReading(reading, size: 17, available: 68)
+                }
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(slot.name)
+                .accessibilityValue("\(percentText(reading)) \(caption(reading))")
+                .help("\(slot.name) · \(percentText(reading)) · \(caption(reading))")
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// The first three slots never change position. The fourth prefers a mouse,
+    /// falling back to another connected peripheral with a reported battery.
+    private var multiSlots: [Slot] {
+        let metrics = BatteryMetrics.shared
+        let mac: Slot = .fixed(.mac, source: nil)
+        guard BatteryShelf.showsBluetooth(instance.config) else { return [mac] }
+        let buds: Slot = .fixed(.pods, source: context.isPreview ? nil : metrics.source(of: .pods))
+        let caseSlot: Slot = .fixed(.podsCase, source: context.isPreview ? nil : metrics.source(of: .podsCase))
+        let peripheral: Slot
+        if context.isPreview {
+            peripheral = .accessory(BluetoothBattery(id: "preview.mouse", name: tr("鼠标"),
+                                                     kind: .mouse, main: 89))
+        } else {
+            let available = metrics.accessories.filter { $0.level != nil && !$0.kind.isAirPods }
+            let candidate = available.first { $0.kind == .mouse }
+                ?? available.first { $0.kind == .trackpad }
+                ?? available.first { $0.kind == .keyboard }
+                ?? available.first
+            if let candidate {
+                peripheral = .accessory(candidate)
+            } else {
+                peripheral = .unavailable(id: "peripheral", name: tr("鼠标"),
+                                          symbol: BatterySymbol.resolve(AccessoryKind.mouse.symbol))
+            }
+        }
+        return [mac, buds, caseSlot, peripheral]
+    }
 
     @ViewBuilder
     private func status(_ slot: Slot) -> some View {
@@ -433,13 +483,14 @@ struct BatteryTile: View {
     /// slots nothing fills leave the column evenly spaced rather than a gap
     /// at the bottom. A lone device gets the bigger ring the room allows.
     private var column: some View {
-        VStack(spacing: 0) {
-            ForEach(slots) { slot in
+        let displayedSlots = layout == "multi" ? multiSlots : slots
+        return VStack(spacing: 0) {
+            ForEach(displayedSlots) { slot in
                 let reading = reading(slot)
-                let single = slots.count == 1
+                let single = displayedSlots.count == 1
                 VStack(spacing: 3) {
                     let shown = look(for: slot)
-                    if layout == "icon" {
+                    if layout == "icon" || layout == "multi" {
                         // 仅图标：电量环里是设备图标，下面是百分比。
                         iconRing(slot, reading, diameter: single ? 38 : 32)
                         iconReading(reading, size: single ? 16 : 14, available: 56)
@@ -558,6 +609,7 @@ struct BatteryTile: View {
     enum Slot: Identifiable {
         case fixed(BatteryDeviceKind, source: BluetoothBattery?)
         case accessory(BluetoothBattery)
+        case unavailable(id: String, name: String, symbol: String)
 
         var isMac: Bool {
             if case .fixed(.mac, _) = self { return true }
@@ -568,6 +620,7 @@ struct BatteryTile: View {
             switch self {
             case .fixed(let kind, _): "fixed.\(kind.rawValue)"
             case .accessory(let device): "bt.\(device.id)"
+            case .unavailable(let id, _, _): "unavailable.\(id)"
             }
         }
 
@@ -577,6 +630,7 @@ struct BatteryTile: View {
             case .fixed(.podsCase, let source?): tr("\(source.displayName) 充电盒")
             case .fixed(let kind, _): kind.name
             case .accessory(let device): device.displayName
+            case .unavailable(_, let name, _): name
             }
         }
 
@@ -587,6 +641,7 @@ struct BatteryTile: View {
                 BatterySymbol.resolve(source.kind.symbol)
             case .fixed(let kind, _): BatterySymbol.resolve(kind.symbol)
             case .accessory(let device): BatterySymbol.resolve(device.kind.symbol)
+            case .unavailable(_, _, let symbol): symbol
             }
         }
     }
@@ -629,6 +684,8 @@ struct BatteryTile: View {
         case .accessory(let device):
             guard let level = device.level else { return Reading(level: 0, charging: false, present: false) }
             return Reading(level: Double(level) / 100, charging: device.charging, present: true)
+        case .unavailable:
+            return Reading(level: 0, charging: false, present: false)
         }
     }
 

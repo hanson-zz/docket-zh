@@ -560,6 +560,30 @@ final class WidgetConfigurationTests: XCTestCase {
         }
     }
 
+    // MARK: Battery four-device preset
+
+    func testBatteryMultiDeviceIsAnExplicitSelectableStyle() {
+        guard let entry = WidgetCatalog.entry(.battery),
+              let instance = WidgetCatalog.make(.battery,
+                          overrides: ["layout": .string("multi"),
+                                      "devices": .list([.string("mac")]),
+                                      BatteryShelf.bluetoothKey: .bool(true)]) else {
+            return XCTFail("Battery widget entry or multi-device preset missing")
+        }
+        XCTAssertTrue(entry.variants.contains { $0.title == "多设备" })
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: instance.config, kind: .battery), "多设备")
+        XCTAssertEqual(WidgetCatalog.naturalSize(instance), CGSize(width: 344, height: 112))
+        XCTAssertTrue(BatteryShelf.showsBluetooth(instance.config))
+        XCTAssertEqual(BatteryShelf.configuredCount(instance.config), 1)
+    }
+
+    func testBatteryLegacyStylesAreStillAvailable() {
+        guard let entry = WidgetCatalog.entry(.battery) else { return XCTFail("battery widget missing") }
+        for title in ["电量", "电池格", "仅图标"] {
+            XCTAssertTrue(entry.variants.contains { $0.title == title }, "\(title) must remain available")
+        }
+    }
+
     // MARK: Helpers
 
     private static func caseName(_ value: WidgetConfig.Value) -> String {
