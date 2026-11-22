@@ -39,6 +39,8 @@ struct TodoDetail: View {
     @FocusState private var editFocus: String?
     /// 「今天」刚清空的那一刻：彩点从中间撒开。
     @State private var celebrateAt: Date?
+    /// 顶部小熊猫的短暂表态：记下一条探头、勾完一条庆祝；3 秒内连着来只播一次（合并加冷却）。
+    @State private var pandaMoment = PandaCelebration()
     /// 最近几步删除和完成，撤销条按后进先出一步步退回。
     @State private var undo = TodoUndoStack()
     /// 每记一步换一个，撤销条从最后一次改动起再停几秒。
@@ -169,6 +171,7 @@ struct TodoDetail: View {
                 targeted: { targeted = $0 },
                 receive: { drops in
                     withAnimation(listAnimation) { TodoLog.add(drops, to: instance) }
+                    pandaMoment.register(.peek, at: .now)
                 }))
             .background {
                 if !context.isPreview {
@@ -229,7 +232,10 @@ struct TodoDetail: View {
             Spacer(minLength: 6)
             TodoProgressRing(fraction: tally.total == 0 ? 0 : Double(tally.done) / Double(tally.total),
                              complete: complete, lineWidth: 5, tint: accent) {
-                TodoPanda(name: cleared || complete ? "pet-panda-cheer" : "pet-panda-idle", size: 40)
+                // 有事要做待机，一条都没有休息，今天清空完成；勾完、记下时短暂表态。
+                PandaStateView(PandaStateResolver.todo(openCount: QuickTodo.open(all).count,
+                                                       todayCleared: cleared || complete, totalCount: all.count),
+                               pulse: pandaMoment.pulse, size: PandaStage.regular.side)
                     .offset(y: -2)
             }
             .frame(width: 56, height: 56)
@@ -380,6 +386,7 @@ struct TodoDetail: View {
         let text = draft
         withAnimation(listAnimation) { TodoLog.add(text, to: instance) }
         draft = ""
+        pandaMoment.register(.peek, at: .now)
     }
 
     // MARK: 分组小卡
@@ -1449,7 +1456,10 @@ struct TodoDetail: View {
         let clearing = QuickTodo.clearsToday(toggling: id, in: current)
         let completingNow = !item.done
         withAnimation(listAnimation) { TodoLog.toggle(id, in: instance, cheering: clearing) }
-        if completingNow { record { $0.recordCompletion(of: id, in: current) } }
+        if completingNow {
+            record { $0.recordCompletion(of: id, in: current) }
+            pandaMoment.register(.done, at: .now)
+        }
         if clearing { celebrateAt = .now }
         if selected == id { selected = nil }
     }

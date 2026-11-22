@@ -446,17 +446,31 @@ struct WaterPoseFigure: View {
         return false
     }
 
+    /// 小熊猫走六状态（`PandaStateResolver.water`）：达标完成、快喝饱了待机、提醒时段里很久没喝
+    /// 举爪提醒（没有正式提醒图时照旧口渴图），小口喝、喝一口、还渴着、骷髅保留扩展动作。
+    /// 其他角色照旧用自己的图，不改成小熊猫。
+    private var name: String {
+        guard character == .redPanda,
+              let resolved = PandaStateResolver.waterImageName(look, exists: { PandaStateArt.exists($0) })
+        else { return WaterPose.imageName(character, look) }
+        return resolved
+    }
+
+    /// 六状态正式素材本身就是提醒的样子，不再压暗；口渴图照旧降饱和。
+    private var dims: Bool { isDry && !name.hasPrefix("panda-state-") }
+
     var body: some View {
-        let name = WaterPose.imageName(character, look)
+        let name = self.name
+        let picture = name.hasPrefix("panda-state-") ? PandaStateArt.image(name) : WaterArt.named(name)
         ZStack(alignment: .bottom) {
-            if let image = WaterArt.named(name) {
+            if let image = picture {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)
                     .aspectRatio(contentMode: .fit)
                     // 渴了：口渴图降饱和、略压暗，像打蔫。
-                    .saturation(isDry ? 0.45 : 1)
-                    .brightness(isDry ? -0.06 : 0)
+                    .saturation(dims ? 0.45 : 1)
+                    .brightness(dims ? -0.06 : 0)
                     .id(name)
                     .transition(.opacity)
             } else {

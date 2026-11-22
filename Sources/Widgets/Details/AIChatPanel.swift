@@ -187,6 +187,8 @@ struct AIChatPanelView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var appeared = false
     @State private var choosingService = false
+    /// 顶栏小熊猫的短暂表态（答完、失败），几秒后回常态。
+    @State private var pandaPulse: PandaPulse?
 
     /// 顶栏、网页四周统一的边距。
     static let inset: CGFloat = 14
@@ -277,8 +279,14 @@ struct AIChatPanelView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
-            AIPandaAvatar(size: 32)
+        let phase = center.pandaPhase(center.current)
+        return HStack(spacing: 10) {
+            // 同小组件面板：生成中思考，答完短暂完成，失败短暂提醒，其余待机。
+            PandaStateView(PandaStateResolver.aiBase(phase), pulse: pandaPulse, size: 32,
+                           fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
+                .onChange(of: phase) { old, new in
+                    if let pulse = PandaStateResolver.aiPulse(from: old, to: new, at: .now) { pandaPulse = pulse }
+                }
             VStack(alignment: .leading, spacing: 1) {
                 Text(tr("AI 助手"))
                     .font(.system(size: 16, weight: .semibold))

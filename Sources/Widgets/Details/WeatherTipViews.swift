@@ -21,14 +21,10 @@ enum WeatherTipSource {
             fahrenheit: fahrenheit)
     }
 
-    /// 小熊猫的姿势：风和日丽（只剩穿衣那句）时欢呼，喝水那张配紫外线，其余站着提醒。
-    /// 只用 Resources/Pet 里现成的小熊猫图。
-    static func pandaImage(_ kind: WeatherTips.Tip.Kind) -> String {
-        switch kind {
-        case .clothing: "pet-panda-cheer"
-        case .uv: "pet-panda-drink"
-        default: "pet-panda-idle"
-        }
+    /// 小熊猫的样子交给六状态（`PandaStateResolver.weather`）：平常天待机，下雨下雪、风大、
+    /// 空气差这类重要天气举爪提醒，紫外线那句保留抱竹筒喝水的扩展动作；提醒没了就回待机。
+    static func pandaPose(_ kind: WeatherTips.Tip.Kind, alert: Bool) -> PandaPose {
+        PandaStateResolver.weather(kind, alertStyle: alert)
     }
 }
 
@@ -38,20 +34,9 @@ struct WeatherTipBubble: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
-            Group {
-                if let image = PandaArt.image(WeatherTipSource.pandaImage(tip.kind)) {
-                    Image(nsImage: image)
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                } else {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(.panelSecondary)
-                }
-            }
-            .frame(width: 34, height: 34)
-            .accessibilityHidden(true)
+            // 气泡只说最要紧的一句：重要天气算提醒。
+            PandaStateView(pose: WeatherTipSource.pandaPose(tip.kind, alert: WeatherGlance.rank(tip.kind) <= 1),
+                           size: PandaStage.small.side, fallbackSymbol: "heart.fill")
 
             Text(verbatim: tip.text)
                 .font(.system(size: 13, weight: .medium))

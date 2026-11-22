@@ -44,18 +44,32 @@ struct TodoProgressRing<Inner: View>: View {
     }
 }
 
-/// 小熊猫图片（Resources/Pet/pet-panda-*.png），找不到时什么也不画。
+/// 待办里的小熊猫，走六状态（`PandaStateResolver`）：站着是待机、欢呼是完成、歇着是休息，
+/// 有正式素材时用 Resources/PandaStates，缺图回退原来的 pet-panda-*。别的图名照旧直接画，
+/// 找不到时什么也不画。
 struct TodoPanda: View {
     var name: String
     var size: CGFloat
 
+    static func state(for name: String) -> PandaState? {
+        switch name {
+        case "pet-panda-idle": .idle
+        case "pet-panda-cheer": .done
+        case "pet-panda-rest": .rest
+        default: nil
+        }
+    }
+
     var body: some View {
-        if let image = PandaArt.image(name) {
+        if let state = Self.state(for: name) {
+            PandaStateView(state, size: size)
+        } else if let image = PandaArt.image(name) {
             Image(nsImage: image)
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size, height: size)
+                .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
     }

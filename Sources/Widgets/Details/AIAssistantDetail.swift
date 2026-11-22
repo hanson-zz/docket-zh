@@ -161,6 +161,8 @@ private struct AIAskView: View {
     /// 服务）；没有时（另一张 AI 卡片）只在这里记着。
     @State private var targetID: String?
     @State private var showingMore = false
+    /// 顶栏小熊猫的短暂表态：答完庆祝一下、出错举爪提醒一下，几秒后回常态。
+    @State private var pandaPulse: PandaPulse?
 
     private var state: AIPanelState { AIPanelState.shared }
     private var center: AIChatCenter { AIChatCenter.shared }
@@ -219,8 +221,14 @@ private struct AIAskView: View {
     /// 小熊猫头像、「AI 助手」和副标题「码头 · 快捷工作台」，右边「…」：刘海对话开关、
     /// 助手设置、AI 设置。
     private var header: some View {
-        HStack(spacing: 10) {
-            AIPandaAvatar(size: 34)
+        let phase = context.isPreview ? nil : center.pandaPhase(target)
+        return HStack(spacing: 10) {
+            // 输入时待机，提交后、生成中思考，答完短暂完成，失败短暂提醒；网页、App 方式一直待机。
+            PandaStateView(PandaStateResolver.aiBase(phase), pulse: pandaPulse, size: PandaStage.small.side,
+                           fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
+                .onChange(of: phase) { old, new in
+                    if let pulse = PandaStateResolver.aiPulse(from: old, to: new, at: .now) { pandaPulse = pulse }
+                }
             VStack(alignment: .leading, spacing: 1) {
                 Text(tr("AI 助手"))
                     .font(.system(size: 16, weight: .semibold))

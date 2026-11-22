@@ -565,20 +565,9 @@ struct WeatherDetail: View {
         let alert = reminder.style == .alert
         let corner: CGFloat = alert ? 14 : 12
         return HStack(spacing: 10) {
-            Group {
-                if let image = PandaArt.image(WeatherTipSource.pandaImage(reminder.kind)) {
-                    Image(nsImage: image)
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                } else {
-                    Image(systemName: alert ? "exclamationmark.circle.fill" : "heart.fill")
-                        .font(.system(size: 15))
-                        .foregroundStyle(alert ? Self.warm.panelReadable : .panelSecondary)
-                }
-            }
-            .frame(width: alert ? 40 : 24, height: alert ? 40 : 24)
-            .accessibilityHidden(true)
+            PandaStateView(pose: WeatherTipSource.pandaPose(reminder.kind, alert: alert),
+                           size: alert ? PandaStage.regular.side : PandaStage.mini.side,
+                           fallbackSymbol: alert ? "exclamationmark.circle.fill" : "heart.fill")
             if alert {
                 Rectangle().fill(.panelSeparator).frame(width: 0.8, height: 30)
             }
