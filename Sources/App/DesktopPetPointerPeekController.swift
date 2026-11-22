@@ -2,7 +2,11 @@ import AppKit
 import CoreAudio
 import Foundation
 
-/// 指针旁探头的窗口：鼠标停着约 20 秒，所选吉祥物以完整的小坐姿出现在指针旁，一动就收起。
+/// 指针旁探头的窗口：鼠标停着约 20 秒，所选吉祥物在指针旁扒着一条看不见的水平边探出头，一动就收起。
+///
+/// 图层：`tiltLayer`（以遮罩边中点为轴朝指针歪几度）里先放一道极淡的接触阴影，再放 `clipLayer`
+/// （只露边上面那一截，`masksToBounds`），里面的 `riseLayer` 管出场时的升起、停顿压一下和回弹，
+/// 最里面是整张图（底下一截在边后面被裁掉）。
 ///
 /// 规则在 Core 的 `DesktopPetPointerPeek`。平时每秒读一次系统的空闲秒数（不要辅助功能权限）；
 /// 露着时挂一个鼠标事件的全局监听，一动立刻收起，收起后就摘掉。静止时只是一张图，不开显示刷新。
@@ -16,7 +20,11 @@ final class DesktopPetPointerPeekController {
     private var settings = DesktopPetSettings()
     private var timer: Timer?
     private var panel: NSPanel?
-    private var imageView: NSImageView?
+    private var tiltLayer: CALayer?
+    private var shadowLayer: CALayer?
+    private var clipLayer: CALayer?
+    private var riseLayer: CALayer?
+    private var imageLayer: CALayer?
     private var monitor: Any?
     private var shownAt: CGPoint?
     /// 收起以后，鼠标再动过一次才可以再出来（同一段静止只出来一次）。
@@ -72,28 +80,76 @@ final class DesktopPetPointerPeekController {
     // MARK: 露出、收起
 
     private func show(at pointer: CGPoint) {
-        guard let image = currentImage(),
+        guard let found = currentImage(),
               let screen = NSScreen.screens.first(where: { NSMouseInRect(pointer, $0.frame, false) }) else { return }
-        let size = DesktopPetPointerPeek.size(imageSize: image.size, scale: settings.size.scale)
-        let frame = DesktopPetPointerPeek.frame(pointer: pointer, size: size, bounds: screen.visibleFrame)
+        let (name, image, mascot) = found
+        let cut = DesktopPetPointerPeek.cut(forImage: name, mascot: mascot)
+        let layout = DesktopPetPointerPeek.layout(imageSize: image.size, cut: cut, scale: settings.size.scale)
+        let frame = DesktopPetPointerPeek.frame(pointer: pointer, size: layout.panel, bounds: screen.visibleFrame)
         let panel = self.panel ?? makePanel()
         self.panel = panel
-        imageView?.image = image
+        panel.setFrame(frame, display: false)
+        arrange(layout, image: image, scaleFactor: screen.backingScaleFactor,
+                lean: DesktopPetPointerPeek.lean(pointerOnRight: frame.midX < pointer.x))
         shownAt = pointer
         watchPointer()
 
+        // 从边后面慢慢升起、停住压一下、轻轻回弹；减弱动态效果时直接出现，没有动画。
         let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        // 从下面轻轻冒出来一点；减弱动态效果时只淡入。
-        let rise = CGFloat(DesktopPetPointerPeek.rise(reduceMotion: reduce))
-        panel.setFrame(frame.offsetBy(dx: 0, dy: -rise), display: false)
-        panel.alphaValue = 0
+        panel.alphaValue = 1
         panel.orderFrontRegardless()
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = reduce ? 0.2 : 0.28
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().alphaValue = 1
-            if rise > 0 { panel.animator().setFrame(frame, display: true) }
+        animateEntrance(DesktopPetPointerPeek.entrance(reduceMotion: reduce))
+    }
+
+    /// 按摆法放好各层（点，y 向上，原点在窗口左下角）。
+    private func arrange(_ layout: DesktopPetPointerPeek.Layout, image: NSImage, scaleFactor: CGFloat, lean: Double) {
+        guard let tiltLayer, let shadowLayer, let clipLayer, let riseLayer, let imageLayer else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let margin = CGFloat(DesktopPetPointerPeek.margin)
+        let visible = layout.visible
+        // 以遮罩边中点为轴歪斜。
+        tiltLayer.anchorPoint = CGPoint(x: 0.5, y: 0)
+        tiltLayer.bounds = CGRect(origin: .zero, size: visible)
+        tiltLayer.position = CGPoint(x: margin + visible.width / 2, y: margin)
+        tiltLayer.transform = CATransform3DMakeRotation(-CGFloat(lean) * .pi / 180, 0, 0, 1)
+
+        let shadowWidth = visible.width * CGFloat(DesktopPetPointerPeek.contactShadowWidth)
+        let shadowRect = CGRect(x: (visible.width - shadowWidth) / 2, y: -1.5, width: shadowWidth, height: 3)
+        shadowLayer.frame = CGRect(origin: .zero, size: visible)
+        shadowLayer.shadowPath = CGPath(ellipseIn: shadowRect, transform: nil)
+        shadowLayer.shadowOpacity = Float(DesktopPetPointerPeek.contactShadowOpacity)
+        shadowLayer.shadowRadius = CGFloat(DesktopPetPointerPeek.contactShadowRadius)
+
+        // 只裁边下面那截；上面多留一点，回弹时耳朵尖不被切。
+        clipLayer.frame = CGRect(x: 0, y: 0, width: visible.width, height: visible.height + margin)
+        riseLayer.anchorPoint = CGPoint(x: 0.5, y: 0)
+        riseLayer.bounds = CGRect(origin: .zero, size: visible)
+        riseLayer.position = CGPoint(x: visible.width / 2, y: 0)
+        riseLayer.transform = CATransform3DIdentity
+        imageLayer.frame = layout.image
+        imageLayer.contentsScale = scaleFactor
+        imageLayer.contents = image.layerContents(forContentsScale: scaleFactor)
+        CATransaction.commit()
+    }
+
+    /// 出场的关键帧：升起（往上平移）和停顿时压一下（以遮罩边为基准竖直缩放）。
+    private func animateEntrance(_ frames: [DesktopPetPointerPeek.Keyframe]) {
+        guard let riseLayer else { return }
+        riseLayer.removeAllAnimations()
+        guard !frames.isEmpty else { return }
+        let animation = CAKeyframeAnimation(keyPath: "transform")
+        animation.values = frames.map { frame in
+            NSValue(caTransform3D: CATransform3DScale(
+                CATransform3DMakeTranslation(0, CGFloat(frame.rise), 0), 1, CGFloat(frame.squash), 1))
         }
+        animation.keyTimes = frames.map { NSNumber(value: $0.time) }
+        // 第一段慢慢升起用缓出，其余缓入缓出。
+        animation.timingFunctions = (1..<max(1, frames.count)).map { index in
+            CAMediaTimingFunction(name: index == 1 ? .easeOut : .easeInEaseOut)
+        }
+        animation.duration = DesktopPetPointerPeek.entranceDuration
+        riseLayer.add(animation, forKey: "entrance")
     }
 
     private func hide(animated: Bool) {
@@ -104,7 +160,7 @@ final class DesktopPetPointerPeekController {
         }
         shownAt = nil
         waitingForMove = true
-        guard animated else {
+        guard animated, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
             panel.orderOut(nil)
             return
         }
@@ -143,13 +199,11 @@ final class DesktopPetPointerPeekController {
 
     // MARK: 图
 
-    /// 当前生效的吉祥物（没解锁 Pro 时是小熊猫），专注中用专注的样子。
-    private func currentImage() -> NSImage? {
-        let timer = TimerStateProvider.shared.state
-        let mascot = FocusMascot.of(timer, unlocked: ProAccess.isUnlocked)
-        let focusing = FocusMascotState.of(timer, now: Date()) == .focus
-        for name in DesktopPetPointerPeek.imageCandidates(mascot, focusing: focusing) {
-            if let image = Bundle.main.image(forResource: name) { return image }
+    /// 当前生效的吉祥物（没解锁 Pro 时是小熊猫）和它的探头图；缺图时退到整张坐姿。
+    private func currentImage() -> (String, NSImage, FocusMascot)? {
+        let mascot = FocusMascot.of(TimerStateProvider.shared.state, unlocked: ProAccess.isUnlocked)
+        for name in DesktopPetPointerPeek.imageCandidates(mascot) {
+            if let image = Bundle.main.image(forResource: name) { return (name, image, mascot) }
         }
         return nil
     }
@@ -166,11 +220,31 @@ final class DesktopPetPointerPeekController {
         panel.hidesOnDeactivate = false
         panel.sharingType = .none
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
-        let view = NSImageView()
-        view.imageScaling = .scaleProportionallyUpOrDown
+        let view = NSView()
+        view.wantsLayer = true
         view.setAccessibilityElement(false)
+        let root = view.layer ?? CALayer()
+        let tilt = CALayer()
+        let shadow = CALayer()
+        shadow.shadowColor = NSColor.black.cgColor
+        shadow.shadowOffset = .zero
+        let clip = CALayer()
+        clip.masksToBounds = true
+        let rise = CALayer()
+        let picture = CALayer()
+        picture.contentsGravity = .resize
+        picture.minificationFilter = .trilinear
+        rise.addSublayer(picture)
+        clip.addSublayer(rise)
+        tilt.addSublayer(shadow)
+        tilt.addSublayer(clip)
+        root.addSublayer(tilt)
         panel.contentView = view
-        imageView = view
+        tiltLayer = tilt
+        shadowLayer = shadow
+        clipLayer = clip
+        riseLayer = rise
+        imageLayer = picture
         return panel
     }
 }
