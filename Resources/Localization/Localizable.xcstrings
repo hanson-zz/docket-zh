@@ -10644,6 +10644,116 @@
         }
       }
     },
+    "提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask"
+          }
+        }
+      }
+    },
+    "服务" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service"
+          }
+        }
+      }
+    },
+    "当前服务：%@，%@。点一下换服务或打开方式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current service: %@, %@. Click to change the service or how it opens"
+          }
+        }
+      }
+    },
+    "服务 %@，打开方式 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Service %@, opens with %@"
+          }
+        }
+      }
+    },
+    "回答位置：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answers in: %@"
+          }
+        }
+      }
+    },
+    "回答显示在哪：刘海优先时答案在刘海下方的结果卡片里，选小组件面板时打开完整对话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Where answers show: with Notch first they appear in a result card below the notch; with Widget panel the full chat opens"
+          }
+        }
+      }
+    },
+    "用 API 直接问 %@，回答显示在刘海下方的结果卡片" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask %@ directly through the API. The answer shows in a result card below the notch"
+          }
+        }
+      }
+    },
+    "用 API 直接问 %@，回答显示在刘海对话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask %@ directly through the API. The answer shows in the notch chat"
+          }
+        }
+      }
+    },
+    "已输入 %@ 字，最多 %@ 字" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ characters typed, up to %@"
+          }
+        }
+      }
+    },
+    "最多 2000 字，删掉一些再提交。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up to 2000 characters. Remove some and try again."
+          }
+        }
+      }
+    },
     "点一下换打开方式" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -10673,6 +10783,94 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Follow up"
+          }
+        }
+      }
+    },
+    "%@ 的回答" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@'s answer"
+          }
+        }
+      }
+    },
+    "复制回答" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy answer"
+          }
+        }
+      }
+    },
+    "在完整对话中打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in full chat"
+          }
+        }
+      }
+    },
+    "已固定：不自动收起，点外面也不收" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned: stays open, even when you click elsewhere"
+          }
+        }
+      }
+    },
+    "固定：不自动收起，点外面也不收" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin: keep it open, even when you click elsewhere"
+          }
+        }
+      }
+    },
+    "正在思考" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        }
+      }
+    },
+    "失败" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed"
+          }
+        }
+      }
+    },
+    "已停止生成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopped"
           }
         }
       }
@@ -24594,6 +24792,149 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show AI Assistant in the notch"
+          }
+        }
+      }
+    },
+    "回答显示位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show answers in"
+          }
+        }
+      }
+    },
+    "刘海优先（推荐）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch first (recommended)"
+          }
+        }
+      }
+    },
+    "小组件面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widget panel"
+          }
+        }
+      }
+    },
+    "刘海" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch"
+          }
+        }
+      }
+    },
+    "提交问题后自动展开结果" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show the result after asking"
+          }
+        }
+      }
+    },
+    "刘海空闲时显示生成过程与回答" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the notch is free, shows the answer as it is written"
+          }
+        }
+      }
+    },
+    "回答完成后" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the answer is done"
+          }
+        }
+      }
+    },
+    "保持显示、手动收起（推荐）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep it open, close by hand (recommended)"
+          }
+        }
+      }
+    },
+    "15 秒后自动收起" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close after 15 seconds"
+          }
+        }
+      }
+    },
+    "30 秒后自动收起" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close after 30 seconds"
+          }
+        }
+      }
+    },
+    "刘海优先：在货架的 AI 卡片里用 API 提问后，刘海下方弹出结果卡片；刘海被专注计时、通知、下载或拾掇占着时改在屏幕右上角显示。小组件面板：照原来的做法打开完整对话。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch first: after you ask through an API from the AI card on the shelf, a result card appears below the notch. When the notch is busy with a focus timer, a notification, a download or Shiduo, it shows at the top right of the screen instead. Widget panel: opens the full chat, as before."
+          }
+        }
+      }
+    },
+    "关掉后不自动弹出，刘海下沿只显示“正在思考”，点刘海看回答。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When off, nothing pops up: the notch only shows \"Thinking\". Click the notch to read the answer."
+          }
+        }
+      }
+    },
+    "指针停在结果卡片上时不倒计时；卡片固定后也不会自动收起。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The countdown pauses while the pointer is on the result card, and a pinned card never closes by itself."
           }
         }
       }

@@ -36,10 +36,21 @@ final class AINotchController {
     private var workspaceObservers: [NSObjectProtocol] = []
     private(set) var shiduoRunning = false
     private var started = false
+    /// 快捷结果卡片（小组件用 API 提问后刘海下方那张，或备用浮窗）。
+    private var quickWindow: KeyablePanel?
+    let quickModel = AIQuickResultModel()
+    private var quickMonitors: [Any] = []
 
     private init() {}
 
     var isOpen: Bool { panel?.isVisible == true && panelModel.isOpen }
+
+    /// 快捷结果卡片显示着（刘海下或备用浮窗）。
+    var isQuickOpen: Bool { quickModel.target != nil && quickWindow?.isVisible == true }
+
+    /// 刘海这一块被码头的 AI 占着：完整对话面板，或者贴在刘海下的快捷结果卡片（备用浮窗不算，
+    /// 它本来就是给刘海上的别的东西让位的）。消息卡片、输入法提示、插电动画按它让位。
+    var occupiesNotch: Bool { isOpen || (isQuickOpen && quickModel.target == .notchCard) }
 
     func apply(_ next: AINotchSettings) {
         settings = next
@@ -144,6 +155,7 @@ final class AINotchController {
                 strip.orderFrontRegardless()
             }
         }
+        relayoutQuick()
     }
 
     private func makeEntry(_ id: UInt32) -> AINotchEntryWindow {
@@ -239,6 +251,8 @@ final class AINotchController {
     }
 
     private func show(below entry: CGRect, screen: CGRect) {
+        // 完整对话打开时快捷结果卡片让位（同一个会话，结果在对话里）。
+        closeQuick(animated: false)
         let panel = existingOrNewPanel()
         // 专注计时和系统活动优先：小岛正显示着时，面板挪到它下面，不压住它。
         let placement = AINotchLayout.placement(below: entry, screen: screen, avoiding: blockers)
@@ -303,6 +317,203 @@ final class AINotchController {
         return panel
     }
 
+    // MARK: 快捷结果卡片
+
+    /// 指针所在屏幕（小组件面板就在那块屏幕上）的描述和刘海是不是被占着。
+    /// 占着：刘海小岛（专注计时、下载、收音机、插电）、灵动提示、展开的消息卡片在这块屏幕上，
+    /// 或者拾掇在运行、这块屏幕有刘海（刘海让给拾掇）。
+    private func quickScreen(id: UInt32? = nil) -> (screen: NSScreen, description: AINotchScreen, occupied: Bool)? {
+        let screens = NSScreen.screens
+        guard !screens.isEmpty else { return nil }
+        let target: NSScreen
+        if let id, let match = screens.first(where: { Self.describe($0, isMain: false).id == id }) {
+            target = match
+        } else {
+            let pointer = NSEvent.mouseLocation
+            target = screens.first { $0.frame.contains(pointer) } ?? screens[0]
+        }
+        let description = Self.describe(target, isMain: target == screens[0])
+        let frame = target.frame
+        let busy = [NotchIslandOccupancy.shared.frame, IslandOccupancy.shared.frame,
+                    NotchMessageOccupancy.shared.frame].compactMap { $0 }.contains { $0.intersects(frame) }
+        let shiduo = shiduoRunning && description.notch != nil
+        return (target, description, busy || shiduo)
+    }
+
+    /// 小组件刚交过来一个 API 问题：这次结果放在哪（见 `AIQuickResult.target`）。
+    func quickTarget(mode: AIOpenMode) -> AIQuickResultTarget {
+        let s = AIChatCenter.shared.settings
+        return AIQuickResult.target(mode: mode, unlocked: ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked),
+                                    placement: s.answerPlacement, autoShow: s.autoShowResult,
+                                    notchOccupied: quickScreen()?.occupied ?? false)
+    }
+
+    /// 弹出快捷结果卡片，显示这个服务最新的一问一答。已经开着就换成这一条、留在原处重新摆。
+    func presentQuick(serviceID: String) {
+        guard let place = quickScreen() else { return }
+        if isOpen { close() }
+        quickModel.serviceID = serviceID
+        quickModel.screenID = place.description.id
+        quickModel.pinned = false
+        quickModel.hovering = false
+        quickModel.target = place.occupied ? .floating : .notchCard
+        quickModel.session = UUID()
+        let window = existingOrNewQuickWindow()
+        placeQuick(window, place: place)
+        window.showOpaqueCancellingFade()
+        window.orderFrontRegardless()
+        panelModel.quickCard = quickModel.target == .notchCard
+        watchQuickDismissal()
+    }
+
+    /// 刘海占用、屏幕、内容高度变了以后重新摆：刘海卡片和备用浮窗之间来回换，结果不丢。
+    func relayoutQuick() {
+        guard isQuickOpen, let window = quickWindow, let current = quickModel.target else { return }
+        guard let place = quickScreen(id: quickModel.screenID) else { return }
+        let next = AIQuickResult.relocated(current, notchOccupied: place.occupied)
+        if next != current { quickModel.target = next }
+        panelModel.quickCard = next == .notchCard
+        placeQuick(window, place: place)
+    }
+
+    private func placeQuick(_ window: NSWindow, place: (screen: NSScreen, description: AINotchScreen, occupied: Bool)) {
+        let description = place.description
+        let screen = place.screen.frame
+        let notchCard = quickModel.target == .notchCard
+        let withMascot = notchCard && description.notch != nil
+        quickModel.withMascot = withMascot
+        let height = quickModel.cardHeight
+        let card: CGRect
+        if notchCard {
+            let entry = entries[description.id].flatMap { $0.model.visible ? $0.frame : nil }
+                ?? AINotchLayout.anchor(for: description, shiduoRunning: shiduoRunning)
+            card = AIQuickResult.notchFrame(below: entry, screen: screen, height: height, avoiding: blockers)
+        } else {
+            let others = blockers + [NotchMessageOccupancy.shared.frame].compactMap { $0 }
+            card = AIQuickResult.floatingFrame(screen: screen, menuBar: AINotchLayout.menuBar(of: description),
+                                               entry: AINotchLayout.anchor(for: description, shiduoRunning: shiduoRunning),
+                                               height: height, blockers: others)
+        }
+        let frame = AIQuickResult.windowFrame(card: card, withMascot: withMascot)
+        if window.frame != frame { window.setFrame(frame, display: true) }
+    }
+
+    /// 收起快捷结果卡片。回答挂在 `AIChatCenter` 上，收起了也照样答完，点刘海或小组件再看。
+    func closeQuick(animated: Bool = true) {
+        guard quickModel.target != nil else { return }
+        quickModel.target = nil
+        quickModel.hovering = false
+        panelModel.quickCard = false
+        stopQuickWatching()
+        guard let window = quickWindow, window.isVisible else { return }
+        let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        guard animated, !reduce else {
+            window.orderOut(nil)
+            return
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.14
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            window.animator().alphaValue = 0
+        } completionHandler: { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                // 淡出途中又弹出来了：不收，透明度补回 1。
+                guard self.quickModel.target == nil else {
+                    self.quickWindow?.alphaValue = 1
+                    return
+                }
+                self.quickWindow?.orderOut(nil)
+                self.quickWindow?.alphaValue = 1
+            }
+        }
+    }
+
+    /// 「继续追问」「展开」：收起卡片，打开完整对话（同一个服务、同一个会话）。
+    /// 「继续追问」再把光标放进底部输入条。
+    func expandQuick(focusInput: Bool) {
+        let center = AIChatCenter.shared
+        if let id = quickModel.serviceID { center.select(id) }
+        closeQuick(animated: false)
+        open()
+        if focusInput, isOpen {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(60))
+                center.requestInputFocus()
+            }
+        }
+    }
+
+    private func existingOrNewQuickWindow() -> KeyablePanel {
+        if let quickWindow { return quickWindow }
+        let size = CGSize(width: AIQuickResult.width, height: AIQuickResult.minHeight)
+        let actions = AIQuickResultActions(
+            close: { [weak self] in self?.closeQuick() },
+            expand: { [weak self] in self?.expandQuick(focusInput: false) },
+            followUp: { [weak self] in self?.expandQuick(focusInput: true) },
+            resize: { [weak self] in self?.relayoutQuick() },
+            settings: { [weak self] in
+                self?.closeQuick(animated: false)
+                guard let app = AIChatCenter.shared.app else { return }
+                SettingsWindow.shared.show(app: app, tab: "AI")
+            })
+        let hosting = FirstMouseHostingView(rootView: AIQuickResultCard(center: AIChatCenter.shared, model: quickModel,
+                                                                        actions: actions))
+        hosting.frame = CGRect(origin: .zero, size: size)
+        hosting.autoresizingMask = [.width, .height]
+        let window = KeyablePanel(contentRect: CGRect(origin: .zero, size: size),
+                                  styleMask: [.borderless, .nonactivatingPanel],
+                                  backing: .buffered, defer: false)
+        window.onCancel = { [weak self] in self?.closeQuick() }
+        window.contentView = hosting
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
+        window.isMovable = false
+        window.hidesOnDeactivate = false
+        window.becomesKeyOnlyIfNeeded = true
+        window.isReleasedWhenClosed = false
+        window.animationBehavior = .none
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
+        window.level = .statusBar
+        quickWindow = window
+        return window
+    }
+
+    /// 点卡片外面收起：固定了不收；还在思考、回答时不收（见 `AIQuickResult.closesOnOutsideClick`）。
+    private func watchQuickDismissal() {
+        stopQuickWatching()
+        let dismiss: (NSEvent) -> Void = { [weak self] event in
+            guard let self, let window = self.quickWindow, window.isVisible else { return }
+            let point = event.window?.convertPoint(toScreen: event.locationInWindow) ?? NSEvent.mouseLocation
+            guard !window.frame.contains(point) else { return }
+            // 菜单（「…」）开着时点的是菜单本身。
+            if let clicked = event.window, clicked !== window, clicked.level.rawValue > window.level.rawValue { return }
+            guard AIQuickResult.closesOnOutsideClick(phase: self.quickPhase, pinned: self.quickModel.pinned) else { return }
+            self.closeQuick()
+        }
+        let mask: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: dismiss) {
+            quickMonitors.append(global)
+        }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { event in
+            dismiss(event)
+            return event
+        }) { quickMonitors.append(local) }
+    }
+
+    private func stopQuickWatching() {
+        quickMonitors.forEach(NSEvent.removeMonitor)
+        quickMonitors.removeAll()
+    }
+
+    /// 卡片上那一条回答现在的阶段。
+    var quickPhase: AIQuickResultPhase {
+        guard let id = quickModel.serviceID else { return .done }
+        let reply = AIQuickResultModel.reply(in: AIChatCenter.shared.messages(id))
+        return AIQuickResult.phase(status: reply?.status, text: reply?.text ?? "")
+    }
+
     /// 点面板外面收起，钉住时不收。点入口本身由入口自己处理（再点一次收起）。
     private func watchForDismissal() {
         stopWatching()
@@ -334,6 +545,36 @@ final class AINotchController {
 final class AINotchPanelModel {
     var isOpen = false
     var session = UUID()
+    /// 快捷结果卡片贴在刘海下面：刘海下沿那一条「正在思考」收起，由卡片自己显示。
+    var quickCard = false
+}
+
+/// 快捷结果卡片的状态，SwiftUI 那边读。
+@MainActor @Observable
+final class AIQuickResultModel {
+    /// 显示哪个服务的最新一问一答。
+    var serviceID: String?
+    /// 在哪：刘海卡片或备用浮窗；收起时 nil。
+    var target: AIQuickResultTarget?
+    /// 弹出时所在屏幕。
+    var screenID: UInt32 = 0
+    /// 贴在刘海下、刘海里探头的小熊猫。
+    var withMascot = false
+    /// 固定：不自动收起，点外面也不收。
+    var pinned = false
+    var hovering = false
+    /// 正文量出来的高度，卡片高度跟着它在 180 到 300 之间变。
+    var bodyHeight: CGFloat = 0
+    /// 每弹一次换一个，SwiftUI 那边重放出现的动画。
+    var session = UUID()
+
+    var cardHeight: CGFloat { AIQuickResult.cardHeight(bodyHeight: bodyHeight, withMascot: withMascot) }
+
+    /// 最新那一问后面的回答；问题刚交过去、回答还没建起来时 nil。
+    static func reply(in messages: [AIChatMessage]) -> AIChatMessage? {
+        guard let last = messages.last, last.role == .assistant else { return nil }
+        return last
+    }
 }
 
 // MARK: - 入口窗口

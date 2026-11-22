@@ -38,9 +38,14 @@ final class AIChatCenter {
     /// 小组件刚把问题交过来、刘海对话正要打开：这一次打开不清掉 `notice`
     /// （网页模式那句「已复制，请粘贴」要留着给用户看）。
     @ObservationIgnored var holdNoticeOnce = false
+    /// 加一就让完整对话面板把光标放进底部输入条（快捷结果卡片的「继续追问」）。
+    private(set) var focusRequest = 0
 
     @ObservationIgnored private var clipboardChangeCount = -1
     @ObservationIgnored private var tasks: [String: Task<Void, Never>] = [:]
+    /// 每个服务正在流的那一条回答。被新问题顶掉的旧请求晚到的收尾只改它自己那条，
+    /// 不会把新请求的「生成中」清掉。
+    @ObservationIgnored private var activeReply: [String: UUID] = [:]
     @ObservationIgnored private var webViews: [String: WKWebView] = [:]
     @ObservationIgnored private var webDelegates: [String: AIWebDelegate] = [:]
 
@@ -152,6 +157,14 @@ final class AIChatCenter {
 
     func keysChanged() { keyRevision += 1 }
 
+    /// 按 id 找服务（卡片上勾选的和设置里列出的都算）。
+    func service(_ id: String) -> AIService? {
+        services.first { $0.id == id } ?? allServices.first { $0.id == id }
+    }
+
+    /// 让完整对话面板把光标放进输入条。
+    func requestInputFocus() { focusRequest += 1 }
+
     // MARK: API 对话
 
     func messages(_ serviceID: String) -> [AIChatMessage] { conversations[serviceID] ?? [] }
@@ -181,12 +194,17 @@ final class AIChatCenter {
     /// API 直接发出去，请求挂在这里，不挂在任何视图上，面板关了也照样答完；
     /// 刘海输入框里写了一半的字不动。网页复制好问题、载入网页，提示用户粘贴，
     /// 不假装已经发送。App 方式不经过这里。
+    ///
+    /// 连续提问（上一条还在生成时又从小组件提问）：取消，不排队。上一条停在已经流出来的
+    /// 地方（标为已停止，字留着），马上答新问题。小组件提问是「换个问题」的意思，排队要
+    /// 等上一条答完才动，结果卡片会一直停在旧回答上，看起来像没反应。刘海对话里自己的
+    /// 发送键仍然是「生成中变停止」，不走这里。
     func receive(_ question: String, for service: AIService) -> Handoff {
         select(service.id)
         guard current?.id == service.id else { return .unavailable }
         switch mode(for: service) {
         case .api:
-            guard !generating.contains(service.id) else { return .busy }
+            if generating.contains(service.id) { cancelInFlight(service.id) }
             conversations[service.id, default: []].append(AIChatMessage(role: .user, text: question))
             notice = nil
             holdNoticeOnce = false
@@ -203,8 +221,10 @@ final class AIChatCenter {
     }
 
     /// 重新回答最后一个问题：去掉最后的回答（出错、停止或者已经答完的都算）。
-    func retry() {
-        guard let service = current, !generating.contains(service.id) else { return }
+    /// `serviceID` 不给时用当前服务（快捷结果卡片给它自己那个服务）。
+    func retry(_ serviceID: String? = nil) {
+        guard let service = serviceID.flatMap({ self.service($0) }) ?? current,
+              !generating.contains(service.id) else { return }
         var list = conversations[service.id] ?? []
         while let last = list.last, last.role == .assistant { list.removeLast() }
         guard list.last?.role == .user else { return }
@@ -224,6 +244,18 @@ final class AIChatCenter {
         conversations[id] = []
     }
 
+    /// 停掉这个服务正在流的回答，同步收尾（标为已停止、清掉生成中），好马上发下一条。
+    private func cancelInFlight(_ serviceID: String) {
+        tasks[serviceID]?.cancel()
+        tasks[serviceID] = nil
+        generating.remove(serviceID)
+        if let messageID = activeReply.removeValue(forKey: serviceID),
+           let index = conversations[serviceID]?.firstIndex(where: { $0.id == messageID }),
+           conversations[serviceID]?[index].status == .streaming {
+            conversations[serviceID]?[index].status = .stopped
+        }
+    }
+
     func copy(_ text: String) {
         AIServiceOpener.copy(text)
     }
@@ -239,6 +271,7 @@ final class AIChatCenter {
             return finish(id, reply.id, .failed(AIChatFailure.badURL.message))
         }
         generating.insert(id)
+        activeReply[id] = reply.id
         tasks[id] = Task { [weak self] in
             do {
                 for try await piece in AIChatClient.stream(request) {
@@ -254,14 +287,22 @@ final class AIChatCenter {
     }
 
     private func append(_ piece: String, to messageID: UUID, in serviceID: String) {
+        // 已经被顶掉（停止）的旧请求晚到的字不再往上接。
+        guard activeReply[serviceID] == messageID else { return }
         guard let index = conversations[serviceID]?.firstIndex(where: { $0.id == messageID }) else { return }
         conversations[serviceID]?[index].text += piece
     }
 
     private func finish(_ serviceID: String, _ messageID: UUID, _ status: AIChatMessage.Status) {
-        generating.remove(serviceID)
-        tasks[serviceID] = nil
-        guard let index = conversations[serviceID]?.firstIndex(where: { $0.id == messageID }) else { return }
+        // 只有还是这个服务当前那条请求时才清「生成中」：被新问题顶掉的旧请求晚到的收尾
+        // 不能把新请求的状态清掉（见 `cancelInFlight`）。没开始流就失败的也走这里。
+        if activeReply[serviceID] == messageID || activeReply[serviceID] == nil {
+            generating.remove(serviceID)
+            tasks[serviceID] = nil
+            activeReply[serviceID] = nil
+        }
+        guard let index = conversations[serviceID]?.firstIndex(where: { $0.id == messageID }),
+              conversations[serviceID]?[index].status == .streaming else { return }
         conversations[serviceID]?[index].status = status
     }
 

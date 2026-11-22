@@ -294,8 +294,9 @@ final class ProLicenseManager {
     private func applyLocks() {
         let unlocked = ProAccess.isUnlocked
         ChargeLimitService.shared.applyLicense(unlocked: unlocked)
-        if !ProLicenseGate.canOpenAINotch(unlocked: unlocked), AINotchController.shared.isOpen {
-            AINotchController.shared.close()
+        if !ProLicenseGate.canOpenAINotch(unlocked: unlocked) {
+            if AINotchController.shared.isOpen { AINotchController.shared.close() }
+            AINotchController.shared.closeQuick()
         }
         // Pro 专属应用图标：没解锁时换回经典，重新解锁后换回所选。
         AppIconSwitcher.licenseChanged()

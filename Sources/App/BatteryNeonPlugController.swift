@@ -83,7 +83,7 @@ final class BatteryNeonPlugController {
                 ownPID: ProcessInfo.processInfo.processIdentifier),
             sharing: Self.screenShared(),
             presenting: QuickActions.shared.presentation != nil,
-            notchBusy: NotchMessageOccupancy.shared.cardExpanded || AINotchController.shared.isOpen
+            notchBusy: NotchMessageOccupancy.shared.cardExpanded || AINotchController.shared.occupiesNotch
                 || ReminderPopupCenter.shared.isShowing || IslandOccupancy.shared.frame != nil
                 || NotchIslandOccupancy.shared.expanded)
         guard BatteryNeon.plugDecision(context, gate: gate, at: now) == .play else { return }

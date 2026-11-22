@@ -76,7 +76,7 @@ struct AINotchStripView: View {
     private static let peekTop: CGFloat = 14
 
     var body: some View {
-        let content = AINotchLayout.stripContent(visible: entry.visible, panelOpen: panel.isOpen,
+        let content = AINotchLayout.stripContent(visible: entry.visible, panelOpen: panel.isOpen || panel.quickCard,
                                                  hovering: entry.hovering, generating: center.isGenerating)
         let notchWidth = entry.entry.frame.width
         let width = content.map { AINotchLayout.stripWidth($0, service: center.generatingTitle, notchWidth: notchWidth) }
@@ -555,6 +555,8 @@ private struct AIAPIChatPane: View {
                 .padding(.bottom, 12)
                 .padding(.top, 6)
         }
+        // 快捷结果卡片的「继续追问」：打开这个面板后把光标放进输入条。
+        .onChange(of: center.focusRequest) { _, _ in focusToken += 1 }
     }
 
     private var transcript: some View {

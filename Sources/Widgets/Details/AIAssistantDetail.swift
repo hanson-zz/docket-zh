@@ -6,14 +6,15 @@ import UniformTypeIdentifiers
 ///
 /// 提问页从上到下（同效果图）：顶栏是小熊猫、「AI 助手」和副标题「码头 · 快捷工作台」，
 /// 右边「…」里是「刘海对话 Pro」开关和设置；中间的大输入框是主角（Enter 提交，
-/// Shift+Enter 换行，中文输入法选字时的 Enter 只确认选字）；下面一排快捷操作胶囊
-/// （截图提问、剪贴板总结、翻译、润色，可在设置页里换）；底部一排是服务分段按钮
-/// （前三个，其余进「…」）、模式胶囊（API 模式 / 网页模式 / App 模式）和发送。
+/// Shift+Enter 换行，中文输入法选字时的 Enter 只确认选字，右下角字数「24 / 2000」）；下面一排
+/// 快捷操作胶囊（截图提问、剪贴板、翻译、润色，可在设置页里换）和「更多」；底部一排三件：
+/// 服务和打开方式合在一起的下拉胶囊「ChatGPT · API」、「回答位置：刘海」（网页、App 方式换成一句
+/// 说明）、唯一的主按钮。
 ///
-/// 当前服务和刘海对话共用（`AIChatCenter.current`）。API 和网页方式的问题交给
-/// 刘海对话：先收起这个面板，再从刘海长出对话，两个窗口不同时出现；请求挂在
-/// `AIChatCenter` 上，面板关了也照样答完。App 方式只负责跳转，不显示「已发送」
-/// 「已回答」之类的状态，回答在那个服务里看。
+/// 当前服务和刘海对话共用（`AIChatCenter.current`）。API 方式的问题挂在 `AIChatCenter` 上，
+/// 面板收起，按「回答显示位置」在刘海下方弹快捷结果卡片（刘海被占着时用备用浮窗），或者打开
+/// 刘海里的完整对话；网页方式复制问题，在刘海对话的网页里粘贴发送。App 方式只负责跳转，
+/// 不显示「已发送」「已回答」之类的状态，回答在那个服务里看。
 ///
 /// 字牌、服务的打开方式和 API 密钥这些不常改的，收在设置页（齿轮）里。面板的
 /// 大小在打开时量一次，切换两页不会重新量。
@@ -159,7 +160,6 @@ private struct AIAskView: View {
     /// 这张卡片上选的服务。刘海对话的服务列表里有它时同时切过去（两边共用当前
     /// 服务）；没有时（另一张 AI 卡片）只在这里记着。
     @State private var targetID: String?
-    @State private var choosing = false
     @State private var showingMore = false
 
     private var state: AIPanelState { AIPanelState.shared }
@@ -178,7 +178,8 @@ private struct AIAskView: View {
     }
 
     private var canSubmit: Bool {
-        !context.isPreview && target != nil && AIAsk.question(state.draft(instance.id)) != nil
+        let draft = state.draft(instance.id)
+        return !context.isPreview && target != nil && AIAsk.question(draft) != nil && AIAskLimit.withinLimit(draft)
     }
 
     private var chips: [AIDockChip] { AIDockChips.resolved(center.settings.panelChips) }
@@ -301,14 +302,26 @@ private struct AIAskView: View {
         .frame(height: max(0, CGFloat(AIAsk.inputHeight(state.draft(instance.id), width: 360)) - 24),
                alignment: .topLeading)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: AIAsk.inputHeight(state.draft(instance.id), width: 360))
-        .overlay(alignment: .bottomLeading) {
-            Text("Enter 提交 · Shift+Enter 换行")
-                .font(.system(size: 13))
-                .foregroundStyle(.panelSecondary)
-                .lineLimit(1)
-                .padding(.leading, 5)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+        .overlay(alignment: .bottom) {
+            // 左边快捷键提示，右下角字数「24 / 2000」；超过 2000 字不提交（不截断，免得打断输入法选字），
+            // 字数换成橙色提醒。
+            let draft = state.draft(instance.id)
+            let within = AIAskLimit.withinLimit(draft)
+            HStack(spacing: 8) {
+                Text("Enter 提交 · Shift+Enter 换行")
+                    .lineLimit(1)
+                    .accessibilityHidden(true)
+                Spacer(minLength: 4)
+                Text(verbatim: AIAskLimit.label(draft))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .foregroundStyle(within ? Color.panelSecondary : Color(hex: PaletteColor.orange.hex).panelReadable)
+                    .accessibilityLabel(tr("已输入 \(AIAskLimit.count(draft)) 字，最多 \(AIAskLimit.maxLength) 字"))
+            }
+            .font(.system(size: 13))
+            .foregroundStyle(.panelSecondary)
+            .padding(.horizontal, 5)
+            .allowsHitTesting(false)
         }
         .padding(12)
         .glassPane(cornerRadius: 14)
@@ -482,228 +495,190 @@ private struct AIAskView: View {
 
     // MARK: 底栏
 
-    /// 一条细线下面分左右两栏（按效果图）：左边当前服务（始终露出、带勾）、再露一个别的服务和「…」，
-    /// 下面一句说清楚这次会怎么处理；右边打开方式下拉和唯一的主按钮。
+    /// 一条细线下面一排三件（按效果图）：左边服务和打开方式合在一个下拉胶囊里
+    /// 「ChatGPT · API ∨」；中间 API 方式是「回答位置：刘海 ∨」，网页和 App 方式换成一句
+    /// 小字说明这次怎么处理；右边唯一的主按钮。420 宽放不下时服务胶囊先只露服务名，
+    /// 再把「回答位置」缩成图标加「刘海」。
     private var footer: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Rectangle()
                 .fill(.panelSeparator)
                 .frame(height: 0.5)
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    ViewThatFits(in: .horizontal) {
-                        serviceChips(showsOther: true)
-                        serviceChips(showsOther: false)
-                    }
-                    // 弹出列表挂在整组上（ViewThatFits 会量几种摆法，按钮里不挂弹窗），列出全部服务。
-                    .popover(isPresented: $choosing, arrowEdge: .top) { serviceList(services) }
-                    if let target {
-                        HStack(alignment: .firstTextBaseline, spacing: 5) {
-                            Image(systemName: "info.circle")
-                                .font(.system(size: 12))
-                                .accessibilityHidden(true)
-                            Text(AIAsk.modeLine(mode: targetMode,
-                                                appInstalled: AIServiceOpener.installedApp(target) != nil,
-                                                supportsAsk: target.supportsAsk))
-                                .font(.system(size: 13))
-                                .lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
+            ViewThatFits(in: .horizontal) {
+                footerRow(compactService: false, compactPlace: false)
+                footerRow(compactService: true, compactPlace: false)
+                footerRow(compactService: true, compactPlace: true)
+            }
+        }
+    }
+
+    private func footerRow(compactService: Bool, compactPlace: Bool) -> some View {
+        HStack(spacing: 8) {
+            serviceModeMenu(compact: compactService)
+            Spacer(minLength: 4)
+            middle(compact: compactPlace)
+            primaryButton
+        }
+    }
+
+    /// 服务和打开方式的下拉胶囊。菜单上半是服务（当前的带勾），下半是打开方式
+    /// API / 网页 / App，不能选的灰掉并写原因（和设置 ▸ AI 里改的是同一个键）。
+    private func serviceModeMenu(compact: Bool) -> some View {
+        Menu {
+            Section(tr("服务")) {
+                ForEach(services) { service in
+                    Button {
+                        pick(service)
+                    } label: {
+                        if service.id == target?.id {
+                            Label(service.title, systemImage: "checkmark")
+                        } else {
+                            Text(service.title)
                         }
-                        .foregroundStyle(.panelSecondary)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Rectangle()
-                    .fill(.panelSeparator)
-                    .frame(width: 0.5)
-                    .frame(maxHeight: 64)
-                VStack(spacing: 8) {
-                    if let target { modeMenu(target) }
-                    Button(action: submitFromButton) {
-                        HStack(spacing: 6) {
-                            Image(systemName: targetMode == .api ? "paperplane.fill" : "arrow.up.forward.app")
-                                .font(.system(size: 12, weight: .semibold))
-                                .accessibilityHidden(true)
-                            Text(buttonTitle)
-                                .font(.system(size: 14, weight: .semibold))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.9)
+            }
+            if let target {
+                Section(tr("打开方式")) {
+                    ForEach(center.modeOptions(for: target), id: \.mode) { option in
+                        Button {
+                            center.setMode(option.mode, for: target)
+                        } label: {
+                            if option.mode == targetMode {
+                                Label(AIModeChoice.capsuleTitle(option.mode), systemImage: "checkmark")
+                            } else {
+                                Text(option.available
+                                     ? AIModeChoice.capsuleTitle(option.mode)
+                                     : [AIModeChoice.capsuleTitle(option.mode),
+                                        AIModeChoice.unavailableReason(option.mode) ?? ""].joined(separator: " · "))
+                            }
                         }
-                        .padding(.horizontal, 12)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 32)
-                    }
-                    // 只这一个按钮用实心强调色；设了主题色按 PanelButtonLook.solid(for:) 配，对比度不低于 4.5。
-                    .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex))))
-                    .disabled(!canSubmit)
-                    .help(buttonHelp)
-                    .accessibilityLabel(buttonTitle)
-                    .accessibilityHint(buttonHelp)
-                }
-                .frame(width: 168)
-            }
-        }
-    }
-
-    /// 服务胶囊：当前服务始终排第一、凸起、带勾；`showsOther` 时再露一个别的服务（卡片上的下一个），
-    /// 其余进「…」。放不下时只留当前服务和「…」。
-    private func serviceChips(showsOther: Bool) -> some View {
-        let current = target
-        let others = services.filter { $0.id != current?.id }
-        let other = showsOther ? others.first : nil
-        let hidden = others.count - (other == nil ? 0 : 1)
-        return HStack(spacing: 6) {
-            if let current { serviceChip(current, selected: true) }
-            if let other { serviceChip(other, selected: false) }
-            if hidden > 0 {
-                Button {
-                    choosing.toggle()
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.panelSecondary)
-                        .frame(width: 28, height: 28)
-                        .background(Capsule().fill(.panelFill))
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .help(tr("更多服务"))
-                .accessibilityLabel(tr("更多服务"))
-            }
-        }
-        .fixedSize()
-        .disabled(context.isPreview)
-    }
-
-    private func serviceChip(_ service: AIService, selected: Bool) -> some View {
-        Button {
-            if selected { choosing.toggle() } else { pick(service) }
-        } label: {
-            HStack(spacing: 5) {
-                AIGlyph(initial: service.initial, size: 18, style: .panel)
-                Text(service.title)
-                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
-                    .lineLimit(1)
-                    .fixedSize()
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Color(hex: AIGlyph.dotHex).panelReadable)
-                        .accessibilityHidden(true)
-                }
-            }
-            .padding(.leading, 5)
-            .padding(.trailing, 8)
-            .frame(height: 28)
-            .background {
-                if selected {
-                    Capsule().fill(.panelRaised).panelLift()
-                } else {
-                    Capsule().fill(.panelFill)
-                }
-            }
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .help(selected ? tr("当前服务：\(service.title)，点一下换别的") : center.modeLabel(for: service))
-        .accessibilityLabel(selected ? tr("\(service.title)，当前") : tr("切换到 \(service.title)"))
-    }
-
-    /// 打开方式下拉：API 模式 / 网页模式 / App 模式，不能选的灰掉并写原因。和设置 ▸ AI 里改的是同一个键。
-    private func modeMenu(_ service: AIService) -> some View {
-        let options = center.modeOptions(for: service)
-        return Menu {
-            ForEach(options, id: \.mode) { option in
-                Button {
-                    center.setMode(option.mode, for: service)
-                } label: {
-                    if option.mode == targetMode {
-                        Label(AIModeChoice.capsuleTitle(option.mode), systemImage: "checkmark")
-                    } else {
-                        Text(option.available
-                             ? AIModeChoice.capsuleTitle(option.mode)
-                             : [AIModeChoice.capsuleTitle(option.mode),
-                                AIModeChoice.unavailableReason(option.mode) ?? ""].joined(separator: " · "))
+                        .disabled(!option.available)
                     }
                 }
-                .disabled(!option.available)
             }
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: Self.modeSymbol(targetMode))
-                    .font(.system(size: 12, weight: .medium))
-                    .accessibilityHidden(true)
-                Text(AIModeChoice.capsuleTitle(targetMode))
-                    .font(.system(size: 13, weight: .medium))
-                    .lineLimit(1)
-                Spacer(minLength: 2)
+                if let target {
+                    if !compact {
+                        AIGlyph(initial: target.initial, size: 20, style: .panel)
+                            .accessibilityHidden(true)
+                    }
+                    Text(compact ? target.title : "\(target.title) · \(targetMode.title)")
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                        .fixedSize()
+                }
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
                     .accessibilityHidden(true)
             }
             .foregroundStyle(.panelPrimary)
-            .padding(.horizontal, 11)
-            .frame(maxWidth: .infinity)
-            .frame(height: 30)
-            .background(Capsule().fill(.panelFill))
+            .padding(.leading, compact ? 11 : 6)
+            .padding(.trailing, 10)
+            .frame(height: 32)
+            .background(Capsule().fill(.panelRaised).panelLift())
             .contentShape(Capsule())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
+        .fixedSize()
         .disabled(context.isPreview)
-        .help(AIHandoff.modeAction(targetMode, appInstalled: AIServiceOpener.installedApp(service) != nil,
-                                   supportsAsk: service.supportsAsk))
-        .accessibilityLabel(tr("打开方式：\(AIModeChoice.capsuleTitle(targetMode))"))
+        .help(target.map { tr("当前服务：\($0.title)，\(center.modeLabel(for: $0))。点一下换服务或打开方式") } ?? "")
+        .accessibilityLabel(target.map { tr("服务 \($0.title)，打开方式 \(AIModeChoice.capsuleTitle(targetMode))") } ?? tr("服务"))
     }
 
-    private static func modeSymbol(_ mode: AIOpenMode) -> String {
-        switch mode {
-        case .api: "bolt.horizontal"
-        case .web: "globe"
-        case .jump: "app.badge"
+    /// 中间：API 方式是「回答位置」下拉；网页和 App 方式码头拿不到回答，换成一句说明。
+    @ViewBuilder private func middle(compact: Bool) -> some View {
+        if targetMode == .api {
+            let placement = center.settings.answerPlacement
+            Menu {
+                ForEach(AIAnswerPlacement.allCases, id: \.self) { option in
+                    Button {
+                        center.updateSettings { $0.answerPlacement = option }
+                    } label: {
+                        if option == placement {
+                            Label(option.title, systemImage: "checkmark")
+                        } else {
+                            Text(option.title)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: placement == .notch ? "macbook" : "rectangle.bottomhalf.inset.filled")
+                        .font(.system(size: 12, weight: .medium))
+                        .accessibilityHidden(true)
+                    Text(compact ? placement.shortTitle : tr("回答位置：\(placement.shortTitle)"))
+                        .font(.system(size: 13))
+                        .lineLimit(1)
+                        .fixedSize()
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 9, weight: .semibold))
+                        .accessibilityHidden(true)
+                }
+                .foregroundStyle(.panelSecondary)
+                .padding(.horizontal, 6)
+                .frame(height: 30)
+                .contentShape(.rect)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .disabled(context.isPreview)
+            .help(tr("回答显示在哪：刘海优先时答案在刘海下方的结果卡片里，选小组件面板时打开完整对话"))
+            .accessibilityLabel(tr("回答位置：\(placement.title)"))
+        } else if let target {
+            Text(AIHandoff.modeAction(targetMode, appInstalled: AIServiceOpener.installedApp(target) != nil,
+                                      supportsAsk: target.supportsAsk))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.trailing)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 130, alignment: .trailing)
+                .help(AIAsk.modeLine(mode: targetMode, appInstalled: AIServiceOpener.installedApp(target) != nil,
+                                     supportsAsk: target.supportsAsk))
         }
+    }
+
+    /// 唯一的主按钮：API「提问 ↑」；App 和网页方式照实写「复制并打开 豆包」「去网页提问」。
+    /// 小熊猫橙（白字不够 4.5 时 `PanelSolidButtonStyle` 自动加深，见 `PanelButtonLook.solid`），
+    /// 设了主题色按主题色；不发光。
+    private var primaryButton: some View {
+        Button(action: submitFromButton) {
+            HStack(spacing: 6) {
+                if targetMode != .api {
+                    Image(systemName: "arrow.up.forward.app")
+                        .font(.system(size: 12, weight: .semibold))
+                        .accessibilityHidden(true)
+                }
+                Text(buttonTitle)
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
+                if targetMode == .api {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 12, weight: .bold))
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 32)
+        }
+        .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: ShelfColor.redPanda.hex))))
+        .fixedSize()
+        .disabled(!canSubmit)
+        .help(buttonHelp)
+        .accessibilityLabel(buttonTitle)
+        .accessibilityHint(buttonHelp)
     }
 
     private func pick(_ service: AIService) {
         targetID = service.id
         // 和刘海对话共用当前服务；刘海那边没有这个服务时 select 不改。
         center.select(service.id)
-        choosing = false
-    }
-
-    private func serviceList(_ list: [AIService]) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach(list) { service in
-                Button {
-                    pick(service)
-                } label: {
-                    HStack(spacing: 8) {
-                        AIGlyph(initial: service.initial, size: 20, style: .panel)
-                        Text(service.title)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.panelPrimary)
-                            .lineLimit(1)
-                        Spacer(minLength: 12)
-                        Text(center.mode(for: service).title)
-                            .font(.system(size: 13))
-                            .foregroundStyle(.panelSecondary)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.panelPrimary)
-                            .opacity(service.id == target?.id ? 1 : 0)
-                    }
-                    .padding(.horizontal, 8)
-                    .frame(height: 28)
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tr("\(service.title)，\(center.mode(for: service).title)"))
-                .accessibilityAddTraits(service.id == target?.id ? .isSelected : [])
-            }
-        }
-        .padding(6)
-        .frame(minWidth: 200)
     }
 
     private var empty: some View {
@@ -731,7 +706,10 @@ private struct AIAskView: View {
     private var buttonHelp: String {
         let name = target?.title ?? ""
         switch targetMode {
-        case .api: return tr("在刘海对话里用 API 直接问 \(name)")
+        case .api:
+            return center.settings.answerPlacement == .notch
+                ? tr("用 API 直接问 \(name)，回答显示在刘海下方的结果卡片")
+                : tr("用 API 直接问 \(name)，回答显示在刘海对话")
         case .web: return tr("复制问题，在刘海对话里打开 \(name) 的网页")
         case .jump:
             if let target, AIServiceOpener.installedApp(target) != nil {
@@ -758,6 +736,10 @@ private struct AIAskView: View {
     private func deliver(_ text: String?, keepsDraft: Bool = false) {
         guard !context.isPreview, let service = target else { return }
         let asked = text ?? state.draft(instance.id)
+        guard AIAskLimit.withinLimit(asked) else {
+            state.setHint(AIAskLimit.overLimitHint, for: instance.id)
+            return
+        }
         let handoff = AIHandoff.plan(asked, mode: targetMode,
                                      notchUnlocked: ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked))
         switch handoff {
@@ -767,12 +749,15 @@ private struct AIAskView: View {
             // 刘海对话是码头 Pro：没解锁时弹付费墙，问题留在框里。
             PaywallWindow.shared.show()
         case .notchAPI(let question), .notchWeb(let question):
+            // API 的结果放在哪（刘海卡片、备用浮窗、完整对话、只在刘海下沿显示进度），交出去之前定好。
+            let quick: AIQuickResultTarget = targetMode == .api
+                ? AINotchController.shared.quickTarget(mode: .api) : .none
             switch center.receive(question, for: service) {
             case .accepted:
-                // 交过去了才清空草稿（剪贴板总结不动输入框）。先收起这个面板，再从刘海长出对话，不叠两个窗口。
+                // 交过去了才清空草稿（剪贴板总结不动输入框）。先收起这个面板，再从刘海长出结果，不叠两个窗口。
                 if !keepsDraft { state.setDraft("", for: instance.id) }
                 WidgetDetailWindow.shared.close()
-                openNotchAfterPanelCloses()
+                showResultAfterPanelCloses(quick, serviceID: service.id)
             case .busy:
                 state.setHint(tr("还在回答，先停止或等它答完。"), for: instance.id)
             case .unavailable:
@@ -783,12 +768,19 @@ private struct AIAskView: View {
         }
     }
 
-    /// 等小组件面板收起的淡出走完再打开刘海对话；减弱动态效果时马上打开。
-    private func openNotchAfterPanelCloses() {
+    /// 等小组件面板收起的淡出走完再显示结果；减弱动态效果时马上显示。
+    /// - 刘海卡片、备用浮窗：弹快捷结果卡片（流式回答一边来一边显示）。
+    /// - 完整对话：原来的做法，打开刘海对话面板（网页方式也是它，在那里粘贴发送）。
+    /// - 只显示进度：什么都不弹，刘海下沿「正在思考」，点刘海看回答。
+    private func showResultAfterPanelCloses(_ quick: AIQuickResultTarget, serviceID: String) {
         let wait = reduceMotion ? 0 : 160
         Task { @MainActor in
             if wait > 0 { try? await Task.sleep(for: .milliseconds(wait)) }
-            AINotchController.shared.open()
+            switch quick {
+            case .notchCard, .floating: AINotchController.shared.presentQuick(serviceID: serviceID)
+            case .quiet: break
+            case .fullPanel, .none: AINotchController.shared.open()
+            }
         }
     }
 

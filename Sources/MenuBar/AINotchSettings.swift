@@ -53,6 +53,30 @@ struct AINotchSettingsSection: View {
                 .buttonStyle(.link)
                 .help("到“快捷键”页录制或清除。")
             }
+            // 小组件里用 API 提问后回答显示在哪。网页、App 方式码头拿不到回答，不受这几项影响。
+            Picker("回答显示位置", selection: $state.aiNotch.answerPlacement) {
+                ForEach(AIAnswerPlacement.allCases, id: \.self) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .help("刘海优先：在货架的 AI 卡片里用 API 提问后，刘海下方弹出结果卡片；刘海被专注计时、通知、下载或拾掇占着时改在屏幕右上角显示。小组件面板：照原来的做法打开完整对话。")
+            Toggle(isOn: $state.aiNotch.autoShowResult) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("提交问题后自动展开结果")
+                    Text("刘海空闲时显示生成过程与回答")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .disabled(state.aiNotch.answerPlacement != .notch)
+            .help("关掉后不自动弹出，刘海下沿只显示“正在思考”，点刘海看回答。")
+            Picker("回答完成后", selection: $state.aiNotch.afterAnswer) {
+                ForEach(AIAutoCollapse.allCases, id: \.self) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .disabled(state.aiNotch.answerPlacement != .notch || !state.aiNotch.autoShowResult)
+            .help("指针停在结果卡片上时不倒计时；卡片固定后也不会自动收起。")
             if shiduoRunning {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Label(AIShiduo.explanation, systemImage: "rectangle.on.rectangle")

@@ -10,7 +10,7 @@ public enum AIDockChip: String, CaseIterable, Sendable {
     public var title: String {
         switch self {
         case .screenshot: tr("截图提问")
-        case .clipboardSummary: tr("剪贴板总结")
+        case .clipboardSummary: tr("剪贴板")
         case .clipboard: tr("处理剪贴板")
         case .translate: tr("翻译", context: "chip")
         case .summarize: tr("总结", context: "chip")

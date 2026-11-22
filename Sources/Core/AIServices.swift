@@ -524,11 +524,11 @@ public enum AIAsk {
     }
 
     /// 主按钮上的字：说清楚码头做到哪一步，App 和网页方式不能让人以为码头已经替他问了。
-    /// API 方式「发送」；App 方式装了 App 时「复制并打开 豆包」；其余（网页方式、
+    /// API 方式「提问」；App 方式装了 App 时「复制并打开 豆包」；其余（网页方式、
     /// 没装 App 走浏览器）「去网页提问」。
     public static func buttonTitle(mode: AIOpenMode, service: AIService?, appInstalled: Bool) -> String {
         switch mode {
-        case .api: return tr("发送")
+        case .api: return tr("提问")
         case .web: return tr("去网页提问")
         case .jump:
             guard let service, appInstalled else { return tr("去网页提问") }

@@ -153,7 +153,7 @@ final class InputSourceHintController {
             fullscreen: NotchFullscreen.isFullscreen(windows, screen: screen.frame, topInset: screen.safeAreaInsets.top,
                                                      frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier,
                                                      ownPID: ProcessInfo.processInfo.processIdentifier),
-            aiPanelOpen: AINotchController.shared.isOpen,
+            aiPanelOpen: AINotchController.shared.occupiesNotch,
             reminderShowing: ReminderPopupCenter.shared.isShowing,
             messageCardExpanded: NotchMessageOccupancy.shared.cardExpanded,
             islandShowing: IslandOccupancy.shared.frame != nil)

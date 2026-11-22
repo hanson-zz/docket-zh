@@ -290,7 +290,7 @@ final class AIServicesTests: XCTestCase {
         XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: false), "去网页提问")
         XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: nil, appInstalled: true), "去网页提问")
         XCTAssertEqual(AIAsk.buttonTitle(mode: .web, service: doubao, appInstalled: true), "去网页提问")
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .api, service: doubao, appInstalled: false), "发送")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .api, service: doubao, appInstalled: false), "提问")
         for service in AIServices.builtIn {
             let title = AIAsk.buttonTitle(mode: .jump, service: service, appInstalled: true)
             XCTAssertLessThanOrEqual(title.count, 6 + AIAsk.maxButtonNameLength, service.id)

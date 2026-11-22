@@ -8,8 +8,8 @@ final class AIAssistantFlowTests: XCTestCase {
 
     func testDockChipsDefaultToTheFourCommonOnes() {
         XCTAssertEqual(AIDockChips.resolved(nil), [.screenshot, .clipboardSummary, .translate, .polish],
-                       "同效果图：截图提问、剪贴板总结、翻译、润色")
-        XCTAssertEqual(AIDockChips.resolved(nil).map(\.title), ["截图提问", "剪贴板总结", "翻译", "润色"])
+                       "同效果图：截图提问、剪贴板、翻译、润色")
+        XCTAssertEqual(AIDockChips.resolved(nil).map(\.title), ["截图提问", "剪贴板", "翻译", "润色"])
         XCTAssertEqual(AIDockChips.resolved([]), [], "存了空列表就是一个都不显示")
     }
 

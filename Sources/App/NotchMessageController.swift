@@ -307,7 +307,7 @@ final class NotchMessageController {
             fullscreen: NotchFullscreen.isFullscreen(windows, screen: screen.frame, topInset: screen.safeAreaInsets.top,
                                                      frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier,
                                                      ownPID: ProcessInfo.processInfo.processIdentifier),
-            aiPanelOpen: AINotchController.shared.isOpen,
+            aiPanelOpen: AINotchController.shared.occupiesNotch,
             reminderShowing: ReminderPopupCenter.shared.isShowing)
         let waited = pendingSince.map { now.timeIntervalSince($0) } ?? 0
 

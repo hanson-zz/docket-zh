@@ -63,11 +63,18 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
     /// 小组件提问面板显示哪几个快捷操作胶囊（`AIDockChip` 的 id）。nil 是没设置过，
     /// 用 `AIDockChips.defaults`；空列表是一个都不显示。
     public var panelChips: [String]?
+    /// 小组件里用 API 提问后回答显示在哪：刘海优先（默认）或小组件面板（原来的做法）。
+    public var answerPlacement: AIAnswerPlacement = .notch
+    /// 提交问题后自动展开结果（刘海空闲时显示生成过程与回答）。默认开。
+    public var autoShowResult: Bool = true
+    /// 快捷结果卡片答完之后：保持显示、手动收起（默认），或者 15、30 秒后自动收起。
+    public var afterAnswer: AIAutoCollapse = .manual
 
     public init() {}
 
     private enum CodingKeys: String, CodingKey {
         case enabled, mainScreenOnly, hotKey, modes, endpoints, appPaths, lastServiceID, prompts, panelChips
+        case answerPlacement, autoShowResult, afterAnswer
     }
 
     public init(from decoder: any Decoder) throws {
@@ -83,6 +90,12 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
         lastServiceID = try? c.decodeIfPresent(String.self, forKey: .lastServiceID)
         prompts = AIPrompts.sanitized((try? c.decodeIfPresent([AIPrompt].self, forKey: .prompts)) ?? [])
         panelChips = try? c.decodeIfPresent([String].self, forKey: .panelChips)
+        // 新加的三项：旧存档没有、或者值认不出来时用默认。
+        answerPlacement = ((try? c.decodeIfPresent(String.self, forKey: .answerPlacement)) ?? nil)
+            .flatMap(AIAnswerPlacement.init(rawValue:)) ?? .notch
+        autoShowResult = ((try? c.decodeIfPresent(Bool.self, forKey: .autoShowResult)) ?? nil) ?? true
+        afterAnswer = ((try? c.decodeIfPresent(String.self, forKey: .afterAnswer)) ?? nil)
+            .flatMap(AIAutoCollapse.init(rawValue:)) ?? .manual
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -96,6 +109,9 @@ public struct AINotchSettings: Codable, Hashable, Sendable {
         try c.encodeIfPresent(lastServiceID, forKey: .lastServiceID)
         try c.encode(prompts, forKey: .prompts)
         try c.encodeIfPresent(panelChips, forKey: .panelChips)
+        try c.encode(answerPlacement.rawValue, forKey: .answerPlacement)
+        try c.encode(autoShowResult, forKey: .autoShowResult)
+        try c.encode(afterAnswer.rawValue, forKey: .afterAnswer)
     }
 
     /// 只有带 Control、Option 或 Command 的组合才注册，Shift 单独不算。
