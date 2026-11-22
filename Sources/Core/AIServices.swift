@@ -524,7 +524,7 @@ public enum AIAsk {
     }
 
     /// 主按钮上的字：说清楚码头做到哪一步，App 和网页方式不能让人以为码头已经替他问了。
-    /// API 方式「提问」；App 方式装了 App 时「复制并打开 豆包」；其余（网页方式、
+    /// API 方式「提问」；App 方式装了 App 时「复制并打开豆包」；其余（网页方式、
     /// 没装 App 走浏览器）「去网页提问」。
     public static func buttonTitle(mode: AIOpenMode, service: AIService?, appInstalled: Bool) -> String {
         switch mode {
@@ -539,11 +539,11 @@ public enum AIAsk {
     /// 服务名超过这么多个字时按钮写「复制并打开 App」，免得把按钮撑得太宽。
     public static let maxButtonNameLength = 8
 
-    /// 「复制并打开 豆包」；名字太长（自定义服务）时「复制并打开 App」。
+    /// 「复制并打开豆包」（中文里服务名前后不加空格）；名字太长（自定义服务）时「复制并打开 App」。
     public static func appButtonTitle(_ service: AIService) -> String {
         let name = service.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, name.count <= maxButtonNameLength else { return tr("复制并打开 App") }
-        return tr("复制并打开 \(name)")
+        return tr("复制并打开\(name)")
     }
 
     /// 主按钮左边那一句：当前服务会怎么处理这次提问。App 和网页方式写明要用户自己粘贴发送。
@@ -579,8 +579,8 @@ public enum AIAsk {
     public static func hint(after plan: Plan, service: AIService) -> String? {
         switch plan {
         case .blocked: tr("先写下要问的问题。")
-        case .openWithQuestion: tr("已在浏览器打开 \(service.title)，问题放在了网址里。")
-        case .copyThenOpen: tr("已复制，到 \(service.title) 里粘贴即可。")
+        case .openWithQuestion: tr("已在浏览器打开\(service.title)，问题放在了网址里。")
+        case .copyThenOpen: tr("已复制，到\(service.title)里粘贴即可。")
         }
     }
 }

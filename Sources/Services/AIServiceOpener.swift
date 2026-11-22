@@ -110,6 +110,8 @@ final class AIPanelState {
     var form = Form()
     private(set) var drafts: [UUID: String] = [:]
     private(set) var hints: [UUID: String] = [:]
+    /// 每次设提示换一个记号：同一句话再出现一次，淡出的计时也重新开始。
+    private(set) var hintTokens: [UUID: UUID] = [:]
     /// 选 App 时面板是自己收起的，选完要原样回来，这一次关闭不重置。
     var holdingForAppChooser = false
 
@@ -131,6 +133,8 @@ final class AIPanelState {
         mode = .ask
         wantsCustomForm = false
         if form != Form() { form = Form() }
+        // 提示只说刚做完的那一下，下次打开面板不再挂着上一次的「已复制」。
+        if !hints.isEmpty { hints = [:] }
     }
 
     func draft(_ id: UUID) -> String { drafts[id] ?? "" }
@@ -138,12 +142,26 @@ final class AIPanelState {
     func setDraft(_ text: String, for id: UUID) {
         drafts[id] = text.isEmpty ? nil : text
         // 一开始改问题，上一次的提示就不再对应它了。
-        if hints[id] != nil { hints[id] = nil }
+        if hints[id] != nil { setHint(nil, for: id) }
     }
 
     func hint(_ id: UUID) -> String? { hints[id] }
 
-    func setHint(_ text: String?, for id: UUID) { hints[id] = text }
+    func setHint(_ text: String?, for id: UUID) {
+        hints[id] = text
+        hintTokens[id] = text == nil ? nil : UUID()
+    }
+
+    func hintToken(_ id: UUID) -> UUID? { hintTokens[id] }
+
+    /// 淡出到点了：还是那一次的提示才清掉，期间又换了新提示就留着。
+    func expireHint(_ token: UUID, for id: UUID) {
+        guard hintTokens[id] == token else { return }
+        setHint(nil, for: id)
+    }
+
+    /// 状态提示停留多久后淡出。
+    static let hintLifetime: Duration = .seconds(4)
 
     /// 请扩展栏打开（或关掉）这张卡片的面板。扩展栏手里有锚点，所以由它来开。
     static let openRequest = Notification.Name("com.docket-zh.ai-assistant.open")

@@ -100,14 +100,20 @@ private struct PanelSolidButtonBody<S: InsettableShape>: View {
 /// （`panelTertiary`，浅色约 3.6:1，深色约 4.2:1），比主按钮淡一档但认得出来。
 /// 同样自己画，系统不再额外变淡。
 struct PanelChipButtonStyle: ButtonStyle {
+    /// 画成灰的但还能点、还能悬停出说明（禁用的按钮不出悬停说明），比如剪贴板空时的「剪贴板」。
+    var dimmed = false
+
     func makeBody(configuration: Configuration) -> some View {
-        PanelChipButtonBody(configuration: configuration)
+        PanelChipButtonBody(configuration: configuration, dimmed: dimmed)
     }
 }
 
 private struct PanelChipButtonBody: View {
     var configuration: ButtonStyleConfiguration
-    @Environment(\.isEnabled) private var isEnabled
+    var dimmed: Bool
+    @Environment(\.isEnabled) private var enabled
+
+    private var isEnabled: Bool { enabled && !dimmed }
 
     var body: some View {
         configuration.label

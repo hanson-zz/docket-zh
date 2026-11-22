@@ -277,15 +277,15 @@ final class AIServicesTests: XCTestCase {
     func testServicesWithoutATemplateCopyThenOpen() throws {
         let deepseek = try XCTUnwrap(AIServices.builtIn("deepseek"))
         XCTAssertEqual(AIAsk.plan("  你好  ", service: deepseek), .copyThenOpen("你好"))
-        XCTAssertEqual(AIAsk.hint(after: .copyThenOpen("你好"), service: deepseek), "已复制，到 DeepSeek 里粘贴即可。")
+        XCTAssertEqual(AIAsk.hint(after: .copyThenOpen("你好"), service: deepseek), "已复制，到DeepSeek里粘贴即可。")
     }
 
-    /// 主按钮的字：装了 App「复制并打开 豆包」，没装或网页方式「去网页提问」，API「发送」。
+    /// 主按钮的字：装了 App「复制并打开豆包」，没装或网页方式「去网页提问」，API「发送」。
     func testAskButtonTitleIsShort() throws {
         let doubao = try XCTUnwrap(AIServices.builtIn("doubao"))
         let chatgpt = try XCTUnwrap(AIServices.builtIn("chatgpt"))
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: true), "复制并打开 豆包")
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: true), "复制并打开 ChatGPT")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: true), "复制并打开豆包")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: true), "复制并打开ChatGPT")
         XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: false), "去网页提问")
         XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: false), "去网页提问")
         XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: nil, appInstalled: true), "去网页提问")

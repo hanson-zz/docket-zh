@@ -16,8 +16,9 @@ import UniformTypeIdentifiers
 /// 刘海里的完整对话；网页方式复制问题，在刘海对话的网页里粘贴发送。App 方式只负责跳转，
 /// 不显示「已发送」「已回答」之类的状态，回答在那个服务里看。
 ///
-/// 字牌、服务的打开方式和 API 密钥这些不常改的，收在设置页（齿轮）里。面板的
-/// 大小在打开时量一次，切换两页不会重新量。
+/// 字牌、服务的打开方式和 API 密钥这些不常改的，收在设置页（齿轮）里。提问页的高度
+/// 跟内容走（输入框变高、出现状态提示时面板跟着长），不再垫一大块空白；设置页里是
+/// 滚动列表，固定 `bodyHeight` 高。
 struct AIAssistantDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -32,17 +33,17 @@ struct AIAssistantDetail: View {
         DetailCard {
             MeshBackdrop(color: Color(hex: ShelfColor.redPanda.hex))
         } content: {
-            VStack(alignment: .leading, spacing: 12) {
-                if state.mode == .manage {
+            if state.mode == .manage {
+                VStack(alignment: .leading, spacing: 12) {
                     settingsHeader
                     AIManageView(instance: instance, context: context)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                } else {
-                    AIAskView(instance: instance, context: context, services: services)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
+                .frame(height: Self.bodyHeight, alignment: .top)
+            } else {
+                AIAskView(instance: instance, context: context, services: services)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .frame(height: Self.bodyHeight, alignment: .top)
         }
     }
 
@@ -161,6 +162,8 @@ private struct AIAskView: View {
     /// 服务）；没有时（另一张 AI 卡片）只在这里记着。
     @State private var targetID: String?
     @State private var showingMore = false
+    /// 服务胶囊的弹出列表开着没有。
+    @State private var choosingService = false
     /// 顶栏小熊猫的短暂表态：答完庆祝一下、出错举爪提醒一下，几秒后回常态。
     @State private var pandaPulse: PandaPulse?
 
@@ -194,17 +197,12 @@ private struct AIAskView: View {
             } else {
                 input
                 chipRow
-                if let hint = state.hint(instance.id) {
-                    Text(hint)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.panelPrimary)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityAddTraits(.updatesFrequently)
-                }
+                statusLine
                 footer
             }
         }
+        // 状态提示出现、淡出时一起过渡（面板高度也跟着变）。
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: state.hintToken(instance.id))
         // 面板开着时每秒看一眼剪贴板有没有变（只比较计数，变了才读内容），
         // 和刘海对话共用同一份。
         .task {
@@ -213,6 +211,33 @@ private struct AIAskView: View {
                 center.refreshClipboard()
                 try? await Task.sleep(for: .seconds(1))
             }
+        }
+    }
+
+    // MARK: 状态提示
+
+    /// 做完一下之后的一句话（「已复制，到豆包里粘贴即可。」「剪贴板里没有文字」），
+    /// 对应刚才那一下和当时选的服务；`AIPanelState.hintLifetime` 后淡出，换服务、
+    /// 改问题、关面板也清掉。没有提示时不占地方。
+    @ViewBuilder private var statusLine: some View {
+        let token = state.hintToken(instance.id)
+        Group {
+            if let hint = state.hint(instance.id) {
+                Text(hint)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .transition(.opacity)
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
+        }
+        .task(id: token) {
+            guard let token else { return }
+            try? await Task.sleep(for: AIPanelState.hintLifetime)
+            guard !Task.isCancelled else { return }
+            state.expireHint(token, for: instance.id)
         }
     }
 
@@ -398,6 +423,9 @@ private struct AIAskView: View {
         .accessibilityLabel(tr("更多快捷操作"))
     }
 
+    /// 剪贴板空时「剪贴板」胶囊画成灰的，但不用 `.disabled`：禁用的按钮在 macOS 上
+    /// 不出悬停说明，用户只看到一个灰胶囊不知道为什么。悬停写「剪贴板里没有文字」，
+    /// 点了也在状态行说这一句。
     private func chipButton(_ chip: AIDockChip) -> some View {
         let clipboardEmpty = chip.usesClipboardOnly && center.clipboardPreview == nil
         return Button {
@@ -414,10 +442,10 @@ private struct AIAskView: View {
             .padding(.horizontal, 7)
             .frame(height: 28)
         }
-        .buttonStyle(PanelChipButtonStyle())
-        .disabled(clipboardEmpty)
+        .buttonStyle(PanelChipButtonStyle(dimmed: clipboardEmpty))
         .help(chipHelp(chip))
         .accessibilityLabel(chip.title)
+        .accessibilityHint(clipboardEmpty ? tr("剪贴板里没有文字") : "")
     }
 
     private func chipHelp(_ chip: AIDockChip) -> String {
@@ -467,9 +495,9 @@ private struct AIAskView: View {
     private func actionHelp(_ title: String) -> String {
         let name = target?.title ?? ""
         switch targetMode {
-        case .api: return tr("\(title)输入框里的文字（空着时用剪贴板），在刘海对话里直接问 \(name)")
-        case .web: return tr("\(title)输入框里的文字（空着时用剪贴板）：复制套好的提示词，在刘海对话里打开 \(name)")
-        case .jump: return tr("\(title)输入框里的文字（空着时用剪贴板），再打开 \(name)")
+        case .api: return tr("\(title)输入框里的文字（空着时用剪贴板），在刘海对话里直接问\(name)")
+        case .web: return tr("\(title)输入框里的文字（空着时用剪贴板）：复制套好的提示词，在刘海对话里打开\(name)")
+        case .jump: return tr("\(title)输入框里的文字（空着时用剪贴板），再打开\(name)")
         }
     }
 
@@ -503,76 +531,65 @@ private struct AIAskView: View {
 
     // MARK: 底栏
 
-    /// 一条细线下面一排三件（按效果图）：左边服务和打开方式合在一个下拉胶囊里
-    /// 「ChatGPT · API ∨」；中间 API 方式是「回答位置：刘海 ∨」，网页和 App 方式换成一句
-    /// 小字说明这次怎么处理；右边唯一的主按钮。420 宽放不下时服务胶囊先只露服务名，
-    /// 再把「回答位置」缩成图标加「刘海」。
+    /// 一条细线下面一排三件：左边服务胶囊（服务图标加完整名字，宽时再带打开方式
+    /// 「DeepSeek · 网页」），中间 API 方式是「回答位置：刘海 ∨」，网页和 App 方式换成一行
+    /// 小字说明这次怎么处理；右边唯一的主按钮。放不下时依次：胶囊去掉打开方式、「回答
+    /// 位置」缩成图标加「刘海」、去掉中间那句（主按钮的悬停说明里有）、服务名截断。
+    /// 什么时候都只占一行，不折行。
     private var footer: some View {
         VStack(spacing: 10) {
             Rectangle()
                 .fill(.panelSeparator)
                 .frame(height: 0.5)
             ViewThatFits(in: .horizontal) {
-                footerRow(compactService: false, compactPlace: false)
-                footerRow(compactService: true, compactPlace: false)
-                footerRow(compactService: true, compactPlace: true)
+                footerRow(service: .full, middle: .full)
+                footerRow(service: .name, middle: .full)
+                footerRow(service: .name, middle: .compact)
+                footerRow(service: .name, middle: nil)
+                footerRow(service: .truncated, middle: nil)
             }
         }
     }
 
-    private func footerRow(compactService: Bool, compactPlace: Bool) -> some View {
+    private enum ServiceLabel { case full, name, truncated }
+    private enum MiddleLabel { case full, compact }
+
+    private func footerRow(service: ServiceLabel, middle: MiddleLabel?) -> some View {
         HStack(spacing: 8) {
-            serviceModeMenu(compact: compactService)
+            serviceButton(service)
             Spacer(minLength: 4)
-            middle(compact: compactPlace)
+            if let middle { self.middle(compact: middle == .compact) }
             primaryButton
         }
     }
 
-    /// 服务和打开方式的下拉胶囊。菜单上半是服务（当前的带勾），下半是打开方式
-    /// API / 网页 / App，不能选的灰掉并写原因（和设置 ▸ AI 里改的是同一个键）。
-    private func serviceModeMenu(compact: Bool) -> some View {
-        Menu {
-            Section(tr("服务")) {
-                ForEach(services) { service in
-                    Button {
-                        pick(service)
-                    } label: {
-                        if service.id == target?.id {
-                            Label(service.title, systemImage: "checkmark")
-                        } else {
-                            Text(service.title)
-                        }
-                    }
-                }
-            }
-            if let target {
-                Section(tr("打开方式")) {
-                    ForEach(center.modeOptions(for: target), id: \.mode) { option in
-                        Button {
-                            center.setMode(option.mode, for: target)
-                        } label: {
-                            if option.mode == targetMode {
-                                Label(AIModeChoice.capsuleTitle(option.mode), systemImage: "checkmark")
-                            } else {
-                                Text(option.available
-                                     ? AIModeChoice.capsuleTitle(option.mode)
-                                     : [AIModeChoice.capsuleTitle(option.mode),
-                                        AIModeChoice.unavailableReason(option.mode) ?? ""].joined(separator: " · "))
-                            }
-                        }
-                        .disabled(!option.available)
-                    }
-                }
-            }
+    /// 服务胶囊：服务图标加完整名字，点开是服务和打开方式的列表。
+    ///
+    /// 不用 `Menu`：macOS 上 `.borderlessButton` 样式的菜单只取标签里的第一段字和第一张图，
+    /// 胶囊底、图标都被丢掉，真机上只剩字牌里的一个「D」「豆」。这里是普通按钮加弹出框，
+    /// 标签画成什么样就是什么样。
+    private func serviceButton(_ label: ServiceLabel) -> some View {
+        Button {
+            choosingService.toggle()
         } label: {
             HStack(spacing: 6) {
                 if let target {
-                    if !compact {
-                        AIGlyph(initial: target.initial, size: 20, style: .panel)
-                            .accessibilityHidden(true)
+                    AIGlyph(initial: target.initial, size: 20, style: .panel)
+                        .accessibilityHidden(true)
+                    Group {
+                        if label == .full {
+                            Text(verbatim: "\(target.title) · \(targetMode.title)")
+                        } else {
+                            Text(verbatim: target.title)
+                        }
                     }
-                    Text(compact ? target.title : "\(target.title) · \(targetMode.title)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .fixedSize(horizontal: label != .truncated, vertical: false)
+                    .frame(maxWidth: label == .truncated ? 96 : nil, alignment: .leading)
+                } else {
+                    Text(tr("服务"))
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
                         .fixedSize()
@@ -583,18 +600,92 @@ private struct AIAskView: View {
                     .accessibilityHidden(true)
             }
             .foregroundStyle(.panelPrimary)
-            .padding(.leading, compact ? 11 : 6)
+            .padding(.leading, 6)
             .padding(.trailing, 10)
             .frame(height: 32)
             .background(Capsule().fill(.panelRaised).panelLift())
             .contentShape(Capsule())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
+        .buttonStyle(.plain)
+        .fixedSize(horizontal: label != .truncated, vertical: true)
+        .popover(isPresented: $choosingService, arrowEdge: .top) { serviceList }
         .disabled(context.isPreview)
         .help(target.map { tr("当前服务：\($0.title)，\(center.modeLabel(for: $0))。点一下换服务或打开方式") } ?? "")
-        .accessibilityLabel(target.map { tr("服务 \($0.title)，打开方式 \(AIModeChoice.capsuleTitle(targetMode))") } ?? tr("服务"))
+        .accessibilityLabel(target.map { tr("服务\($0.title)，打开方式\(AIModeChoice.capsuleTitle(targetMode))") } ?? tr("服务"))
+    }
+
+    /// 服务胶囊弹出的列表：上半是服务（当前的带勾），下半是这个服务的打开方式
+    /// API / 网页 / App，不能选的灰掉并写原因（和设置 ▸ AI 里改的是同一个键）。
+    private var serviceList: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            listHeader(tr("服务"))
+            ForEach(services) { service in
+                listRow(selected: service.id == target?.id) {
+                    pick(service)
+                    choosingService = false
+                } label: {
+                    AIGlyph(initial: service.initial, size: 20, style: .panel)
+                        .accessibilityHidden(true)
+                    Text(verbatim: service.title)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                }
+            }
+            if let target {
+                Divider().padding(.vertical, 4)
+                listHeader(tr("打开方式"))
+                ForEach(center.modeOptions(for: target), id: \.mode) { option in
+                    listRow(selected: option.mode == targetMode) {
+                        center.setMode(option.mode, for: target)
+                        choosingService = false
+                    } label: {
+                        Text(AIModeChoice.capsuleTitle(option.mode))
+                            .font(.system(size: 13))
+                            .foregroundStyle(option.available ? Color.panelPrimary : Color.panelTertiary)
+                            .lineLimit(1)
+                        if !option.available, let reason = AIModeChoice.unavailableReason(option.mode) {
+                            Text(reason)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.panelTertiary)
+                                .lineLimit(1)
+                        }
+                    }
+                    .disabled(!option.available)
+                }
+            }
+        }
+        .padding(8)
+        .frame(minWidth: 220, alignment: .leading)
+    }
+
+    private func listHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.panelSecondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private func listRow<RowLabel: View>(selected: Bool, action: @escaping () -> Void,
+                                      @ViewBuilder label: () -> RowLabel) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                label()
+                Spacer(minLength: 12)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .opacity(selected ? 1 : 0)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 28)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     /// 中间：API 方式是「回答位置」下拉；网页和 App 方式码头拿不到回答，换成一句说明。
@@ -642,16 +733,14 @@ private struct AIAskView: View {
                                       supportsAsk: target.supportsAsk))
                 .font(.system(size: 13))
                 .foregroundStyle(.panelSecondary)
-                .lineLimit(2)
-                .multilineTextAlignment(.trailing)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 130, alignment: .trailing)
+                .lineLimit(1)
+                .fixedSize()
                 .help(AIAsk.modeLine(mode: targetMode, appInstalled: AIServiceOpener.installedApp(target) != nil,
                                      supportsAsk: target.supportsAsk))
         }
     }
 
-    /// 唯一的主按钮：API「提问 ↑」；App 和网页方式照实写「复制并打开 豆包」「去网页提问」。
+    /// 唯一的主按钮：API「提问 ↑」；App 和网页方式照实写「复制并打开豆包」「去网页提问」。
     /// 小熊猫橙（白字不够 4.5 时 `PanelSolidButtonStyle` 自动加深，见 `PanelButtonLook.solid`），
     /// 设了主题色按主题色；不发光。
     private var primaryButton: some View {
@@ -685,6 +774,8 @@ private struct AIAskView: View {
 
     private func pick(_ service: AIService) {
         targetID = service.id
+        // 上一句提示说的是原来那个服务，换了就不再挂着。
+        state.setHint(nil, for: instance.id)
         // 和刘海对话共用当前服务；刘海那边没有这个服务时 select 不改。
         center.select(service.id)
     }
@@ -696,7 +787,8 @@ private struct AIAskView: View {
                 .buttonStyle(.borderedProminent)
                 .accessibilityLabel("添加 AI 字牌")
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 24)
     }
 
     /// 这个服务的打开方式。不是 App 方式时，问题交给刘海对话。
@@ -704,7 +796,7 @@ private struct AIAskView: View {
         target.map { center.mode(for: $0) } ?? .jump
     }
 
-    /// 主按钮的字要短（「打开 豆包」「去网页问」「发送」），会做什么写在左边那一句里。
+    /// 主按钮的字要短（「复制并打开豆包」「去网页提问」「提问」），会做什么写在左边那一句里。
     private var buttonTitle: String {
         AIAsk.buttonTitle(mode: targetMode, service: target,
                           appInstalled: target.map { AIServiceOpener.installedApp($0) != nil } ?? false)
@@ -716,16 +808,16 @@ private struct AIAskView: View {
         switch targetMode {
         case .api:
             return center.settings.answerPlacement == .notch
-                ? tr("用 API 直接问 \(name)，回答显示在刘海下方的结果卡片")
-                : tr("用 API 直接问 \(name)，回答显示在刘海对话")
-        case .web: return tr("复制问题，在刘海对话里打开 \(name) 的网页")
+                ? tr("用 API 直接问\(name)，回答显示在刘海下方的结果卡片")
+                : tr("用 API 直接问\(name)，回答显示在刘海对话")
+        case .web: return tr("复制问题，在刘海对话里打开\(name)的网页")
         case .jump:
             if let target, AIServiceOpener.installedApp(target) != nil {
-                return tr("复制问题，再打开 \(name) App")
+                return tr("复制问题，再打开\(name) App")
             }
             return target?.supportsAsk == true
-                ? tr("在浏览器打开 \(name)，问题会带过去")
-                : tr("把问题复制到剪贴板，再打开 \(name)")
+                ? tr("在浏览器打开\(name)，问题会带过去")
+                : tr("把问题复制到剪贴板，再打开\(name)")
         }
     }
 
@@ -769,7 +861,7 @@ private struct AIAskView: View {
             case .busy:
                 state.setHint(tr("还在回答，先停止或等它答完。"), for: instance.id)
             case .unavailable:
-                state.setHint(tr("\(service.title) 不在刘海对话的服务里：刘海对话用第一张 AI 卡片的字牌。"), for: instance.id)
+                state.setHint(tr("\(service.title)不在刘海对话的服务里：刘海对话用第一张 AI 卡片的字牌。"), for: instance.id)
             }
         case .app:
             jump(asked, service: service, keepsDraft: keepsDraft)
@@ -801,13 +893,13 @@ private struct AIAskView: View {
             return
         case .openWithQuestion(let url):
             guard AIServiceOpener.open(url) else {
-                state.setHint(tr("没能打开 \(service.title)。"), for: instance.id)
+                state.setHint(tr("没能打开\(service.title)。"), for: instance.id)
                 return
             }
         case .copyThenOpen(let question):
             AIServiceOpener.copy(question)
             guard AIServiceOpener.open(service) else {
-                state.setHint(tr("已复制，但没能打开 \(service.title)。"), for: instance.id)
+                state.setHint(tr("已复制，但没能打开\(service.title)。"), for: instance.id)
                 return
             }
         }

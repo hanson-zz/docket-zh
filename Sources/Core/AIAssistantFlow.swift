@@ -118,11 +118,11 @@ public enum AIHandoff: Equatable, Sendable {
         tr("问题已复制，请在 \(service) 的输入框里粘贴（⌘V）后发送。")
     }
 
-    /// 小组件底部服务名旁边那一小句：这个服务按提交会发生什么。
+    /// 小组件底部服务名旁边那一小句：这个服务按提交会发生什么。要短，底栏里只放一行。
     public static func modeAction(_ mode: AIOpenMode, appInstalled: Bool, supportsAsk: Bool) -> String {
         switch mode {
         case .api: return tr("在刘海里直接回答")
-        case .web: return tr("复制后在刘海网页里粘贴")
+        case .web: return tr("到刘海网页里粘贴")
         case .jump:
             if appInstalled { return tr("复制后打开 App") }
             return supportsAsk ? tr("带着问题打开网页") : tr("复制后打开网页")

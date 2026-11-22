@@ -7733,7 +7733,7 @@
         }
       }
     },
-    "复制并打开 %@" : {
+    "复制并打开%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -8107,7 +8107,7 @@
         }
       }
     },
-    "复制问题，再打开 %@ App" : {
+    "复制问题，再打开%@ App" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -9720,7 +9720,18 @@
         }
       }
     },
-    "%@输入框里的文字（空着时用剪贴板），在刘海对话里直接问 %@" : {
+    "%@输入框里的文字（空着时用剪贴板），再打开%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ the text in the input box (or the clipboard when empty), then opens %@"
+          }
+        }
+      }
+    },
+    "%@输入框里的文字（空着时用剪贴板），在刘海对话里直接问%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -9742,7 +9753,7 @@
         }
       }
     },
-    "%@输入框里的文字（空着时用剪贴板）：复制套好的提示词，在刘海对话里打开 %@" : {
+    "%@输入框里的文字（空着时用剪贴板）：复制套好的提示词，在刘海对话里打开%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -10930,7 +10941,7 @@
         }
       }
     },
-    "服务 %@，打开方式 %@" : {
+    "服务%@，打开方式%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -10963,7 +10974,7 @@
         }
       }
     },
-    "用 API 直接问 %@，回答显示在刘海下方的结果卡片" : {
+    "用 API 直接问%@，回答显示在刘海下方的结果卡片" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -10974,7 +10985,7 @@
         }
       }
     },
-    "用 API 直接问 %@，回答显示在刘海对话" : {
+    "用 API 直接问%@，回答显示在刘海对话" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -25335,7 +25346,7 @@
         }
       }
     },
-    "在浏览器打开 %@，问题会带过去" : {
+    "在浏览器打开%@，问题会带过去" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -26057,7 +26068,7 @@
         }
       }
     },
-    "复制问题，在刘海对话里打开 %@ 的网页" : {
+    "复制问题，在刘海对话里打开%@的网页" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -29125,7 +29136,7 @@
         }
       }
     },
-    "已在浏览器打开 %@，问题放在了网址里。" : {
+    "已在浏览器打开%@，问题放在了网址里。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -29213,7 +29224,18 @@
         }
       }
     },
-    "已复制，到 %@ 里粘贴即可。" : {
+    "已复制，但没能打开%@。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied, but couldn't open %@."
+          }
+        }
+      }
+    },
+    "已复制，到%@里粘贴即可。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -32501,13 +32523,13 @@
         }
       }
     },
-    "复制后在刘海网页里粘贴" : {
+    "到刘海网页里粘贴" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy, then paste in the notch web page"
+            "value" : "Paste in the notch web page"
           }
         }
       }
@@ -32754,7 +32776,7 @@
         }
       }
     },
-    "%@ 不在刘海对话的服务里：刘海对话用第一张 AI 卡片的字牌。" : {
+    "%@不在刘海对话的服务里：刘海对话用第一张 AI 卡片的字牌。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -34235,7 +34257,7 @@
         }
       }
     },
-    "把问题复制到剪贴板，再打开 %@" : {
+    "把问题复制到剪贴板，再打开%@" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -46584,6 +46606,17 @@
       }
     },
     "没能打开 %@。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't open %@."
+          }
+        }
+      }
+    },
+    "没能打开%@。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

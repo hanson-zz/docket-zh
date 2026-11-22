@@ -79,7 +79,7 @@ final class AIAssistantFlowTests: XCTestCase {
 
     func testModeActionSaysWhatSubmitDoes() {
         XCTAssertEqual(AIHandoff.modeAction(.api, appInstalled: false, supportsAsk: false), "在刘海里直接回答")
-        XCTAssertEqual(AIHandoff.modeAction(.web, appInstalled: true, supportsAsk: true), "复制后在刘海网页里粘贴")
+        XCTAssertEqual(AIHandoff.modeAction(.web, appInstalled: true, supportsAsk: true), "到刘海网页里粘贴")
         XCTAssertEqual(AIHandoff.modeAction(.jump, appInstalled: true, supportsAsk: true), "复制后打开 App")
         XCTAssertEqual(AIHandoff.modeAction(.jump, appInstalled: false, supportsAsk: true), "带着问题打开网页")
         XCTAssertEqual(AIHandoff.modeAction(.jump, appInstalled: false, supportsAsk: false), "复制后打开网页")
