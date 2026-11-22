@@ -21,10 +21,21 @@ enum WeatherTipSource {
             fahrenheit: fahrenheit)
     }
 
-    /// 小熊猫的样子交给六状态（`PandaStateResolver.weather`）：平常天待机，下雨下雪、风大、
-    /// 空气差这类重要天气举爪提醒，紫外线那句保留抱竹筒喝水的扩展动作；提醒没了就回待机。
-    static func pandaPose(_ kind: WeatherTips.Tip.Kind, alert: Bool) -> PandaPose {
-        PandaStateResolver.weather(kind, alertStyle: alert)
+    /// 小熊猫的样子交给 `PandaStateResolver.weather`：下雨下雪用雨雪场景图（提醒级别也是），
+    /// 风大、空气差这类重要天气举爪提醒，紫外线那句用喝水场景图；其余平常天按现在的天气
+    /// 给晴、冷、热场景图，没有天气数据时待机。
+    static func pandaPose(_ kind: WeatherTips.Tip.Kind, alert: Bool,
+                          conditions: WeatherSceneInput? = nil) -> PandaPose {
+        PandaStateResolver.weather(kind, alertStyle: alert, conditions: conditions)
+    }
+
+    /// 天气场景要的真实数据：现在的气温、体感、天气图标和这一小时降水；没有当前天气时 nil。
+    static func sceneInput(weather: WeatherNow?, nowcast: WeatherNowcast?) -> WeatherSceneInput? {
+        let temperature = weather?.temperatureC ?? nowcast?.current?.temperatureC
+        let apparent = nowcast?.current?.apparentC
+        guard weather != nil || temperature != nil else { return nil }
+        return WeatherSceneInput(temperatureC: temperature, apparentC: apparent,
+                                 symbolName: weather?.symbolName, precipitationMM: weather?.precipitationMM)
     }
 }
 

@@ -565,7 +565,9 @@ struct WeatherDetail: View {
         let alert = reminder.style == .alert
         let corner: CGFloat = alert ? 14 : 12
         return HStack(spacing: 10) {
-            PandaStateView(pose: WeatherTipSource.pandaPose(reminder.kind, alert: alert),
+            PandaStateView(pose: WeatherTipSource.pandaPose(reminder.kind, alert: alert,
+                                                            conditions: WeatherTipSource.sceneInput(
+                                                                weather: shownWeather, nowcast: nowcast)),
                            size: alert ? PandaStage.regular.side : PandaStage.mini.side,
                            fallbackSymbol: alert ? "exclamationmark.circle.fill" : "heart.fill")
             if alert {

@@ -128,11 +128,96 @@ final class PandaStateTests: XCTestCase {
     func testWeather() {
         XCTAssertEqual(PandaStateResolver.weather(nil, alertStyle: false), .state(.idle))
         XCTAssertEqual(PandaStateResolver.weather(.clothing, alertStyle: false), .state(.idle), "晴天平常天待机")
-        XCTAssertEqual(PandaStateResolver.weather(.rain, alertStyle: true), .state(.alert))
+        XCTAssertEqual(PandaStateResolver.weather(.rain, alertStyle: true), .scene(.rain), "雨雪提醒用雨雪图代替举爪")
+        XCTAssertEqual(PandaStateResolver.weather(.rain, alertStyle: false), .scene(.rain))
         XCTAssertEqual(PandaStateResolver.weather(.wind, alertStyle: true), .state(.alert))
         XCTAssertEqual(PandaStateResolver.weather(.air, alertStyle: true), .state(.alert), "空气差提醒")
-        XCTAssertEqual(PandaStateResolver.weather(.uv, alertStyle: true), .extra(.drink))
+        XCTAssertEqual(PandaStateResolver.weather(.uv, alertStyle: true), .scene(.drink))
         XCTAssertEqual(PandaStateResolver.weather(.cooling, alertStyle: true), .state(.idle))
+    }
+
+    func testWeatherScenesFromRealData() {
+        func input(_ t: Double?, feels: Double? = nil, symbol: String? = "cloud.fill", mm: Double? = nil) -> WeatherSceneInput {
+            WeatherSceneInput(temperatureC: t, apparentC: feels, symbolName: symbol, precipitationMM: mm)
+        }
+        let sunny = input(22, symbol: "sun.max.fill")
+        XCTAssertEqual(PandaStateResolver.weather(.clothing, alertStyle: false, conditions: sunny), .scene(.sunny))
+        XCTAssertEqual(PandaStateResolver.weather(nil, alertStyle: false, conditions: sunny), .scene(.sunny))
+        XCTAssertEqual(PandaStateResolver.weather(.clothing, alertStyle: false,
+                                                  conditions: input(10, symbol: "cloud.rain.fill")), .scene(.rain))
+        XCTAssertEqual(PandaStateResolver.weather(.clothing, alertStyle: false,
+                                                  conditions: input(-2, symbol: "cloud.snow.fill")), .scene(.rain), "下雪也算雨雪")
+        XCTAssertEqual(PandaStateResolver.weatherScene(input(12, mm: 0.4)), .rain, "这一小时已有降水")
+        XCTAssertEqual(PandaStateResolver.weatherScene(input(8, feels: 5)), .cold, "体感 5℃ 算冷")
+        XCTAssertNil(PandaStateResolver.weatherScene(input(8, feels: 5.5)))
+        XCTAssertEqual(PandaStateResolver.weatherScene(input(4)), .cold, "没有体感时看气温")
+        XCTAssertEqual(PandaStateResolver.weatherScene(input(30, symbol: "sun.max.fill")), .hot, "热优先于晴")
+        XCTAssertEqual(PandaStateResolver.weatherScene(input(-3, feels: -6, symbol: "sun.max.fill")), .cold)
+        XCTAssertNil(PandaStateResolver.weatherScene(input(20, symbol: "moon.stars.fill")), "夜里晴不算晴天图")
+        XCTAssertNil(PandaStateResolver.weatherScene(input(20, symbol: "cloud.sun.fill")))
+        XCTAssertNil(PandaStateResolver.weatherScene(input(nil, symbol: nil)), "没有数据保持待机")
+        XCTAssertEqual(PandaStateResolver.weather(.clothing, alertStyle: false, conditions: nil), .state(.idle))
+        // 风大、空气差告警照旧举爪，不被晴天图盖掉；不是告警时按天气。
+        XCTAssertEqual(PandaStateResolver.weather(.wind, alertStyle: true, conditions: sunny), .state(.alert))
+        XCTAssertEqual(PandaStateResolver.weather(.air, alertStyle: false, conditions: sunny), .scene(.sunny))
+        XCTAssertEqual(PandaStateResolver.weather(.uv, alertStyle: false, conditions: sunny), .scene(.drink))
+    }
+
+    // MARK: 场景图
+
+    func testSceneNamesAndCandidates() {
+        XCTAssertEqual(PandaScene.allCases.count, 7)
+        for scene in PandaScene.allCases {
+            XCTAssertEqual(scene.imageName, "panda-scene-\(scene.rawValue)")
+            XCTAssertEqual(PandaStateResolver.candidates(.scene(scene)),
+                           ["panda-scene-\(scene.rawValue)"] + PandaStateResolver.candidates(.idle))
+            XCTAssertEqual(PandaPose.scene(scene).state, .idle, "场景图按待机算")
+            XCTAssertTrue(PandaStateResolver.isFormalArt(scene.imageName))
+        }
+        XCTAssertTrue(PandaStateResolver.isFormalArt("panda-state-idle"))
+        XCTAssertFalse(PandaStateResolver.isFormalArt("pet-panda-drink"))
+    }
+
+    func testSceneFallsBackToIdleWhenMissing() {
+        XCTAssertEqual(PandaStateResolver.imageName(.scene(.record), exists: { _ in true }), "panda-scene-record")
+        XCTAssertEqual(PandaStateResolver.imageName(.scene(.record), exists: { $0.hasPrefix("panda-state-") }),
+                       "panda-state-idle")
+        XCTAssertEqual(PandaStateResolver.imageName(.scene(.write), exists: { $0 == "pet-panda-idle" }), "pet-panda-idle")
+        XCTAssertNil(PandaStateResolver.imageName(.scene(.sunny), exists: { _ in false }))
+    }
+
+    func testSceneArtShipsInResources() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Resources/PandaStates")
+        guard FileManager.default.fileExists(atPath: dir.path) else { throw XCTSkip("没有源码目录") }
+        for scene in PandaScene.allCases {
+            for suffix in ["", "@2x"] {
+                let path = dir.appendingPathComponent("\(scene.imageName)\(suffix).png").path
+                XCTAssertTrue(FileManager.default.fileExists(atPath: path), path)
+            }
+        }
+    }
+
+    func testWritePulseShowsSceneAndKeepsCooldown() {
+        var moment = PandaCelebration()
+        let first = moment.register(.peek, scene: .write, at: t0)
+        XCTAssertEqual(first.pose, .scene(.write))
+        XCTAssertEqual(PandaStateResolver.resolve(base: .state(.idle), pulse: first, now: t0.addingTimeInterval(1)),
+                       .scene(.write))
+        XCTAssertEqual(PandaStateResolver.resolve(base: .state(.rest), pulse: first, now: t0.addingTimeInterval(1)),
+                       .scene(.write))
+        // 3 秒里再记一条：不重播，只往后延。
+        let again = moment.register(.peek, scene: .write, at: t0.addingTimeInterval(1))
+        XCTAssertEqual(again.started, t0)
+        XCTAssertEqual(again.pose, .scene(.write))
+        // 冷却里勾完一条：完成优先级更高，改成完成的图。
+        let done = moment.register(.done, at: t0.addingTimeInterval(1.5))
+        XCTAssertEqual(done.pose, .state(.done))
+        XCTAssertEqual(done.started, t0)
+        // 过了冷却重新开始一次。
+        let later = moment.register(.peek, scene: .write, at: t0.addingTimeInterval(10))
+        XCTAssertEqual(later.started, t0.addingTimeInterval(10))
+        XCTAssertEqual(later.pose, .scene(.write))
     }
 
     // MARK: AI
@@ -177,7 +262,7 @@ final class PandaStateTests: XCTestCase {
         XCTAssertEqual(PandaStateResolver.water(.stage(.nearlyFull)), .state(.idle))
         XCTAssertEqual(PandaStateResolver.water(.dry(hours: 2)), .state(.alert))
         XCTAssertEqual(PandaStateResolver.water(.stage(.sipping)), .extra(.sip))
-        XCTAssertEqual(PandaStateResolver.water(.gulp), .extra(.drink))
+        XCTAssertEqual(PandaStateResolver.water(.gulp), .scene(.drink))
         XCTAssertEqual(PandaStateResolver.water(.parched), .extra(.parched))
         XCTAssertEqual(PandaStateResolver.water(.stage(.thirsty)), .extra(.thirsty))
     }
@@ -185,9 +270,19 @@ final class PandaStateTests: XCTestCase {
     func testWaterDryKeepsThirstyArtWithoutAlertArt() {
         let old: (String) -> Bool = { $0.hasPrefix("pet-panda") }
         XCTAssertEqual(PandaStateResolver.waterImageName(.dry(hours: 3), exists: old), "pet-panda-hungry")
-        XCTAssertEqual(PandaStateResolver.waterImageName(.dry(hours: 3), exists: { _ in true }), "panda-state-alert")
+        XCTAssertEqual(PandaStateResolver.waterImageName(.dry(hours: 3), exists: { $0 != "panda-scene-drink" }),
+                       "panda-state-alert")
         XCTAssertEqual(PandaStateResolver.waterImageName(.stage(.done), exists: old), "pet-panda-cheer")
-        XCTAssertEqual(PandaStateResolver.waterImageName(.gulp, exists: { _ in true }), "pet-panda-drink")
+        XCTAssertEqual(PandaStateResolver.waterImageName(.gulp, exists: old), "pet-panda-drink", "缺场景图回退抱竹筒")
+    }
+
+    func testWaterDrinkScene() {
+        let all: (String) -> Bool = { _ in true }
+        XCTAssertEqual(PandaStateResolver.waterImageName(.gulp, exists: all), "panda-scene-drink", "点 + 喝一口")
+        XCTAssertEqual(PandaStateResolver.waterImageName(.dry(hours: 2), exists: all), "panda-scene-drink", "提醒该喝水")
+        XCTAssertEqual(PandaStateResolver.waterImageName(.stage(.sipping), exists: all), "pet-panda-sip")
+        XCTAssertEqual(PandaStateResolver.waterImageName(.stage(.thirsty), exists: all), "pet-panda-hungry")
+        XCTAssertEqual(PandaStateResolver.waterImageName(.parched, exists: all), "WaterPanda-skeleton")
     }
 
     // MARK: 专注

@@ -63,16 +63,38 @@ public enum PandaExtra: String, CaseIterable, Sendable {
     }
 }
 
-/// 面板这一刻让小熊猫摆的样子：六状态之一，或一个场景扩展动作。
+/// 场景图：和六状态同一母版、同画布、同底部锚点的七张（Resources/PandaStates/panda-scene-<名>.png）。
+/// 天气（晴、雨雪、冷、热）、喝水、待办记下、录音用；缺图时回退待机。
+public enum PandaScene: String, CaseIterable, Sendable {
+    /// 晴天。
+    case sunny
+    /// 下雨下雪。
+    case rain
+    /// 冷（体感 5℃ 及以下）。
+    case cold
+    /// 热（30℃ 及以上）。
+    case hot
+    /// 抱竹筒喝水（喝水点 +、该喝水了、天气的紫外线 / 补水建议）。
+    case drink
+    /// 拿笔记下（待办添加成功）。
+    case write
+    /// 对着麦克风录音（正在录音）。
+    case record
+
+    public var imageName: String { "panda-scene-\(rawValue)" }
+}
+
+/// 面板这一刻让小熊猫摆的样子：六状态之一、一个场景扩展动作，或一张场景图。
 public enum PandaPose: Equatable, Sendable {
     case state(PandaState)
     case extra(PandaExtra)
+    case scene(PandaScene)
 
-    /// 扩展动作按待机算（排优先级、算动效时）。
+    /// 扩展动作和场景图按待机算（排优先级、算动效时）。
     public var state: PandaState {
         switch self {
         case .state(let state): state
-        case .extra: .idle
+        case .extra, .scene: .idle
         }
     }
 }
@@ -83,12 +105,18 @@ public struct PandaPulse: Equatable, Sendable {
     public var state: PandaState
     public var started: Date
     public var until: Date
+    /// 这次表态画哪张场景图（待办记下时的「记下」）；nil 时画 `state` 的图。优先级仍按 `state` 算。
+    public var scene: PandaScene?
 
-    public init(state: PandaState, started: Date, until: Date) {
+    public init(state: PandaState, started: Date, until: Date, scene: PandaScene? = nil) {
         self.state = state
         self.started = started
         self.until = until
+        self.scene = scene
     }
+
+    /// 这次表态要画的样子。
+    public var pose: PandaPose { scene.map(PandaPose.scene) ?? .state(state) }
 
     public func isActive(at now: Date) -> Bool { now >= started && now < until }
 }
@@ -105,17 +133,20 @@ public struct PandaCelebration: Equatable, Sendable {
     ///   `until` 延到这一次的 `hold` 之后；状态取优先级高的那个。
     /// - 否则重新开始一次。
     @discardableResult
-    public mutating func register(_ state: PandaState = .done, at now: Date,
+    public mutating func register(_ state: PandaState = .done, scene: PandaScene? = nil, at now: Date,
                                   hold: TimeInterval = PandaMotion.doneHold,
                                   cooldown: TimeInterval = PandaMotion.celebrationCooldown) -> PandaPulse {
         let until = now.addingTimeInterval(max(0, hold))
         if var current = pulse, current.isActive(at: now), now.timeIntervalSince(current.started) < cooldown {
             current.until = max(current.until, until)
-            if state.priority > current.state.priority { current.state = state }
+            if state.priority > current.state.priority {
+                current.state = state
+                current.scene = scene
+            }
             pulse = current
             return current
         }
-        let fresh = PandaPulse(state: state, started: now, until: until)
+        let fresh = PandaPulse(state: state, started: now, until: until, scene: scene)
         pulse = fresh
         return fresh
     }
@@ -216,7 +247,13 @@ public enum PandaStateResolver {
         switch pose {
         case .state(let state): candidates(state)
         case .extra(let extra): [extra.imageName] + candidates(.idle)
+        case .scene(let scene): [scene.imageName] + candidates(.idle)
         }
+    }
+
+    /// 这张图是 Resources/PandaStates 里的正式素材（六状态或场景图），不是老图。
+    public static func isFormalArt(_ name: String) -> Bool {
+        name.hasPrefix("panda-state-") || name.hasPrefix("panda-scene-")
     }
 
     /// 第一张存在的图名；一张都没有时 nil（界面画占位符号）。
@@ -231,7 +268,7 @@ public enum PandaStateResolver {
     /// 常态加上一次短暂表态：表态还在显示、而且优先级不低于常态时用表态，否则用常态。
     public static func resolve(base: PandaPose, pulse: PandaPulse?, now: Date) -> PandaPose {
         guard let pulse, pulse.isActive(at: now), pulse.state.priority >= base.state.priority else { return base }
-        return .state(pulse.state)
+        return pulse.pose
     }
 
     // MARK: 老图名迁移
@@ -259,15 +296,35 @@ public enum PandaStateResolver {
 
     // MARK: 各面板：事件 → 状态
 
-    /// 天气：没有提醒或平常天 idle；下雨下雪、风大、空气差这类重要天气 alert；
-    /// 只剩紫外线（补水、防晒）时保留喝水扩展动作；降温、温差这些 idle。
-    public static func weather(_ kind: WeatherTips.Tip.Kind?, alertStyle: Bool) -> PandaPose {
-        guard let kind else { return .state(.idle) }
-        switch kind {
-        case .rain, .wind, .air: return .state(alertStyle ? .alert : .idle)
-        case .uv: return .extra(.drink)
-        case .cooling, .swing, .clothing: return .state(.idle)
+    /// 天气：下雨下雪（不管是不是提醒级别）用雨雪场景图代替举爪；风大、空气差这类重要天气 alert；
+    /// 只剩紫外线（补水、防晒）时用喝水场景图；其余平常天按现在的天气给场景（`weatherScene`），
+    /// 没有天气数据时 idle。
+    public static func weather(_ kind: WeatherTips.Tip.Kind?, alertStyle: Bool,
+                               conditions: WeatherSceneInput? = nil) -> PandaPose {
+        if let kind {
+            switch kind {
+            case .rain: return .scene(.rain)
+            case .wind, .air: if alertStyle { return .state(.alert) }
+            case .uv: return .scene(.drink)
+            case .cooling, .swing, .clothing: break
+            }
         }
+        return conditions.flatMap(weatherScene).map(PandaPose.scene) ?? .state(.idle)
+    }
+
+    /// 体感到这么低（℃）算冷。
+    public static let coldApparentC: Double = 5
+    /// 气温到这么高（℃）算热。
+    public static let hotC: Double = 30
+
+    /// 平常天按现在的天气挑场景图：正在下雨下雪 rain，体感 5℃ 及以下 cold，30℃ 及以上 hot，
+    /// 白天晴 sunny，其他（多云、阴、雾、夜里）nil（待机）。哪项数据没有就跳过那项，不猜。
+    public static func weatherScene(_ input: WeatherSceneInput) -> PandaScene? {
+        if input.precipitating { return .rain }
+        if let feels = input.apparentC ?? input.temperatureC, feels <= coldApparentC { return .cold }
+        if let celsius = input.temperatureC ?? input.apparentC, celsius >= hotC { return .hot }
+        if input.clearDay { return .sunny }
+        return nil
     }
 
     /// AI：没问过 idle；思考、回答中 thinking；答完 done（短暂，靠表态）；失败 alert。
@@ -305,8 +362,9 @@ public enum PandaStateResolver {
         return .idle
     }
 
-    /// 喝水（只给小熊猫；其他角色照旧用自己的图）：达标 done；提醒时段里很久没喝 alert；
-    /// 快喝饱了 idle；小口喝、刚点 +、还渴着、渴成骷髅保留原来的扩展动作。
+    /// 喝水（只给小熊猫；其他角色照旧用自己的图）：达标 done；提醒时段里很久没喝 alert
+    /// （画的时候用喝水场景图，见 `waterImageName`）；快喝饱了 idle；刚点 + 喝一口用喝水场景图；
+    /// 小口喝、还渴着、渴成骷髅保留原来的扩展动作。
     public static func water(_ look: WaterPose.Look) -> PandaPose {
         switch look {
         case .stage(.done): .state(.done)
@@ -314,19 +372,24 @@ public enum PandaStateResolver {
         case .dry: .state(.alert)
         case .stage(.sipping): .extra(.sip)
         case .stage(.thirsty): .extra(.thirsty)
-        case .gulp: .extra(.drink)
+        case .gulp: .scene(.drink)
         case .parched: .extra(.parched)
         }
     }
 
-    /// 喝水「渴了」那一档在没有正式提醒图时照旧用口渴图（不突然换成举爪的回退帧）。
+    /// 喝水「渴了」（提醒该喝水）用喝水场景图；没有时用正式提醒图，再没有照旧口渴图
+    /// （不突然换成举爪的回退帧）。点 + 喝一口那一下没有场景图时回退原来的抱竹筒图。
     public static func waterImageName(_ look: WaterPose.Look, exists: (String) -> Bool) -> String? {
-        let pose = water(look)
-        if case .dry = look {
-            let preferred = preferredName(.alert)
-            return exists(preferred) ? preferred : [PandaExtra.thirsty.imageName].first(where: exists)
+        switch look {
+        case .dry:
+            return [PandaScene.drink.imageName, preferredName(.alert), PandaExtra.thirsty.imageName]
+                .first(where: exists)
+        case .gulp:
+            return ([PandaScene.drink.imageName, PandaExtra.drink.imageName] + candidates(.idle))
+                .first(where: exists)
+        default:
+            return imageName(water(look), exists: exists)
         }
-        return imageName(pose, exists: exists)
     }
 
     /// 专注只做状态兼容：等开始 idle、专注中 nil（用专注自己的动画：小熊猫爬竹竿、其他吉祥物的专注图）、
@@ -339,5 +402,31 @@ public enum PandaStateResolver {
         case .`break`: .rest
         case .done: .done
         }
+    }
+}
+
+/// 天气场景要用的几项真实数据（面板手上有哪项给哪项，没有的留空）。
+public struct WeatherSceneInput: Equatable, Sendable {
+    public var temperatureC: Double?
+    public var apparentC: Double?
+    /// 现在正在下雨下雪（天气图标是雨雪，或这一小时已有降水）。
+    public var precipitating: Bool
+    /// 白天晴（不是多云、不是夜里）。
+    public var clearDay: Bool
+
+    public init(temperatureC: Double?, apparentC: Double?, precipitating: Bool, clearDay: Bool) {
+        self.temperatureC = temperatureC
+        self.apparentC = apparentC
+        self.precipitating = precipitating
+        self.clearDay = clearDay
+    }
+
+    /// 从面板手上的天气图标（SF Symbol 名）和这一小时降水量拼出来。
+    public init(temperatureC: Double?, apparentC: Double?, symbolName: String?, precipitationMM: Double?) {
+        let symbol = symbolName ?? ""
+        let wet = ["rain", "drizzle", "snow", "sleet", "hail"].contains { symbol.contains($0) }
+        let raining = (precipitationMM ?? 0) >= WeatherTips.rainingNowMM
+        self.init(temperatureC: temperatureC, apparentC: apparentC, precipitating: wet || raining,
+                  clearDay: symbol.hasPrefix("sun.max"))
     }
 }

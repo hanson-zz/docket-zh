@@ -242,7 +242,8 @@ struct RecorderDetail: View {
     private var list: some View {
         if items.isEmpty {
             HStack(spacing: 12) {
-                if let image = PandaArt.image("pet-panda-idle") {
+                // 正在录音时小熊猫对着麦克风录（场景图，缺图回退待机），空闲照旧待机。
+                if let image = recording ? PandaStateArt.image(.scene(.record)) : PandaArt.image("pet-panda-idle") {
                     Image(nsImage: image)
                         .resizable()
                         .interpolation(.high)

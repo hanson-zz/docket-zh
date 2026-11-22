@@ -21,7 +21,12 @@ enum PandaStateArt {
 
     /// 这个样子该画的图名（正式素材优先，缺图回退），一张都没有时 nil。
     static func name(_ pose: PandaPose) -> String? {
-        PandaStateResolver.imageName(pose, exists: exists)
+        PandaStateResolver.imageName(pose, exists: { exists($0) })
+    }
+
+    /// 这个样子该画的图（场景图、六状态正式素材优先，缺图回退）。
+    static func image(_ pose: PandaPose) -> NSImage? {
+        name(pose).flatMap { image($0) }
     }
 }
 
@@ -67,8 +72,10 @@ struct PandaStateView: View {
     var body: some View {
         let shown = pose
         let state = shown.state
+        // 只有画待机图时眨眼；场景图、扩展动作虽按待机算，也不换成待机的眨眼帧。
         let blinkName = PandaMotion.blinks(state, reduceMotion: reduceMotion,
-                                           hasBlinkFrame: PandaStateArt.exists(PandaStateResolver.blinkName))
+                                           hasBlinkFrame: shown == .state(.idle)
+                                               && PandaStateArt.exists(PandaStateResolver.blinkName))
             ? PandaStateResolver.blinkName : nil
         let stateName = PandaStateArt.name(shown)
         // 眨眼只换一帧，不淡入淡出（动画只跟着状态图走）。

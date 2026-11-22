@@ -27,6 +27,8 @@ struct MicrophoneDetail: View {
     @Environment(\.panelTint) private var panelTint
 
     private var mic: MicrophoneMonitor { MicrophoneMonitor.shared }
+    /// 码头自己的录音机正在录音。
+    private var recordingHere: Bool { !preview && VoiceRecorder.shared.isRecording }
     private var meter: MicLevelMeter { MicLevelMeter.shared }
     private var current: WidgetInstance { WidgetWriter.current(instance.id) ?? instance }
     private var settings: MicPrivacySettings { MicPrivacySettings(config: current.config) }
@@ -197,7 +199,8 @@ struct MicrophoneDetail: View {
         let rows = useRows
         if rows.isEmpty {
             HStack(spacing: 12) {
-                if let image = PandaArt.image("pet-panda-idle") {
+                // 码头自己在录音（电平表开着时不把自己算进「谁在用」，这里会空着）时小熊猫录音，空闲照旧待机。
+                if let image = recordingHere ? PandaStateArt.image(.scene(.record)) : PandaArt.image("pet-panda-idle") {
                     Image(nsImage: image)
                         .resizable()
                         .interpolation(.high)

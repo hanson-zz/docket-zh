@@ -171,7 +171,7 @@ struct TodoDetail: View {
                 targeted: { targeted = $0 },
                 receive: { drops in
                     withAnimation(listAnimation) { TodoLog.add(drops, to: instance) }
-                    pandaMoment.register(.peek, at: .now)
+                    pandaMoment.register(.peek, scene: .write, at: .now)
                 }))
             .background {
                 if !context.isPreview {
@@ -386,7 +386,7 @@ struct TodoDetail: View {
         let text = draft
         withAnimation(listAnimation) { TodoLog.add(text, to: instance) }
         draft = ""
-        pandaMoment.register(.peek, at: .now)
+        pandaMoment.register(.peek, scene: .write, at: .now)
     }
 
     // MARK: 分组小卡
