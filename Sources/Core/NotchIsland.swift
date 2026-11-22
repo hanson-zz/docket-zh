@@ -740,11 +740,27 @@ public enum NotchIslandLayout {
     /// 展开卡片离刘海底边多远。卡片整个在菜单栏下面，不往两侧盖住菜单栏上的图标。
     public static let cardGap: CGFloat = 6
 
-    /// 展开卡片的高度（不含刘海那一段，卡片从刘海底下 `cardGap` 处开始）。
+    /// 这种卡片离刘海底边多远：电台卡片从刘海下沿直接长出来（0），别的卡片照旧空 `cardGap`。
+    /// 电台卡片顶上一截只有刘海那么宽，往下弯出 `radioShoulder` 再铺满整张卡片，
+    /// 所以两侧仍不伸进菜单栏那一条，不挡右边的状态栏图标。
+    public static func cardGap(kind: NotchIslandKind) -> CGFloat {
+        kind == .radio ? 0 : cardGap
+    }
+
+    /// 电台卡片顶上和刘海同宽那一截往两侧弯出去的圆弧有多高（也是两侧弯出去多宽）。
+    public static let radioShoulder: CGFloat = 10
+    /// 电台卡片的宽度：按内容收窄（左插画、中间台名和三个按钮、右边台号和波形），
+    /// 原来和别的卡片一样 372。
+    public static let radioCardWidth: CGFloat = 340
+    /// 电台卡片铺满整宽那部分顶上两角的圆角。
+    public static let radioTopRadius: CGFloat = 16
+
+    /// 展开卡片的高度（不含刘海那一段，卡片从刘海底下 `cardGap(kind:)` 处开始）。
+    /// 电台卡片含顶上弯出去那一截 `radioShoulder`。
     public static func cardHeight(_ geometry: NotchIslandGeometry, kind: NotchIslandKind, hasSecondary: Bool) -> CGFloat {
         let content: CGFloat
         switch kind {
-        case .radio: content = 132
+        case .radio: content = 140 + radioShoulder
         case .timer: content = 122
         case .download: content = 100
         case .meeting: content = 100
@@ -753,12 +769,19 @@ public enum NotchIslandLayout {
         return content + (hasSecondary ? secondaryRowHeight : 0)
     }
 
-    /// 展开卡片的范围：顶边在刘海（菜单栏）底下 `cardGap`，宽度至少比刘海宽出两边。
+    /// 展开卡片的范围：顶边在刘海（菜单栏）底下 `cardGap(kind:)`，宽度至少比刘海宽出两边。
     /// 菜单栏那一条里只留刘海本身那段黑色，两侧不再多出一截。
     public static func card(_ geometry: NotchIslandGeometry, kind: NotchIslandKind, hasSecondary: Bool) -> CGRect {
-        let width = max(cardWidth, geometry.notchWidth + 120)
-        return CGRect(x: -width / 2, y: geometry.notchHeight + cardGap, width: width,
+        let width = cardWidth(geometry, kind: kind)
+        return CGRect(x: -width / 2, y: geometry.notchHeight + cardGap(kind: kind), width: width,
                       height: cardHeight(geometry, kind: kind, hasSecondary: hasSecondary))
+    }
+
+    /// 展开卡片多宽。电台卡片 `radioCardWidth`，刘海特别宽时至少比刘海两边各宽出 60，
+    /// 保证顶上弯出去的圆弧和两角的圆角放得下。
+    public static func cardWidth(_ geometry: NotchIslandGeometry, kind: NotchIslandKind) -> CGFloat {
+        let base = kind == .radio ? radioCardWidth : cardWidth
+        return max(base, geometry.notchWidth + 120)
     }
 
     /// 这种形态下画出来的东西（主岛、小圆岛、小熊猫、卡片），原点坐标。

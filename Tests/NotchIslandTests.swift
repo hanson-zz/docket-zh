@@ -461,6 +461,29 @@ final class NotchIslandTests: XCTestCase {
         XCTAssertGreaterThan(NotchIslandLayout.textWidth("现在"), NotchIslandLayout.textWidth("12"))
     }
 
+    /// 电台卡片从刘海下沿直接长出来（不留缝），按内容收窄到 340；别的卡片照旧空 6 点、372 宽。
+    func testRadioCardGrowsFromTheNotch() {
+        let geometry = NotchIslandLayout.geometry(screen: notched)
+        let radioCard = NotchIslandLayout.card(geometry, kind: .radio, hasSecondary: false)
+        XCTAssertEqual(NotchIslandLayout.cardGap(kind: .radio), 0)
+        XCTAssertEqual(radioCard.minY, geometry.notchHeight)
+        XCTAssertEqual(radioCard.width, NotchIslandLayout.radioCardWidth)
+        XCTAssertLessThanOrEqual(radioCard.width, 360, "电台卡片按内容收窄")
+        XCTAssertEqual(radioCard.midX, 0, accuracy: 0.001)
+        // 顶上那截和刘海同宽，两侧弯出去的圆弧和顶角放得下。
+        XCTAssertGreaterThanOrEqual(radioCard.width / 2 - geometry.notchWidth / 2,
+                                    NotchIslandLayout.radioShoulder + NotchIslandLayout.radioTopRadius)
+        for kind in [NotchIslandKind.timer, .download, .meeting, .charging] {
+            let card = NotchIslandLayout.card(geometry, kind: kind, hasSecondary: false)
+            XCTAssertEqual(card.minY, geometry.notchHeight + NotchIslandLayout.cardGap, "\(kind) 照旧空一道缝")
+            XCTAssertEqual(card.width, NotchIslandLayout.cardWidth, "\(kind) 宽度不变")
+        }
+        // 刘海特别宽时，卡片两侧至少各宽出 60。
+        let wide = NotchIslandGeometry(notchWidth: 260, notchHeight: 38, hasNotch: true)
+        XCTAssertEqual(NotchIslandLayout.cardWidth(wide, kind: .radio), 380)
+        XCTAssertEqual(AINotchLayout.cardGap, 6, "AI 卡片的间距不受电台卡片影响")
+    }
+
     /// 展开时卡片（或倒挂那一套）整个在菜单栏下面，菜单栏那一条里只占刘海本身。
     func testExpandedKeepsMenuBarClear() {
         let geometry = NotchIslandLayout.geometry(screen: notched)
@@ -493,12 +516,14 @@ final class NotchIslandTests: XCTestCase {
         XCTAssertEqual(expanded.count, 2, "刘海那段加卡片")
         XCTAssertEqual(expanded[0], NotchIslandLayout.notch(geometry))
         let card = Array(expanded.dropFirst())
-        XCTAssertEqual(card[0].minY, geometry.notchHeight + NotchIslandLayout.cardGap, "卡片在菜单栏下面")
+        XCTAssertEqual(card[0].minY, geometry.notchHeight, "电台卡片紧贴刘海下沿，不留缝")
         XCTAssertEqual(card[0].midX, 0, accuracy: 0.001, "卡片以刘海中线对称")
         XCTAssertGreaterThan(card[0].width, geometry.notchWidth)
         let zone = NotchIslandLayout.hotZone(geometry, form: .expanded(radio, secondary: timer))
-        XCTAssertTrue(zone.contains(CGPoint(x: 0, y: geometry.notchHeight + NotchIslandLayout.cardGap / 2)),
-                      "刘海和卡片之间那道缝也算停在小岛上")
+        XCTAssertTrue(zone.contains(CGPoint(x: 0, y: geometry.notchHeight + 1)), "刘海下沿接着卡片，算停在小岛上")
+        let downloadZone = NotchIslandLayout.hotZone(geometry, form: .expanded(download, secondary: nil))
+        XCTAssertTrue(downloadZone.contains(CGPoint(x: 0, y: geometry.notchHeight + NotchIslandLayout.cardGap / 2)),
+                      "别的卡片和刘海之间那道缝也算停在小岛上")
         XCTAssertEqual(NotchIslandLayout.card(geometry, kind: .radio, hasSecondary: true).height
                        - NotchIslandLayout.card(geometry, kind: .radio, hasSecondary: false).height,
                        NotchIslandLayout.secondaryRowHeight)

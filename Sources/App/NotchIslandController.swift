@@ -449,6 +449,8 @@ final class NotchIslandController {
                 radioHold = nil
                 radio.resume()
             }
+        case .radioPrevious:
+            radio.switchStation(by: -1)
         case .radioNext:
             radio.switchStation(by: 1)
         case .radioVolume(let level):
@@ -489,7 +491,7 @@ final class NotchIslandController {
 
 /// 卡片上的按钮。
 enum NotchIslandAction: Equatable {
-    case radioToggle, radioNext
+    case radioToggle, radioPrevious, radioNext
     case radioVolume(Double)
     /// 作用到卡片上显示的那一个计时器。
     case timerToggle(NotchIslandTimerSource)

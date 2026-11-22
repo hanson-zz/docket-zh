@@ -40,8 +40,10 @@ struct NotchIslandRootView: View {
                 case .split(let primary, let secondary):
                     compact(primary, geometry: geometry, secondary: secondary)
                 case .expanded(let primary, let secondary):
-                    // 刘海那一段留着黑色，卡片从它下面长出来。
-                    NotchIslandShape(flare: NotchIslandLayout.topFlare, bottomRadius: 8)
+                    // 刘海那一段留着黑色，卡片从它下面长出来。电台卡片顶上一截和刘海同宽、紧贴着
+                    // 刘海下沿，这里下面两角不圆，两块接成一体。
+                    NotchIslandShape(flare: NotchIslandLayout.topFlare,
+                                     bottomRadius: primary.kind == .radio ? 0 : 8)
                         .fill(.black)
                         .place(NotchIslandLayout.notch(geometry))
                         .id("island-body")
@@ -470,10 +472,20 @@ private struct NotchIslandCard: View {
 
     @Environment(\.colorScheme) private var scheme
 
-    private var shape: UnevenRoundedRectangle {
+    private var isRadio: Bool { primary.kind == .radio }
+
+    private var shape: AnyShape {
+        if isRadio {
+            // 电台卡片从刘海下沿长出来：顶上一截和刘海同宽，往两侧弯出去再铺满整宽，
+            // 两侧仍在菜单栏下面，不盖住右边的状态栏图标。
+            return AnyShape(NotchIslandGrownShape(neck: model.geometry.notchWidth,
+                                                  shoulder: NotchIslandLayout.radioShoulder,
+                                                  topRadius: NotchIslandLayout.radioTopRadius,
+                                                  bottomRadius: 24))
+        }
         // 卡片整个在菜单栏下面（不再从屏幕顶边往两侧铺开盖住菜单栏图标），四角都圆。
-        UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 26,
-                               bottomTrailingRadius: 26, topTrailingRadius: 22, style: .continuous)
+        return AnyShape(UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 26,
+                                               bottomTrailingRadius: 26, topTrailingRadius: 22, style: .continuous))
     }
 
     var body: some View {
@@ -485,8 +497,8 @@ private struct NotchIslandCard: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.top, 12)
-        .padding(.horizontal, 20)
+        .padding(.top, isRadio ? NotchIslandLayout.radioShoulder + 10 : 12)
+        .padding(.horizontal, isRadio ? 18 : 20)
         .padding(.bottom, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background { surface }
@@ -496,7 +508,8 @@ private struct NotchIslandCard: View {
     }
 
     private var surface: some View {
-        NotchMessageGlass(shape: shape)
+        Color.clear
+        .readableGlass(in: shape)
         .clipShape(shape)
         .overlay { shape.stroke(Color.panelStroke, lineWidth: 0.6) }
         .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.16), radius: 18, y: 8)
@@ -525,6 +538,7 @@ private struct NotchIslandCircleButton: View {
     var label: String
     var solid: Bool
     var enabled = true
+    var diameter: CGFloat = 38
     var action: () -> Void
 
     @Environment(\.colorScheme) private var scheme
@@ -532,9 +546,9 @@ private struct NotchIslandCircleButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: diameter < 38 ? 13 : 15, weight: .bold))
                 .foregroundStyle(solid ? Color.white : Color.panelPrimary)
-                .frame(width: 38, height: 38)
+                .frame(width: diameter, height: diameter)
                 .background(Circle().fill(solid ? NotchIslandPalette.solid(scheme) : Color.panelFill))
                 .overlay(Circle().strokeBorder(Color.panelStroke, lineWidth: solid ? 0 : 0.5))
                 .contentShape(Circle())
@@ -572,48 +586,71 @@ private struct NotchIslandCapsuleButton: View {
     }
 }
 
+/// 电台卡片：左边当前所选外观的收音机插画，中间台名、副标题和上一台 / 播放暂停 / 下一台，
+/// 右边「CH 03 / 06」和播放波形，底下音量条。
+///
+///     [插画]  音乐之声                CH 03 / 06
+///             正在播放
+///             (<<) ( || ) (>>)          ||||
+///     音量 ----------------o----
 private struct NotchIslandRadioCard: View {
     var model: NotchIslandModel
     var fallbackStation: String
 
     @Environment(\.colorScheme) private var scheme
 
-    @MainActor private static let artwork: NSImage? = {
-        guard let url = Bundle.main.url(forResource: "RadioMeow", withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
-    }()
-
     var body: some View {
         let radio = RadioPlayer.shared
         let playing = radio.isPlaying
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 14) {
-                artwork
-                VStack(alignment: .leading, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
+        // 外观和台号都读开始播放的那个收音机小组件（和电台面板同一份配置），读不到时外观用经典。
+        let config = radio.ownerConfig
+        let stations = radio.switchList
+        let stored = config.map { RadioDial.index($0, count: stations.count) } ?? 0
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
+                NotchIslandRadioArt(skin: NotchIslandRadio.skin(config))
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(verbatim: radio.station?.name ?? fallbackStation)
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.panelPrimary)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.82)
                             .truncationMode(.tail)
-                        Text(verbatim: subtitle(radio, playing: playing))
-                            .font(.system(size: 13))
-                            .foregroundStyle(.panelSecondary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
+                            .layoutPriority(1)
+                        Spacer(minLength: 0)
+                        if !stations.isEmpty {
+                            channel(NotchIslandRadio.channel(of: radio.station, in: stations, stored: stored),
+                                    spoken: NotchIslandRadio.spokenChannel(of: radio.station, in: stations,
+                                                                          stored: stored))
+                        }
                     }
-                    HStack(spacing: 10) {
+                    Text(verbatim: subtitle(radio, playing: playing))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    HStack(spacing: 8) {
+                        NotchIslandCircleButton(symbol: "backward.end.fill", label: tr("上一台"), solid: false,
+                                                enabled: model.canSwitchStation, diameter: 32) {
+                            model.act?(.radioPrevious)
+                        }
                         NotchIslandCircleButton(symbol: playing ? "pause.fill" : "play.fill",
                                                 label: playing ? tr("暂停") : tr("播放"), solid: true) {
                             model.act?(.radioToggle)
                         }
                         NotchIslandCircleButton(symbol: "forward.end.fill", label: tr("下一台"), solid: false,
-                                                enabled: model.canSwitchStation) {
+                                                enabled: model.canSwitchStation, diameter: 32) {
                             model.act?(.radioNext)
                         }
+                        Spacer(minLength: 6)
+                        // 播放时跳，暂停、连接中停成一排矮条；减弱动态效果时 PlayingBarsView 自己静止。
+                        PlayingBarsView(playing: playing && !radio.isBuffering,
+                                        tint: NotchIslandPalette.accent(scheme), height: 18, visible: true)
+                            .padding(.trailing, 2)
                     }
                 }
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             HStack(spacing: 10) {
                 Image(systemName: "speaker.wave.2.fill")
@@ -633,31 +670,107 @@ private struct NotchIslandRadioCard: View {
         }
     }
 
+    /// 「CH 03 / 06」紧凑写法，和电台面板头部同一套编号（`RadioPanelReadout.channel`）。
+    private func channel(_ parts: (current: String, total: String), spoken: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
+            Text(verbatim: "CH")
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.panelSecondary)
+            Text(verbatim: parts.current)
+                .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+                .foregroundStyle(NotchIslandPalette.accent(scheme))
+            Text(verbatim: "/ \(parts.total)")
+                .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                .foregroundStyle(.panelSecondary)
+        }
+        .lineLimit(1)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken)
+    }
+
     private func subtitle(_ radio: RadioPlayer, playing: Bool) -> String {
         if playing, let title = radio.nowTitle, !title.isEmpty { return title }
         if radio.isBuffering { return tr("正在连接") }
         return playing ? tr("正在播放") : tr("已暂停")
     }
+}
 
-    @ViewBuilder private var artwork: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(LinearGradient(colors: [Color(hex: "#FFB066"), Color(hex: "#E2650F")],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-            if let image = Self.artwork {
-                Image(nsImage: image)
+/// 电台卡片左边的插画：当前所选外观的 Resources/RadioArt/radio-art-<外观>.png（同名 @2x 一起认，
+/// Retina 用 512），透明图直接放、不垫底色；缺图退回 RadioMeow，再没有画个收音机图标。
+/// 掌机像素那套最近邻缩放，不糊边。
+private struct NotchIslandRadioArt: View {
+    var skin: RadioSkin
+
+    @Environment(\.colorScheme) private var scheme
+
+    @MainActor private static var cache: [String: NSImage?] = [:]
+
+    @MainActor private static func image(_ name: String) -> NSImage? {
+        if let hit = cache[name] { return hit }
+        let image = Bundle.main.image(forResource: name)
+        cache.updateValue(image, forKey: name)
+        return image
+    }
+
+    var body: some View {
+        let names = NotchIslandRadio.artNames(skin)
+        let found: (name: String, image: NSImage)? = names.lazy
+            .compactMap { name in Self.image(name).map { (name: name, image: $0) } }
+            .first
+        Group {
+            if let found {
+                Image(nsImage: found.image)
                     .resizable()
-                    .interpolation(.high)
+                    .interpolation(found.name == names.first && NotchIslandRadio.pixelated(skin) ? .none : .high)
                     .aspectRatio(contentMode: .fit)
-                    .padding(8)
             } else {
                 Image(systemName: "radio.fill")
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(NotchIslandPalette.accent(scheme))
             }
         }
-        .frame(width: 72, height: 72)
+        .frame(width: 64, height: 64)
         .accessibilityHidden(true)
+    }
+}
+
+/// 电台卡片的形状：顶上一截和刘海同宽（`neck`），紧贴刘海下沿；往下 `shoulder` 处两侧各弯出一段
+/// 内凹的圆弧，再铺满整宽，顶上两角 `topRadius`、底下两角 `bottomRadius`。看起来是刘海往下长出来的，
+/// 中间没有缝；两侧弯出去的地方在菜单栏下面，不盖住菜单栏上的图标。
+struct NotchIslandGrownShape: Shape {
+    var neck: CGFloat
+    var shoulder: CGFloat
+    var topRadius: CGFloat
+    var bottomRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let s = min(shoulder, rect.height / 4)
+        let top = min(topRadius, (rect.height - s) / 2)
+        let bottom = min(bottomRadius, (rect.height - s) / 2, rect.width / 4)
+        let half = max(0, min(neck / 2, rect.width / 2 - s - top))
+        let cx = rect.midX
+        let bodyTop = rect.minY + s
+        var path = Path()
+        path.move(to: CGPoint(x: cx - half, y: rect.minY))
+        path.addLine(to: CGPoint(x: cx + half, y: rect.minY))
+        path.addQuadCurve(to: CGPoint(x: cx + half + s, y: bodyTop), control: CGPoint(x: cx + half, y: bodyTop))
+        path.addLine(to: CGPoint(x: rect.maxX - top, y: bodyTop))
+        path.addArc(tangent1End: CGPoint(x: rect.maxX, y: bodyTop),
+                    tangent2End: CGPoint(x: rect.maxX, y: bodyTop + top), radius: top)
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - bottom))
+        path.addArc(tangent1End: CGPoint(x: rect.maxX, y: rect.maxY),
+                    tangent2End: CGPoint(x: rect.maxX - bottom, y: rect.maxY), radius: bottom)
+        path.addLine(to: CGPoint(x: rect.minX + bottom, y: rect.maxY))
+        path.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.maxY),
+                    tangent2End: CGPoint(x: rect.minX, y: rect.maxY - bottom), radius: bottom)
+        path.addLine(to: CGPoint(x: rect.minX, y: bodyTop + top))
+        path.addArc(tangent1End: CGPoint(x: rect.minX, y: bodyTop),
+                    tangent2End: CGPoint(x: rect.minX + top, y: bodyTop), radius: top)
+        path.addLine(to: CGPoint(x: cx - half - s, y: bodyTop))
+        path.addQuadCurve(to: CGPoint(x: cx - half, y: rect.minY), control: CGPoint(x: cx - half, y: bodyTop))
+        path.closeSubpath()
+        return path
     }
 }
 

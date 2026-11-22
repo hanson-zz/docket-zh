@@ -212,7 +212,7 @@ final class RadioPlayer {
         }
     }
 
-    /// 换到上一台或下一台（媒体键、刘海小岛的「下一台」）。
+    /// 换到上一台或下一台（媒体键、刘海小岛的「上一台」「下一台」）。
     func switchStation(by delta: Int) {
         // 优先按小组件当前保存的收藏换台，并把 index 写回去。
         if let owner, let instance = WidgetWriter.current(owner), instance.kind == .radio {
@@ -232,6 +232,19 @@ final class RadioPlayer {
 
     /// 现在的音量 0...100（刘海小岛的音量条读它；不随渐弱变）。
     var currentVolume: Double { volume }
+
+    /// 开始播放的那个收音机小组件的配置（外观、收藏、当前序号），刘海小岛的电台卡片读它；
+    /// 没有小组件（或已删掉）时 nil。
+    var ownerConfig: WidgetConfig? {
+        guard let owner, let instance = WidgetWriter.current(owner), instance.kind == .radio else { return nil }
+        return instance.config
+    }
+
+    /// 换台按的列表：有小组件时是它的收藏，没有时是播放列表（和 `switchStation(by:)` 同一套）。
+    var switchList: [RadioStation] {
+        if let config = ownerConfig { return RadioDial.stations(config) }
+        return playlist
+    }
 
     /// 能不能换台：收藏或播放列表里不止一台。
     var canSwitchStation: Bool { playlist.count > 1 || owner != nil }
