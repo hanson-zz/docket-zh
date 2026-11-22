@@ -486,8 +486,7 @@ public enum WidgetCatalog {
         // The languages and the last translations (`source`, `target`,
         // `history`) are kept by the panel; see Translate.
         Entry(kind: .translate, name: tr("翻译"), category: .ai,
-              defaults: c(["clickAction": .string("panel"), "autoDirection": .bool(true),
-                           Translate.pasteTranslateKey: .bool(false)]),
+              defaults: c(["clickAction": .string("panel"), "autoDirection": .bool(true)]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // Public numbers need no token; one in the keychain adds notifications

@@ -414,16 +414,6 @@ public enum Translate {
         }
     }
 
-    /// 粘贴即翻译 (off by default): the panel's 「粘贴」 button translates what it
-    /// pastes at once instead of waiting for the usual pause after a change.
-    /// Only text the user pastes with that button; the clipboard is never
-    /// watched.
-    public static let pasteTranslateKey = "pasteTranslate"
-
-    public static func pasteTranslates(_ config: WidgetConfig) -> Bool {
-        config.bool(pasteTranslateKey, default: false)
-    }
-
     public static func clickAction(_ config: WidgetConfig) -> ClickAction {
         ClickAction(rawValue: config.string("clickAction", default: "panel")) ?? .panel
     }

@@ -372,7 +372,7 @@ struct TranslateDetail: View {
     private func buttons(icons: Bool) -> some View {
         HStack(spacing: 8) {
             actionButton(tr("粘贴"), symbol: icons ? "doc.on.clipboard" : nil) {
-                pasteClipboard(now: Translate.pasteTranslates(config))
+                pasteClipboard(now: true)
             }
             .help(tr("把剪贴板里的文字放进原文"))
             actionButton(tr("截图翻译", context: "button"), symbol: icons ? "text.viewfinder" : nil) {
@@ -547,7 +547,7 @@ struct TranslateDetail: View {
     }
 
     /// 只在点「粘贴」（或卡片设成点按即翻译剪贴板）时读一次剪贴板，从不轮询。
-    /// `now`：设置里开了「粘贴即翻译」就立刻翻译，否则和打字一样停顿后再翻。
+    /// `now`：点面板里的「粘贴」时为 true，贴进来立刻翻译，不等打字的停顿。
     private func pasteClipboard(now: Bool) {
         guard !context.isPreview,
               let text = NSPasteboard.general.string(forType: .string),

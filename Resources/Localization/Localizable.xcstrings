@@ -3444,17 +3444,6 @@
         }
       }
     },
-    "粘贴即翻译（点面板里的「粘贴」后立刻翻译）" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Translate on paste (the panel's Paste button translates at once)"
-          }
-        }
-      }
-    },
     "经典调谐" : {
       "extractionState" : "manual",
       "localizations" : {

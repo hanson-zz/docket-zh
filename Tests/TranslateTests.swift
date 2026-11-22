@@ -200,7 +200,7 @@ final class TranslateTests: XCTestCase {
         let entry = WidgetCatalog.entry(.translate)
         XCTAssertEqual(entry?.name, "翻译")
         XCTAssertEqual(entry?.category, .ai)
-        XCTAssertEqual(WidgetCatalog.configurableKeys(.translate), ["autoDirection", "clickAction", "pasteTranslate"])
+        XCTAssertEqual(WidgetCatalog.configurableKeys(.translate), ["autoDirection", "clickAction"])
         let widget = WidgetCatalog.make(.translate)!
         XCTAssertEqual(WidgetCatalog.contentSize(widget, position: .bottom).height, 58)
         XCTAssertGreaterThanOrEqual(WidgetCatalog.verticalHeight(widget), 76)
@@ -232,11 +232,5 @@ final class TranslateTests: XCTestCase {
         XCTAssertEqual(Translate.editorHeight(content: 900), Translate.editorMaxHeight)
         XCTAssertEqual(Translate.editorHeight(content: .infinity), Translate.editorMinHeight)
         XCTAssertLessThan(Translate.editorMinHeight, Translate.editorMaxHeight)
-    }
-
-    func testPasteToTranslateIsOffUntilTurnedOn() {
-        XCTAssertFalse(Translate.pasteTranslates(WidgetConfig()))
-        XCTAssertTrue(Translate.pasteTranslates(WidgetConfig(["pasteTranslate": .bool(true)])))
-        XCTAssertEqual(WidgetCatalog.make(.translate)?.config.bool("pasteTranslate", default: true), false)
     }
 }
