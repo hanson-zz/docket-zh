@@ -3,9 +3,9 @@ import AppKit
 
 /// 天气面板，320pt 宽、液态玻璃（跟随浅色/深色）。两个状态：
 ///
-/// - 浏览：城市名（当前位置标出来）、城市切换圆点和“城市”按钮；下面小熊猫说一句
-///   暖心提示（`WeatherTips` 里优先级最高的那句，可关）；当前温度大字、
-///   天气和今天最高最低；下面分页（顶部分段，记住切到的那页）：今天是 2 小时
+/// - 浏览：城市名（当前位置标出来）、城市切换圆点、i（数据来源）和“城市”按钮；下面
+///   小熊猫提醒卡（重要天气和空气质量告警优先，平常天一行，见 `WeatherGlance`，可关）；
+///   当前温度大字、天气、今天最高最低和体感（没数据不写）；底部一行更新时间、署名和刷新；下面分页（顶部分段，记住切到的那页）：今天是 2 小时
 ///   降水条和一句“约 40 分钟后有雨，持续半小时”，和风、湿度、日出、日落；指数是
 ///   生活指数三格（穿衣、紫外线、空气质量，可关）；逐小时是接下来 12 小时（横向
 ///   滚动，打开时停在现在；按住左右拖，大字和天色跟着那一小时走）；7 天是未来 7 天。
@@ -45,6 +45,10 @@ struct WeatherDetail: View {
     @State private var topHovered = false
     /// 面板里能横向滚动的区域（逐小时），两指左右滑落在里面时让它滚，不换城市。
     @State private var swipeZones = CitySwipeZones()
+    /// 右上角 i：数据来源、更新时间和隐私说明。
+    @State private var showInfo = false
+    /// 逐小时那一排在面板里的位置（不论是不是当前页）。
+    @State private var hourlyFrame: CGRect = .zero
     /// 浏览态记住的分页（今天、指数、逐小时、7 天），见 `BrowsePage`。
     @AppStorage(DetailPanelSections.pageKey(.weather)) private var storedPage = ""
 
@@ -67,6 +71,9 @@ struct WeatherDetail: View {
     private static let accent = Color(hex: "#7CC8F2")
     private static let accentInk = Color(hex: "#05263A")
     private static let rangeFill = Color(hex: "#F2C46B")
+    /// 告警的暖色（空气质量徽章、离线），徽章上的字用 `warmInk`。
+    private static let warm = Color(hex: "#FFB35C")
+    private static let warmInk = Color(hex: "#3A1F00")
     private static let deleteRed = Color(hex: "#FF6B5A")
     private static let deleteInk = Color(hex: "#330B05")
     /// 拖起、左滑时那一行要盖住下面的删除按钮，用实心底：深色下原来的 #34343a，浅色下近白。
@@ -152,12 +159,35 @@ struct WeatherDetail: View {
     private var showIndices: Bool { config.bool(WeatherPanel.showIndicesKey, default: true) }
     private var showTips: Bool { config.bool(WeatherTips.showKey, default: true) }
 
-    /// 暖心提示：当前城市最要紧的那一句（小熊猫说的）。拖逐小时预报时照旧说现在。
-    private var topTip: WeatherTips.Tip? {
+    /// 小熊猫提醒卡：重要天气和空气质量告警排前面，平常天缩成一行（`WeatherGlance.reminder`）。
+    /// 拖逐小时预报时照旧说现在。
+    private var reminder: WeatherGlance.Reminder? {
         guard showTips, !city.isEmpty, let weather = shownWeather else { return nil }
-        return WeatherTips.top(WeatherTipSource.input(weather: weather, nowcast: nowcast, aqi: aqi,
-                                                      forecast: forecast, now: context.now, zone: zone,
-                                                      fahrenheit: fahrenheit))
+        let tips = WeatherTips.tips(WeatherTipSource.input(weather: weather, nowcast: nowcast, aqi: aqi,
+                                                           forecast: forecast, now: context.now, zone: zone,
+                                                           fahrenheit: fahrenheit))
+        return WeatherGlance.reminder(tips: tips, aqi: aqi)
+    }
+
+    /// 最近一次取到这个城市天气的时刻：第 1 个城市看 MET，其余看 Open-Meteo。
+    private var updatedAt: Date? {
+        if context.isPreview { return context.now }
+        if isPrimary { return WeatherService.shared.updatedAt }
+        return coordinate.flatMap { WeatherExtrasService.shared.updatedAt($0) }
+    }
+
+    /// 底部状态：“14:10 更新”，离线时“离线，显示缓存数据”。
+    private var updateStatus: String? {
+        WeatherGlance.updateStatus(updatedAt: updatedAt, offline: isPrimary && offlineNow,
+                                   hasData: shownWeather != nil, now: context.now)
+    }
+
+    /// 正在请求这个城市的数据。
+    private var refreshing: Bool {
+        guard !context.isPreview else { return false }
+        if isPrimary, WeatherService.shared.fetching { return true }
+        return coordinate.map { WeatherExtrasService.shared.loadingKeys.contains(WeatherExtrasService.key($0)) }
+            ?? false
     }
 
     /// 选中城市的坐标：第 1 个是共用的天气位置，其余是这里自己查到的。
@@ -249,10 +279,10 @@ struct WeatherDetail: View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 12) {
                 header
-                // 暖心提示：顶上小熊猫说一句，换城市时跟着换。
-                if let tip = topTip {
-                    WeatherTipBubble(tip: tip)
-                        .id(tip.text)
+                // 小熊猫提醒卡：告警两行，平常天一行，换城市时跟着换。
+                if let reminder {
+                    reminderCard(reminder)
+                        .id(reminder.title)
                         .transition(.opacity)
                 }
                 if city.isEmpty {
@@ -270,15 +300,8 @@ struct WeatherDetail: View {
             .overlay(alignment: .leading) { cityArrow(step: -1) }
             .overlay(alignment: .trailing) { cityArrow(step: 1) }
 
-            if !city.isEmpty, shownWeather != nil {
-                if isPrimary, offlineNow {
-                    ReconnectStateView(title: tr("离线"), detail: tr("这次没连上天气服务，显示的是上次的数据"),
-                                       loading: WeatherService.shared.fetching, style: .compact,
-                                       retry: retryWeather)
-                }
-            }
-            // 面板统一限高后，大字下面分页：今天（降水、风和湿度、日出日落）、
-            // 生活指数、逐小时、7 天。切到的那页记住。拖逐小时时上面的大字照旧跟着走。
+            // 大字下面分页：今天（未来两小时降水、风湿度日出日落 2×2）、指数（含空气质量详情）、
+            // 逐小时、7 天。前三页叠在一起取最高的那页做高度，切换不跳。切到的那页记住。
             let pages = browsePages
             if let page = shownPage(pages) {
                 if pages.count > 1 {
@@ -286,20 +309,43 @@ struct WeatherDetail: View {
                         storedPage = picked.rawValue
                     }
                 }
-                switch page {
-                case .today:
-                    if let weather = shownWeather {
-                        if showRain { rainCard }
-                        stats(weather)
+                if page == .days {
+                    dayList
+                } else {
+                    ZStack(alignment: .topLeading) {
+                        ForEach(pages.filter { $0 != .days }, id: \.self) { item in
+                            pageBody(item, active: item == page)
+                                .opacity(item == page ? 1 : 0)
+                                .allowsHitTesting(item == page)
+                                .accessibilityHidden(item != page)
+                        }
                     }
-                case .indices:
-                    if let weather = shownWeather { indices(weather) }
-                case .hours: hourly
-                case .days: dayList
                 }
             }
-            attribution
+            if !city.isEmpty, shownWeather != nil { footer }
         }
+    }
+
+    /// 一页的内容。`active` 为假时这页只是叠在底下撑高度，看不见也点不到。
+    @ViewBuilder private func pageBody(_ page: BrowsePage, active: Bool) -> some View {
+        switch page {
+        case .today:
+            if let weather = shownWeather {
+                VStack(alignment: .leading, spacing: 8) {
+                    if showRain { rainCard }
+                    stats(weather)
+                }
+            }
+        case .indices:
+            if let weather = shownWeather { indices(weather) }
+        case .hours: hourly(active: active)
+        case .days: dayList
+        }
+    }
+
+    /// 切到指数页（点空气质量提醒时）。
+    private func openIndices() {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { storedPage = BrowsePage.indices.rawValue }
     }
 
     /// 浏览态大字下面的分页。
@@ -335,42 +381,258 @@ struct WeatherDetail: View {
     // MARK: Header
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     // 定位反查回来的常是「中国河北省石家庄市长安区」一整串，顶部只放
                     // 「石家庄」，完整地名放悬停提示。
                     Text(verbatim: city.isEmpty ? tr("天气") : PlaceName.short(city))
                         .font(.system(size: 19, weight: .bold))
                         .foregroundStyle(.panelPrimary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                         .truncationMode(.tail)
                         .help(PlaceName.tooltip(city) ?? "")
                         .accessibilityLabel(city.isEmpty ? tr("天气") : city)
                     if selectedEntry.isEmpty, !city.isEmpty {
-                        Text(tr("当前位置"))
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.panelSecondary)
-                            .lineLimit(1)
+                        HStack(spacing: 3) {
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .accessibilityHidden(true)
+                            Text(tr("当前位置"))
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .fixedSize()
                     }
                 }
                 if visiblePlaces.count > 1 { dots }
             }
             Spacer(minLength: 0)
             if !context.isPreview {
+                infoButton
                 Button { switchTo(.edit) } label: {
-                    Text(tr("城市"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.panelPrimary)
-                        .padding(.horizontal, 14)
-                        .frame(height: 28)
-                        .glassPane(cornerRadius: 14)
-                        .contentShape(.rect)
+                    HStack(spacing: 4) {
+                        Text(tr("城市"))
+                            .font(.system(size: 13, weight: .semibold))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 11, weight: .bold))
+                            .accessibilityHidden(true)
+                    }
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 12)
+                    .frame(height: 28)
+                    .glassPane(cornerRadius: 14)
+                    .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
                 .help(tr("搜索添加城市、调整顺序、面板显示什么"))
             }
         }
+    }
+
+    // MARK: 信息
+
+    /// 右上角 i：点开是数据来源（MET Norway、Open-Meteo 的署名）、更新时间和隐私说明。
+    private var infoButton: some View {
+        Button { showInfo.toggle() } label: {
+            Image(systemName: "info")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .frame(width: 28, height: 28)
+                .glassPane(cornerRadius: 14)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(tr("数据来源和更新时间"))
+        .accessibilityLabel(tr("数据来源和更新时间"))
+        .popover(isPresented: $showInfo, arrowEdge: .bottom) { infoSheet }
+    }
+
+    private var infoSheet: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(tr("数据来源"))
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.primary)
+            VStack(alignment: .leading, spacing: 4) {
+                // CC BY 4.0 要求署名：第 1 个城市的当前天气和逐小时来自 MET Norway。
+                if layout != WeatherStyle.citiesLayout, isPrimary {
+                    Text(WeatherService.attribution)
+                }
+                Text(WeatherService.forecastAttribution)
+                Text(tr("最高最低温、体感、降水、紫外线和空气质量来自 Open-Meteo；空气质量是美标 AQI，和国内的指数分档不同。"))
+                    .foregroundStyle(.secondary)
+            }
+            .font(.system(size: 13))
+            .foregroundStyle(.primary)
+            if let updateStatus {
+                Text(verbatim: updateStatus)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+            }
+            Text(tr("城市名经系统地图换成坐标，坐标只发给上面的天气服务用来查天气。同一地点 15 分钟内最多请求一次。"))
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(14)
+        .frame(width: 280, alignment: .leading)
+    }
+
+    // MARK: 底部状态
+
+    /// 更新时间（离线时写明在显示缓存）、必要的署名、刷新按钮。
+    private var footer: some View {
+        HStack(spacing: 6) {
+            if let updateStatus {
+                if isPrimary, offlineNow {
+                    Image(systemName: "wifi.slash")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Self.warm.panelReadable)
+                        .accessibilityHidden(true)
+                }
+                Text(verbatim: updateStatus)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(isPrimary && offlineNow ? Self.warm.panelReadable : .panelSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            // 署名常驻一行，完整说明在右上角 i 里。
+            Text(verbatim: layout != WeatherStyle.citiesLayout && isPrimary
+                 ? "MET Norway · Open-Meteo" : "Open-Meteo")
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Spacer(minLength: 4)
+            if !context.isPreview {
+                Button(action: refreshNow) {
+                    Group {
+                        if refreshing {
+                            ProgressView().controlSize(.mini)
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.panelSecondary)
+                        }
+                    }
+                    .frame(width: 24, height: 24)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .disabled(refreshing)
+                .help(tr("刷新（天气服务要求同一地点 15 分钟内最多请求一次）"))
+                .accessibilityLabel(tr("刷新"))
+            }
+        }
+    }
+
+    /// 刷新：离线时重新连接，否则按服务自己的节流刷新；降水、空气、每日一起。
+    private func refreshNow() {
+        guard !context.isPreview else { return }
+        Task {
+            if isPrimary {
+                if WeatherService.shared.offline {
+                    await WeatherService.shared.retry()
+                } else {
+                    await WeatherService.shared.refresh()
+                }
+            }
+            await loadExtras()
+            if isPrimary, let place = WeatherService.shared.place {
+                await ForecastService.shared.refresh(place)
+            }
+        }
+    }
+
+    // MARK: 小熊猫提醒卡
+
+    @ViewBuilder private func reminderCard(_ reminder: WeatherGlance.Reminder) -> some View {
+        let tappable = reminder.aboutAir && showIndices && aqi != nil
+        if tappable {
+            Button(action: openIndices) { reminderContent(reminder, chevron: true) }
+                .buttonStyle(.plain)
+                .help(tr("查看空气质量详情"))
+        } else {
+            reminderContent(reminder, chevron: false)
+        }
+    }
+
+    private func reminderContent(_ reminder: WeatherGlance.Reminder, chevron: Bool) -> some View {
+        let alert = reminder.style == .alert
+        let corner: CGFloat = alert ? 14 : 12
+        return HStack(spacing: 10) {
+            Group {
+                if let image = PandaArt.image(WeatherTipSource.pandaImage(reminder.kind)) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                } else {
+                    Image(systemName: alert ? "exclamationmark.circle.fill" : "heart.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(alert ? Self.warm.panelReadable : .panelSecondary)
+                }
+            }
+            .frame(width: alert ? 40 : 24, height: alert ? 40 : 24)
+            .accessibilityHidden(true)
+            if alert {
+                Rectangle().fill(.panelSeparator).frame(width: 0.8, height: 30)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(verbatim: reminder.title)
+                        .font(.system(size: alert ? 14 : 13, weight: alert ? .bold : .medium))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    if let value = reminder.aqi {
+                        Text(verbatim: "AQI \(value)")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Self.warmInk)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .fixedSize()
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(Self.warm))
+                            .help(tr("AQI（美标）"))
+                    }
+                }
+                if alert, let detail = reminder.detail {
+                    Text(verbatim: detail)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            Spacer(minLength: 0)
+            if chevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, alert ? 8 : 5)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassPane(cornerRadius: corner)
+        .overlay {
+            if alert {
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .strokeBorder(Self.warm.opacity(0.5), lineWidth: 0.8)
+            }
+        }
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tr("暖心提示") + " " + reminder.title
+                            + (reminder.aqi.map { " · " + tr("AQI（美标）") + " \($0)" } ?? "")
+                            + (alert ? (reminder.detail.map { "，" + $0 } ?? "") : ""))
     }
 
     /// 城市切换圆点，点一下切过去。圆点照旧 6.4pt，点击区域每个 24pt 见方，
@@ -531,10 +793,11 @@ struct WeatherDetail: View {
     // MARK: Now
 
     private func hero(_ weather: WeatherNow) -> some View {
-        HStack(alignment: .center, spacing: 12) {
+        let today = forecast?.today(now: context.now)
+        return HStack(alignment: .center, spacing: 12) {
             // 拖动时大数字跟着手指走，在相邻两小时之间平滑过渡。
             temperature(scrubbedTemperature ?? weather.temperatureC)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 if let hour = scrubbedHour {
                     Text(tr("\(hourLabel(hour.date)) 的预报"))
                         .font(.system(size: 17, weight: .semibold))
@@ -544,8 +807,17 @@ struct WeatherDetail: View {
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.panelPrimary)
                 }
-                if let today = forecast?.today(now: context.now) {
-                    Text(tr("最高 \(degrees(today.highC)) 最低 \(degrees(today.lowC))"))
+                // 最高最低来自 Open-Meteo 的每日预报，体感来自它的当前天气；没取到就不写。
+                if let range = WeatherGlance.rangeLine(high: today?.highC, low: today?.lowC, fahrenheit: fahrenheit) {
+                    Text(verbatim: range)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
+                        .monospacedDigit()
+                }
+                // 体感说的是“现在”，拖到别的小时时不写。
+                if scrubbedHour == nil,
+                   let feels = WeatherGlance.feelsLine(nowcast?.current?.apparentC, fahrenheit: fahrenheit) {
+                    Text(verbatim: feels)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.panelSecondary)
                         .monospacedDigit()
@@ -556,8 +828,9 @@ struct WeatherDetail: View {
             Spacer(minLength: 0)
             Image(systemName: scrubbedHour?.symbolName ?? weather.symbolName)
                 .symbolRenderingMode(.multicolor)
-                .font(.system(size: 36))
-                .frame(width: 48)
+                .font(.system(size: 40))
+                .frame(width: 52)
+                .accessibilityHidden(true)
         }
     }
 
@@ -580,83 +853,152 @@ struct WeatherDetail: View {
 
     // MARK: 2 小时降水
 
-    /// 分钟级降水没取到（Open-Meteo 失败或还没回来）时整块不画。
+    /// 未来两小时：15 分钟降水盖得住一个半小时才画（`WeatherGlance.rain`），没取到就整块不画。
+    /// 无雨时只占一行“未来两小时 · 暂无明显降水”，有雨才画降水条。
     @ViewBuilder private var rainCard: some View {
         let slots = nowcast?.slots ?? []
-        if let status = RainOutlook.status(slots, now: context.now) {
-            let bars = RainOutlook.bars(slots, now: context.now)
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: status == .dry ? "cloud.fill" : "cloud.rain.fill")
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(Color.panelPrimary, Self.accent)
-                        .font(.system(size: 15))
-                    Text(RainOutlook.headline(status))
-                        .font(.system(size: 15, weight: .bold))
+        if let glance = WeatherGlance.rain(slots, now: context.now) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: glance.showsBars ? "cloud.rain.fill" : "drop")
+                        .symbolRenderingMode(.hierarchical)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(glance.showsBars ? Self.accent.panelReadable : .panelSecondary)
+                        .accessibilityHidden(true)
+                    Text(tr("未来两小时"))
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(.panelPrimary)
-                    Spacer(minLength: 4)
-                    Text(RainOutlook.detail(status))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.panelSecondary)
+                    Spacer(minLength: 6)
+                    Text(verbatim: glance.headline)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(glance.showsBars ? .panelPrimary : .panelSecondary)
                 }
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
-                ZStack(alignment: .bottomLeading) {
-                    Rectangle().fill(.panelSeparator).frame(height: 0.8)
-                    HStack(alignment: .bottom, spacing: 3) {
-                        ForEach(Array(bars.enumerated()), id: \.offset) { _, slot in
-                            let level = RainOutlook.level(slot.mm)
-                            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                                .fill(level > 0 ? Self.accent.panelReadable : .panelTrack)
-                                .frame(height: max(2, level * 36))
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    // 现在的位置。
-                    Rectangle().fill(.panelPrimary).frame(width: 1.4, height: 42)
-                }
-                .frame(height: 42)
-                .accessibilityHidden(true)
-
-                HStack(spacing: 0) {
-                    ForEach(Array(RainOutlook.axisLabels.enumerated()), id: \.offset) { index, label in
-                        if index > 0 { Spacer(minLength: 0) }
-                        Text(label)
+                if glance.showsBars {
+                    if !glance.detail.isEmpty {
+                        Text(verbatim: glance.detail)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.panelSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
+                    let bars = RainOutlook.bars(slots, now: context.now)
+                    ZStack(alignment: .bottomLeading) {
+                        Rectangle().fill(.panelSeparator).frame(height: 0.8)
+                        HStack(alignment: .bottom, spacing: 3) {
+                            ForEach(Array(bars.enumerated()), id: \.offset) { _, slot in
+                                let level = RainOutlook.level(slot.mm)
+                                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                    .fill(level > 0 ? Self.accent.panelReadable : .panelTrack)
+                                    .frame(height: max(2, level * 30))
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+                        // 现在的位置。
+                        Rectangle().fill(.panelPrimary).frame(width: 1.4, height: 34)
+                    }
+                    .frame(height: 34)
+                    .accessibilityHidden(true)
+
+                    HStack(spacing: 0) {
+                        ForEach(Array(RainOutlook.axisLabels.enumerated()), id: \.offset) { index, label in
+                            if index > 0 { Spacer(minLength: 0) }
+                            Text(label)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.panelSecondary)
+                        }
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .accessibilityHidden(true)
                 }
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .accessibilityHidden(true)
             }
-            .padding(12)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
             .glassPane()
             .accessibilityElement(children: .combine)
-            .accessibilityLabel(RainOutlook.sentence(status))
+            .accessibilityLabel(tr("未来两小时") + " " + (glance.showsBars ? RainOutlook.sentence(glance.status)
+                                                                    : glance.headline))
         }
     }
 
     // MARK: 生活指数
 
-    /// 穿衣按温度总能写；紫外线和空气质量没取到的那一格不画。
+    /// 穿衣按温度总能写；紫外线没取到那一格不画。下面是空气质量详情（美标 AQI 的数值、
+    /// 档位、刻度和建议），没取到 AQI 时整块不画。
     private func indices(_ weather: WeatherNow) -> some View {
         let uv = nowcast?.uvIndex(now: context.now)
-        return HStack(alignment: .top, spacing: 6) {
-            indexCell(tr("穿衣"), value: WeatherIndex.clothing(celsius: weather.temperatureC), detail: "")
-            if let uv {
-                indexCell(tr("紫外线"), value: WeatherIndex.uvLevel(uv), detail: WeatherIndex.uvDetail(uv))
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                indexCell(tr("穿衣"), value: WeatherIndex.clothing(celsius: weather.temperatureC), detail: "")
+                if let uv {
+                    indexCell(tr("紫外线"), value: WeatherIndex.uvLevel(uv), detail: WeatherIndex.uvDetail(uv))
+                }
             }
-            if let aqi {
-                // 数值是美国 AQI 刻度，标签直接写明，免得和国内的指数混着看。
-                indexCell(tr("AQI（美标）"), value: WeatherIndex.aqiLevel(aqi), detail: "\(aqi)",
-                          warm: WeatherIndex.aqiIsPolluted(aqi))
-                    .accessibilityLabel(tr("空气质量") + " " + WeatherIndex.aqiLevel(aqi) + " · "
-                                        + tr("AQI（美标）") + " \(aqi)")
-            }
+            .fixedSize(horizontal: false, vertical: true)
+            if let aqi { airDetail(aqi) }
         }
-        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// 空气质量详情：数值写明是美标 AQI，免得和国内的指数混着看。
+    private func airDetail(_ aqi: Int) -> some View {
+        let polluted = WeatherIndex.aqiIsPolluted(aqi)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(tr("空气质量"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                Text(tr("AQI（美标）"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                Spacer(minLength: 4)
+                Text(verbatim: "\(aqi)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+                    .rollingValue(aqi)
+                Text(verbatim: WeatherGlance.aqiLongLevel(aqi))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(polluted ? Self.warm.panelReadable : .panelPrimary)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            // 0 到 300 的刻度：优、良、轻度、中度、重度，标记落在现在的数值上。
+            GeometryReader { proxy in
+                let x = proxy.size.width * WeatherGlance.aqiFraction(aqi)
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(LinearGradient(colors: [Color(hex: "#5BC97A"), Color(hex: "#E8D44D"),
+                                                      Color(hex: "#F5A623"), Color(hex: "#E8604C"),
+                                                      Color(hex: "#9B59B6")],
+                                             startPoint: .leading, endPoint: .trailing))
+                        .opacity(0.85)
+                        .frame(height: 5)
+                    Circle()
+                        .fill(.panelPrimary)
+                        .overlay { Circle().strokeBorder(.panelRaised, lineWidth: 1.5) }
+                        .frame(width: 11, height: 11)
+                        .offset(x: min(max(0, x - 5.5), proxy.size.width - 11))
+                }
+                .frame(maxHeight: .infinity)
+            }
+            .frame(height: 12)
+            .accessibilityHidden(true)
+            Text(verbatim: WeatherGlance.aqiAdvice(aqi))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassPane()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(tr("空气质量") + " " + WeatherGlance.aqiLongLevel(aqi) + " · "
+                            + tr("AQI（美标）") + " \(aqi)，" + WeatherGlance.aqiAdvice(aqi))
     }
 
     private func indexCell(_ label: String, value: String, detail: String, warm: Bool = false) -> some View {
@@ -690,52 +1032,89 @@ struct WeatherDetail: View {
 
     // MARK: Wind, humidity, sun
 
+    /// 风向风力、湿度、日出、日落：统一的 2×2 小卡，哪项没有就少一张。
     private func stats(_ weather: WeatherNow) -> some View {
-        HStack(alignment: .top, spacing: 6) {
-            if let speed = weather.windSpeed {
-                stat(tr("风"), WeatherIndex.windShort(speed: speed, from: weather.windFrom ?? 0))
-                    .help(Wind.summary(speed: speed, from: weather.windFrom ?? 0))
-            }
-            if let humidity = weather.humidity {
-                stat(tr("湿度"), "\(Int(humidity.rounded()))%")
-            }
-            switch sunToday {
-            case .normal(let rise, let set)?:
-                let note = WeatherSun.localNote(zone, at: rise)
-                stat(tr("日出"), WeatherSun.time(rise, zone: zone))
-                    .help(note.isEmpty ? "" : tr("日出") + note)
-                stat(tr("日落"), WeatherSun.time(set, zone: zone))
-                    .help(note.isEmpty ? "" : tr("日落") + note)
-            case .polarDay?:
-                stat(tr("日照"), tr("极昼"))
-            case .polarNight?:
-                stat(tr("日照"), tr("极夜"))
-            case nil:
-                EmptyView()
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
+                  alignment: .leading, spacing: 8) {
+            ForEach(statItems(weather)) { item in
+                statCard(item)
             }
         }
+    }
+
+    private struct StatItem: Identifiable {
+        var id: String
+        var icon: String
+        var tint: Color
+        var label: String
+        var value: String
+        var help: String = ""
+    }
+
+    private func statItems(_ weather: WeatherNow) -> [StatItem] {
+        var items: [StatItem] = []
+        let water = Self.accent.panelReadable
+        let sun = Color(hex: "#F5A623").panelReadable
+        if let speed = weather.windSpeed {
+            items.append(StatItem(id: "wind", icon: "wind", tint: water, label: tr("风向风力"),
+                                  value: WeatherGlance.windCard(speed: speed, from: weather.windFrom ?? 0),
+                                  help: Wind.summary(speed: speed, from: weather.windFrom ?? 0)))
+        }
+        if let humidity = weather.humidity {
+            items.append(StatItem(id: "humidity", icon: "humidity", tint: water, label: tr("湿度"),
+                                  value: "\(Int(humidity.rounded()))%"))
+        }
+        switch sunToday {
+        case .normal(let rise, let set)?:
+            let note = WeatherSun.localNote(zone, at: rise)
+            items.append(StatItem(id: "rise", icon: "sunrise", tint: sun, label: tr("日出"),
+                                  value: WeatherSun.time(rise, zone: zone),
+                                  help: note.isEmpty ? "" : tr("日出") + note))
+            items.append(StatItem(id: "set", icon: "sunset", tint: sun, label: tr("日落"),
+                                  value: WeatherSun.time(set, zone: zone),
+                                  help: note.isEmpty ? "" : tr("日落") + note))
+        case .polarDay?:
+            items.append(StatItem(id: "sun", icon: "sun.max", tint: sun, label: tr("日照"), value: tr("极昼")))
+        case .polarNight?:
+            items.append(StatItem(id: "sun", icon: "moon.stars", tint: sun, label: tr("日照"), value: tr("极夜")))
+        case nil:
+            break
+        }
+        return items
+    }
+
+    private func statCard(_ item: StatItem) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: item.icon)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(item.tint)
+                .frame(width: 22)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: item.label)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                Text(verbatim: item.value)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+                    .rollingValue(item.value)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassPane()
+        .help(item.help)
+        .accessibilityElement(children: .combine)
     }
 
     private var sunToday: SunTimes.Day? {
         guard let place = sunPlace else { return nil }
         return SunTimes.on(context.now, latitude: place.lat, longitude: place.lon, zone: place.zone)
-    }
-
-    private func stat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.panelSecondary)
-            Text(value)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.panelPrimary)
-                .monospacedDigit()
-                .rollingValue(value)
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.75)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: Hours
@@ -745,7 +1124,7 @@ struct WeatherDetail: View {
     /// 打开时停在现在这一小时；双指横扫（或 Shift 加滚轮）看后面的小时。
     /// 按住在这一排上左右拖，就像拨时间轴：手指下的那一小时亮起来，
     /// 上面的大数字、天气和天空都换成那个时刻，拖到边上会跟着滚，松手回到现在。
-    private var hourly: some View {
+    private func hourly(active: Bool) -> some View {
         let shown = hours
         let column = Self.hourColumn
         let width = column * CGFloat(shown.count)
@@ -813,9 +1192,12 @@ struct WeatherDetail: View {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo(index) }
             }
         }
+        // 叠在底下撑高度时不算可横向滚动的区域，免得挡住在别的页上左右滑换城市。
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.swipeSpace)) } action: { frame in
-            swipeZones.hourly = frame
+            hourlyFrame = frame
+            swipeZones.hourly = active ? frame : .zero
         }
+        .onChange(of: active) { _, now in swipeZones.hourly = now ? hourlyFrame : .zero }
         .onDisappear { swipeZones.hourly = .zero }
         .accessibilityElement(children: .combine)
         .accessibilityHint(tr("左右拖动查看每小时的天气，双指横扫看后面的小时"))

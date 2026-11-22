@@ -69,6 +69,9 @@ final class WeatherService {
     private(set) var offline = false
     /// 正在请求 MET，面板的插头这时插着。
     private(set) var fetching = false
+    /// 最近一次确认数据是新的（200 或 304）的时刻，面板底部写“14:10 更新”。
+    /// 只是记个时间，不参与节流和缓存。
+    private(set) var updatedAt: Date?
 
     @ObservationIgnored private var coordinate: Coordinate?
     @ObservationIgnored private var city = ""
@@ -94,6 +97,7 @@ final class WeatherService {
             current = nil
             hourly = []
             offline = false
+            updatedAt = nil
             lastAttempt = nil
             lastModified = nil
         }
@@ -135,6 +139,7 @@ final class WeatherService {
             // 304: what we already show is current.
             guard http.statusCode != 304 else {
                 offline = false
+                updatedAt = .now
                 return
             }
             guard http.statusCode == 200 else {
@@ -148,6 +153,7 @@ final class WeatherService {
             apply(try decoder.decode(Forecast.self, from: data))
             lastModified = http.value(forHTTPHeaderField: "Last-Modified")
             offline = false
+            updatedAt = .now
         } catch {
             // Offline, throttled or malformed - keep the last good values.
             offline = true

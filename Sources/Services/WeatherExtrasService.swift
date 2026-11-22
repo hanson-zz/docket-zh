@@ -20,6 +20,8 @@ final class WeatherExtrasService {
     private(set) var airQuality: [String: Int] = [:]
     /// 面板里每个城市解析到的坐标，按小写的城市名。
     private(set) var places: [String: WeatherService.Coordinate] = [:]
+    /// 降水和逐小时最近一次取到的时刻，按 `DailyForecast.cacheKey`。只记时间，不参与节流。
+    private(set) var updated: [String: Date] = [:]
     /// 正在请求的地点。
     private(set) var loadingKeys: Set<String> = []
 
@@ -34,6 +36,10 @@ final class WeatherExtrasService {
 
     func nowcast(at place: WeatherService.Coordinate) -> WeatherNowcast? {
         nowcasts[Self.key(place)]
+    }
+
+    func updatedAt(_ place: WeatherService.Coordinate) -> Date? {
+        updated[Self.key(place)]
     }
 
     func aqi(at place: WeatherService.Coordinate) -> Int? {
@@ -78,6 +84,7 @@ final class WeatherExtrasService {
 
         if let forecast, let parsed = WeatherNowcast.parse(forecast) {
             nowcasts[key] = parsed
+            updated[key] = .now
         }
         if let air, let reading = AirQualityReading.parse(air) {
             airQuality[key] = reading

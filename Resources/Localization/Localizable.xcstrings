@@ -72488,6 +72488,281 @@
           }
         }
       }
+    },
+    "%@ · AQI %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · AQI %@"
+          }
+        }
+      }
+    },
+    "%@ 月 %@ 日 %@ 更新" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %@/%@ %@"
+          }
+        }
+      }
+    },
+    "严重污染" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hazardous"
+          }
+        }
+      }
+    },
+    "中度污染" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unhealthy"
+          }
+        }
+      }
+    },
+    "轻度污染" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unhealthy for sensitive groups"
+          }
+        }
+      }
+    },
+    "重度污染" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very unhealthy"
+          }
+        }
+      }
+    },
+    "体感 %@°" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feels like %@°"
+          }
+        }
+      }
+    },
+    "减少户外活动，外出建议戴口罩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limit time outdoors and wear a mask when out"
+          }
+        }
+      }
+    },
+    "刷新（天气服务要求同一地点 15 分钟内最多请求一次）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh (the weather services allow one request per place every 15 minutes)"
+          }
+        }
+      }
+    },
+    "城市名经系统地图换成坐标，坐标只发给上面的天气服务用来查天气。同一地点 15 分钟内最多请求一次。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "City names are turned into coordinates by the system's Maps lookup, and only the coordinates are sent to the weather services above. Each place is requested at most once every 15 minutes."
+          }
+        }
+      }
+    },
+    "尽量待在室内，外出戴好口罩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay indoors where you can and wear a mask outside"
+          }
+        }
+      }
+    },
+    "敏感人群减少户外活动，外出可戴口罩" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sensitive groups should limit time outdoors; consider a mask"
+          }
+        }
+      }
+    },
+    "数据来源" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data Sources"
+          }
+        }
+      }
+    },
+    "数据来源和更新时间" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data sources and update time"
+          }
+        }
+      }
+    },
+    "暂无明显降水" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No notable rain"
+          }
+        }
+      }
+    },
+    "最高 %@° · 最低 %@°" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "H %@° · L %@°"
+          }
+        }
+      }
+    },
+    "最高最低温、体感、降水、紫外线和空气质量来自 Open-Meteo；空气质量是美标 AQI，和国内的指数分档不同。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High and low, feels-like, rain, UV and air quality come from Open-Meteo. Air quality is the US AQI, whose bands differ from China's index."
+          }
+        }
+      }
+    },
+    "未来两小时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next 2 Hours"
+          }
+        }
+      }
+    },
+    "查看空气质量详情" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See air quality details"
+          }
+        }
+      }
+    },
+    "离线，显示缓存数据" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Offline, showing cached data"
+          }
+        }
+      }
+    },
+    "空气尚可，极少数敏感人群减少久留户外" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acceptable; unusually sensitive people should limit long stays outdoors"
+          }
+        }
+      }
+    },
+    "空气很好，适合户外活动" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Air is clean, good for outdoor activities"
+          }
+        }
+      }
+    },
+    "空气质量较差" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poor air quality"
+          }
+        }
+      }
+    },
+    "避免外出，关好门窗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avoid going out and keep windows closed"
+          }
+        }
+      }
+    },
+    "风向风力" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wind"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
