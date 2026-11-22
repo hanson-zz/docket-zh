@@ -1160,7 +1160,8 @@ public struct PersistedState: Codable, Sendable {
     public var macOSDock = MacOSDockSettings()
     public var menuBar = MenuBarSettings()
     /// Shared across every Focus Timer widget - the product treats it as one timer.
-    public var timer = TimerState()
+    /// 全新安装时环境音默认选好一种（见 `TimerState.firstRun`）。
+    public var timer = TimerState.firstRun
     /// Snapshot of the user's live Dock taken before Docket ever wrote to it.
     public var originalMacOSDock: [MacOSDockTile]?
     /// Apple's Dock preferences from before the shelf borrowed its strip.
@@ -1232,7 +1233,7 @@ public struct PersistedState: Codable, Sendable {
         customDock = try c.decodeIfPresent(CustomDockSettings.self, forKey: .customDock) ?? CustomDockSettings()
         macOSDock = try c.decodeIfPresent(MacOSDockSettings.self, forKey: .macOSDock) ?? MacOSDockSettings()
         menuBar = try c.decodeIfPresent(MenuBarSettings.self, forKey: .menuBar) ?? MenuBarSettings()
-        timer = try c.decodeIfPresent(TimerState.self, forKey: .timer) ?? TimerState()
+        timer = try c.decodeIfPresent(TimerState.self, forKey: .timer) ?? TimerState.firstRun
         originalMacOSDock = try c.decodeIfPresent([MacOSDockTile].self, forKey: .originalMacOSDock)
         borrowedDockPrefs = try c.decodeIfPresent(DockPrefs.self, forKey: .borrowedDockPrefs)
         hiddenDockAutoHide = try? c.decodeIfPresent(HiddenDockOriginal.self, forKey: .hiddenDockAutoHide)

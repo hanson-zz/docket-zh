@@ -2311,6 +2311,17 @@
         }
       }
     },
+    "休息时声音停下，回到专注再放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet during the break, back when focus resumes"
+          }
+        }
+      }
+    },
     "休息结束" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2443,6 +2454,17 @@
         }
       }
     },
+    "声音设备没准备好，这一轮先不放，重新选一次声音可再试" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The audio device isn't ready, so nothing plays this round. Pick a sound again to retry"
+          }
+        }
+      }
+    },
     "完全磁盘访问权限：看见刚放进废纸篓的文件和它原来的位置。自动化里允许码头控制访达：请访达把文件放回原处，第一次放回时系统会问。没有自动化权限时，小熊猫只把文件叼回来，给一个「放回原处」的按钮。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2571,6 +2593,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trash Rescue needs two permissions"
+          }
+        }
+      }
+    },
+    "开始专注时自动播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plays when focus starts"
           }
         }
       }
@@ -2729,6 +2762,17 @@
         }
       }
     },
+    "正在试听" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previewing"
+          }
+        }
+      }
+    },
     "消息灵动岛与刘海小岛" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2747,6 +2791,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Submarine"
+          }
+        }
+      }
+    },
+    "环境音小组件正在播放，这一轮不打断它" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The Ambient Sound widget is playing, so this round leaves it alone"
           }
         }
       }
@@ -3026,6 +3081,17 @@
         }
       }
     },
+    "这一轮你手动停了或换了声音，下一轮再自动播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You stopped or changed the sound this round. It plays again next round"
+          }
+        }
+      }
+    },
     "进度未知" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3044,6 +3110,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Repeat"
+          }
+        }
+      }
+    },
+    "选一种声音，开始专注时自动播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a sound to play when focus starts"
           }
         }
       }

@@ -303,7 +303,9 @@ final class ProLicenseManager {
         // 媒体键和控制中心不能再把它们放起来。收音机整种免费，照常播放。
         if !unlocked {
             if PodcastPlayer.shared.episode != nil { PodcastPlayer.shared.pauseAndEnd() }
-            if AmbientPlayer.shared.isPlaying { AmbientPlayer.shared.stop() }
+            // 只停环境音小组件放的；专注计时的环境音是免费功能，不受影响
+            // （以前这里每小时和每次唤醒都会把专注的声音停掉，那一轮就再也不放了）。
+            if AmbientPlayer.shared.isPlaying, AmbientPlayer.shared.owner == .widget { AmbientPlayer.shared.stop() }
         }
     }
 

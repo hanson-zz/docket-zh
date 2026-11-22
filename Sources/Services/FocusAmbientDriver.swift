@@ -31,22 +31,20 @@ final class FocusSessionStore {
 }
 
 /// 开始专注自动放环境音（或收音机收藏里选的一个台），休息时（开着“休息时声音停下”）、
-/// 暂停、重置时停。开始约 1.5 秒淡入，停下约 0.8 秒淡出（`AudioFade`）。
+/// 暂停、重置时停。环境音开始约 1.5 秒淡入，停下约 1.5 秒淡出（`AmbientFade`）。
 ///
 /// 和环境音小组件共用一个 `AmbientPlayer`，和收音机小组件共用一个 `RadioPlayer`。
-/// 只管自己放起来的声音：环境音小组件已经在放用户自己的组合、收音机正在放用户点的
-/// 别的台时不去抢；专注中用户手动停了或换了，这一轮也不再放回来，停的时候也不碰
-/// （电台的规则见 `FocusPlayback`）。专注计时每秒走一次 `sync`（见 `FocusCycleDriver`），
-/// 面板上一按也马上走一次。
+/// 只管自己放起来的声音（`AmbientOwner.focus`）：环境音小组件已经在放用户自己的组合、
+/// 收音机正在放用户点的别的台时不去抢；专注中用户手动停了或换了，这一轮也不再放回来，
+/// 停的时候也不碰；声音设备起不来时这一轮不再每秒重试。这三种让开的原因见
+/// `FocusAmbientSkip`，专注面板上用一行小字说明；用户在专注面板里改选别的声音算明确要放，
+/// 让开作废（规则见 `FocusAmbientRound`，电台的规则见 `FocusPlayback`）。
+/// 专注计时每秒走一次 `sync`（见 `FocusCycleDriver`），面板上一按也马上走一次。
 @MainActor
 final class FocusAmbientDriver {
     static let shared = FocusAmbientDriver()
 
-    /// 我们放起来的声音；nil 是现在没放，或这一轮让给了用户。
-    private var started: AmbientSound?
-    /// 这一轮用户接管了（手动停或换了组合），等专注停下再说。
-    private var yielded = false
-    private var volume: Int = FocusAmbient.defaultVolume
+    private var round = FocusAmbientRound()
     /// 电台这一路自己放起来的、让没让给用户。
     private var radio = FocusPlayback()
 
@@ -55,9 +53,28 @@ final class FocusAmbientDriver {
 
     private init() {}
 
+    /// 这一轮环境音让开的原因，专注面板那一行小字用。
+    var skip: FocusAmbientSkip? { round.skip }
+
+    /// 选的环境音正由专注放着。
+    var isPlayingOurs: Bool {
+        let player = AmbientPlayer.shared
+        return round.playing != nil && player.isPlaying && player.owner == .focus
+    }
+
     /// 所有收音机小组件收藏的台，专注计时面板的「收音机收藏」一组。
     func radioFavourites() -> [RadioStation] {
         FocusRadio.favourites(widgets().filter { $0.kind == .radio }.map(\.config))
+    }
+
+    /// 专注面板里选了一种声音：专注没在放时试听几秒（专注在放时 `sync` 会直接换过去）。
+    func audition(_ state: TimerState, now: Date = .now) {
+        guard let sound = FocusAmbient.sound(state) else {
+            AmbientPlayer.shared.endPreview()
+            return
+        }
+        guard FocusAmbient.wanted(state, now: now) == nil else { return }
+        AmbientPlayer.shared.preview(sound, volume: Double(FocusAmbient.clampVolume(state.ambientVolume)))
     }
 
     func sync(_ state: TimerState, now: Date = .now) {
@@ -65,39 +82,23 @@ final class FocusAmbientDriver {
         let player = AmbientPlayer.shared
         let wanted = FocusAmbient.wanted(state, now: now)
         let level = FocusAmbient.clampVolume(state.ambientVolume)
-        guard let wanted else {
-            if let started, player.isPlaying, player.sounds == [started] { player.stop(fadingOut: AudioFade.fadeOut) }
-            started = nil
-            yielded = false
-            return
-        }
-        if yielded { return }
-        if let started {
-            guard player.isPlaying, player.sounds == [started] else {
-                // 用户手动停了或换了别的组合：这一轮不再管。
-                self.started = nil
-                yielded = true
-                return
+        let ours = player.isPlaying && player.owner == .focus && round.playing.map { player.sounds == [$0] } == true
+        let blocked = AmbientOwner.blocksFocus(owner: player.owner, playing: player.isPlaying)
+        switch round.step(wanted: wanted, choice: state.ambient, level: level, ours: ours, blocked: blocked) {
+        case .none:
+            break
+        case .stop:
+            player.stop(fadingOut: AmbientFade.fadeOut)
+        case .retune(let sound, let volume):
+            player.apply(sounds: [sound], volume: Double(volume), owner: .focus)
+        case .start(let sound):
+            player.play(sounds: [sound], volume: Double(level), fadeIn: AmbientFade.fadeIn, owner: .focus)
+            if player.isPlaying, player.owner == .focus {
+                round.started(sound, volume: level)
+            } else {
+                // 声音设备起不来：这一轮不再每秒重试。
+                round.failed(choice: state.ambient)
             }
-            if started != wanted || level != volume {
-                player.apply(sounds: [wanted], volume: Double(level))
-                self.started = wanted
-                volume = level
-            }
-            return
-        }
-        // 环境音小组件正在放用户自己的组合，不去抢。
-        if player.isPlaying {
-            yielded = true
-            return
-        }
-        player.play(sounds: [wanted], volume: Double(level), fadeIn: AudioFade.fadeIn)
-        if player.isPlaying {
-            started = wanted
-            volume = level
-        } else {
-            // 声音设备起不来：这一轮不再每秒重试。
-            yielded = true
         }
     }
 

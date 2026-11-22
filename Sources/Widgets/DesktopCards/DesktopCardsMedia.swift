@@ -1578,7 +1578,7 @@ private struct DMAmbientCard: View {
             .padding(DM.pad)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .onAppear { player.apply(sounds: sounds, levels: levels, volume: volume) }
+        .onAppear { player.prime(sounds: sounds, levels: levels, volume: volume) }
     }
 
     private func toggle() {

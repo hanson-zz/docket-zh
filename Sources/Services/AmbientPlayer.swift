@@ -23,6 +23,8 @@ final class AmbientPlayer {
     private(set) var sounds: [AmbientSound] = []
     /// Each sound's own level (see `AmbientLevels`), under the master volume.
     private(set) var levels: [AmbientSound: Int] = [:]
+    /// 现在的声音是谁放起来的：环境音小组件、专注计时，还是专注面板里的试听。
+    private(set) var owner: AmbientOwner = .widget
 
     @ObservationIgnored private var volume: Double = 60
     @ObservationIgnored private var startedAt: Date?
@@ -32,13 +34,23 @@ final class AmbientPlayer {
     @ObservationIgnored private var ticker: Timer?
     @ObservationIgnored private var stopTask: Task<Void, Never>?
     @ObservationIgnored private var configObserver: NSObjectProtocol?
+    @ObservationIgnored private var previewTask: Task<Void, Never>?
 
     private init() {}
 
     // MARK: Controls
 
     /// The widget's stored mix and volume, applied whether or not it plays.
-    func apply(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double) {
+    ///
+    /// 小组件里用户改了声音或音量（`owner` 是 `.widget`）时，正在放的专注或试听也换成
+    /// 用户的组合，算用户接管；专注驱动换声音、调音量时传 `.focus`。
+    func apply(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double,
+               owner: AmbientOwner = .widget) {
+        if isPlaying, owner == .widget, self.owner != .widget {
+            previewTask?.cancel()
+            previewTask = nil
+            self.owner = .widget
+        }
         self.sounds = sounds
         self.levels = levels
         self.volume = volume
@@ -51,17 +63,28 @@ final class AmbientPlayer {
         else if playing { publishSession() }
     }
 
+    /// 小组件出现在屏幕上时同步自己存的组合。正在放专注或试听的声音时什么也不改，
+    /// 见 `AmbientOwner.primeChangesPlayback`。
+    func prime(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double) {
+        guard AmbientOwner.primeChangesPlayback(owner: owner, playing: isPlaying) else { return }
+        apply(sounds: sounds, levels: levels, volume: volume)
+    }
+
     func toggle(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double) {
         isPlaying ? pause() : play(sounds: sounds, levels: levels, volume: volume)
     }
 
-    /// `fadeIn` 给了就整体淡入（专注驱动用 `AudioFade.fadeIn`）：淡出途中再播放从当时的
-    /// 音量往回升，不先掉到 0；没给就照旧直接响（各个声音自己约 0.3 秒滑上来）。
+    /// 整体淡入 `fadeIn` 秒（默认 `AmbientFade.fadeIn`）：淡出途中再播放从当时的
+    /// 音量往回升，不先掉到 0。`owner` 记下是谁放的；试听不接管系统的「正在播放」，
+    /// 定时关闭只管小组件自己放的。
     func play(sounds: [AmbientSound], levels: [AmbientSound: Int] = [:], volume: Double,
-              fadeIn: Double? = nil) {
+              fadeIn: Double = AmbientFade.fadeIn, owner: AmbientOwner = .widget) {
         guard !sounds.isEmpty else { return }
-        // 还在淡出、引擎没放掉：接着用，从现在的音量升回去。
-        let resuming = stopTask != nil && engine?.isRunning == true
+        previewTask?.cancel()
+        previewTask = nil
+        // 还在淡出、引擎没放掉：接着用，从现在的音量升回去。正在放（试听被专注接过去）
+        // 也一样，不先掉到 0 再起来，各个声音自己交叉淡入淡出。
+        let resuming = engine?.isRunning == true && (stopTask != nil || isPlaying)
         stopTask?.cancel()
         stopTask = nil
         self.sounds = sounds
@@ -69,34 +92,61 @@ final class AmbientPlayer {
         if engine == nil || engine?.isRunning == false {
             guard startEngine() else { return }
         }
-        MediaSessionCoordinator.shared.begin(.ambient) { [weak self] command, _ in self?.remote(command) }
+        self.owner = owner
+        if owner != .preview {
+            MediaSessionCoordinator.shared.begin(.ambient) { [weak self] command, _ in self?.remote(command) }
+        }
         self.volume = volume
         box.update { synth in
             synth.setVolume(volume / 100)
             synth.setSounds(sounds, levels: levels)
-            if let fadeIn {
-                if !resuming { synth.setFade(0) }
-                synth.fade(to: 1, over: fadeIn)
-            } else {
-                synth.setFade(1)
-            }
+            if !resuming { synth.setFade(0) }
+            synth.fade(to: 1, over: fadeIn)
         }
         startedAt = .now
         isPlaying = true
-        if timerMinutes > 0 { stopAt = .now.addingTimeInterval(Double(timerMinutes) * 60) }
+        // 环境音小组件的定时关闭不管专注和试听：专注那一轮到点会被当成「用户停了」。
+        stopAt = owner == .widget && timerMinutes > 0 ? .now.addingTimeInterval(Double(timerMinutes) * 60) : nil
         startTicker()
         publishSession()
+    }
+
+    /// 专注面板里选了声音、专注还没开始时试听几秒，自己淡出停下。
+    /// 小组件或专注正在放时不试听（不打断用户在听的东西），返回 false。
+    @discardableResult
+    func preview(_ sound: AmbientSound, volume: Double) -> Bool {
+        if isPlaying, owner != .preview { return false }
+        play(sounds: [sound], volume: volume, owner: .preview)
+        guard isPlaying else { return false }
+        let hold = max(0.5, AmbientFade.preview - AmbientFade.fadeOut)
+        previewTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(Int(hold * 1000)))
+            guard !Task.isCancelled, let self, self.owner == .preview, self.isPlaying else { return }
+            self.previewTask = nil
+            self.stop(fadingOut: AmbientFade.fadeOut)
+        }
+        return true
+    }
+
+    /// 试听还在放就淡出停下（专注面板里改选「不播放」时）。
+    func endPreview() {
+        guard isPlaying, owner == .preview else { return }
+        previewTask?.cancel()
+        previewTask = nil
+        stop(fadingOut: AmbientFade.fadeOut)
     }
 
     /// Fades out over about a second, then lets the engine go so nothing
     /// holds the audio hardware awake while silent.
     func stop() {
+        previewTask?.cancel()
+        previewTask = nil
         pause(immediate: true)
         elapsed = 0
         MediaSessionCoordinator.shared.end(.ambient)
     }
 
-    /// 淡出 `seconds` 秒再停（专注驱动用 `AudioFade.fadeOut`），之后和 `stop()` 一样放掉引擎。
+    /// 淡出 `seconds` 秒再停（专注驱动、试听用 `AmbientFade.fadeOut`），之后和 `stop()` 一样放掉引擎。
     /// 淡出途中再 `play` 会接上。
     func stop(fadingOut seconds: Double) {
         guard isPlaying, seconds > 0 else { stop(); return }
@@ -110,7 +160,7 @@ final class AmbientPlayer {
         MediaSessionCoordinator.shared.end(.ambient)
         stopTask?.cancel()
         stopTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(Int(seconds * 1000) + 120))
+            try? await Task.sleep(for: .milliseconds(Int((seconds + AmbientFade.releaseMargin) * 1000)))
             guard !Task.isCancelled else { return }
             self?.box.update { $0.setFade(1) }
             self?.tearDown()
@@ -129,16 +179,20 @@ final class AmbientPlayer {
         startedAt = nil
         isPlaying = false
         stopAt = nil
-        box.update { $0.fadeOut() }
         ticker?.invalidate()
         ticker = nil
         publishSession()
         stopTask?.cancel()
         if immediate { tearDown(); return }
+        // 整体淡出，走完再放掉引擎；淡出途中再按播放从当时的音量往回升。
+        let seconds = AmbientFade.fadeOut
+        box.update { $0.fade(to: 0, over: seconds) }
         stopTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(1_200))
+            try? await Task.sleep(for: .milliseconds(Int((seconds + AmbientFade.releaseMargin) * 1000)))
             guard !Task.isCancelled else { return }
+            self?.box.update { $0.setFade(1) }
             self?.tearDown()
+            self?.stopTask = nil
         }
     }
 
@@ -147,15 +201,17 @@ final class AmbientPlayer {
     }
 
     private func publishSession() {
+        guard owner != .preview else { return }
         MediaSessionCoordinator.shared.update(.ambient, title: AmbientSound.summary(sounds),
             subtitle: tr("环境音"), playing: isPlaying, position: sessionPosition)
     }
 
     private func remote(_ command: MediaCommand) {
-        guard ProAccess.isUnlocked else { return }
+        // 环境音小组件是 Pro；专注计时放的环境音免费，媒体键照样能停能放。
+        guard ProAccess.isUnlocked || owner == .focus else { return }
         guard let action = MediaSessionRules.action(command, source: .ambient, playing: isPlaying) else { return }
         switch action {
-        case .play: play(sounds: sounds, levels: levels, volume: volume)
+        case .play: play(sounds: sounds, levels: levels, volume: volume, owner: owner)
         case .pause: pause()
         case .stop: stop()
         case .position, .station: break
@@ -166,7 +222,8 @@ final class AmbientPlayer {
     /// next play otherwise.
     func setTimer(minutes: Int) {
         timerMinutes = max(0, minutes)
-        stopAt = (isPlaying && timerMinutes > 0) ? .now.addingTimeInterval(Double(timerMinutes) * 60) : nil
+        let counts = isPlaying && owner == .widget && timerMinutes > 0
+        stopAt = counts ? .now.addingTimeInterval(Double(timerMinutes) * 60) : nil
     }
 
     // MARK: Engine
@@ -175,6 +232,8 @@ final class AmbientPlayer {
         tearDown()
         let engine = AVAudioEngine()
         let output = engine.outputNode.outputFormat(forBus: 0)
+        // 没有可用的输出设备时格式是 0 声道：这时连起来 start 也只会抛错或者静音，直接算失败。
+        guard output.channelCount > 0 else { return false }
         let rate = output.sampleRate > 0 ? output.sampleRate : 48_000
         guard let format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 2) else { return false }
         box.reset(sampleRate: rate)
@@ -199,13 +258,16 @@ final class AmbientPlayer {
 
     private func restartAfterDeviceChange() {
         guard isPlaying else { return }
+        // 试听只有几秒，换设备时直接停掉，不再从头放。
+        if owner == .preview { stop(); return }
         elapsed = sessionPosition
         startedAt = nil
         let current = sounds
         let volume = box.volume
         isPlaying = false
         let deadline = stopAt
-        play(sounds: current, levels: levels, volume: volume * 100)
+        // 换了输出设备：新引擎从 0 淡入，谁放的还是谁的（专注那一轮不会因此被当成用户换了）。
+        play(sounds: current, levels: levels, volume: volume * 100, owner: owner)
         stopAt = deadline
     }
 

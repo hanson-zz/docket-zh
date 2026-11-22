@@ -127,7 +127,7 @@ struct FocusTimerDetail: View {
                 bigButton(tr("跳过"), solid: false) { skip() }
                     .help(state.phase == .focus ? tr("跳到休息，这一轮不算完成") : tr("跳回专注"))
             }
-            ambientRow(state)
+            ambientRow(state, now: now)
             today(state, now: now)
             // 没解锁时「近七天专注统计 Pro」放在折叠外面单独一行，收起时也看得到。
             if !ProLicenseGate.canSeeFocusHistory(unlocked: unlocked) {
@@ -277,8 +277,9 @@ struct FocusTimerDetail: View {
 
     // MARK: 环境音
 
-    /// 环境音一行：选的声音或电台（点一下去设置里换）、音量、“换”轮到下一种。
-    private func ambientRow(_ state: TimerState) -> some View {
+    /// 环境音一行：选的声音或电台（点一下去设置里换）、音量、“换”轮到下一种，
+    /// 下面一行 13pt 小字写现在的状态（正在播放、开始专注时自动播放、这一轮为什么没放）。
+    private func ambientRow(_ state: TimerState, now: Date) -> some View {
         let station = chosenStation(state)
         let sound: AmbientSound? = station == nil ? FocusAmbient.sound(state) : nil
         let off = sound == nil && station == nil
@@ -319,6 +320,7 @@ struct FocusTimerDetail: View {
         let next = Button {
             let favourites = radioFavourites
             update { $0.ambient = FocusRadio.next(after: $0.ambient, favourites: favourites) }
+            audition()
         } label: {
             Text(tr("换"))
                 .font(.system(size: 13, weight: .semibold))
@@ -331,30 +333,75 @@ struct FocusTimerDetail: View {
         // 300 宽面板里一行只有 228pt：英文 "Ambient Sound" 加 "Brown noise"
         // 和 "Next" 已经超过，原来整行被撑宽、右边被面板裁掉。放不下时
         // 标题和「换」一行，声音和音量一行。
-        return ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                label
-                choose
-                volume
-                next
-            }
-            .padding(.horizontal, 14)
-            .frame(height: 50)
-            VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
+            ViewThatFits(in: .horizontal) {
                 HStack(spacing: 10) {
                     label
-                    Spacer(minLength: 4)
-                    next
-                }
-                HStack(spacing: 10) {
                     choose
                     volume
+                    next
+                }
+                .frame(minHeight: 30)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 10) {
+                        label
+                        Spacer(minLength: 4)
+                        next
+                    }
+                    HStack(spacing: 10) {
+                        choose
+                        volume
+                    }
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            ambientStatus(state, station: station, off: off, now: now)
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .glassPane(cornerRadius: 12)
+    }
+
+    /// 环境音一行下面的状态小字。没放的原因（让给环境音小组件、这一轮用户接管了、
+    /// 声音设备起不来）也写在这里，见 `FocusAmbientStatus`。
+    private func ambientStatus(_ state: TimerState, station: RadioStation?, off: Bool, now: Date) -> some View {
+        let running = FocusCycle.isRunning(state, now: now)
+        let wanted = station != nil ? FocusRadio.wanted(state, now: now) != nil
+                                    : FocusAmbient.wanted(state, now: now) != nil
+        let ambient = AmbientPlayer.shared
+        let previewing = !context.isPreview && station == nil && ambient.isPlaying && ambient.owner == .preview
+        let playing: Bool
+        if context.isPreview {
+            playing = false
+        } else if let station {
+            playing = RadioPlayer.shared.isPlaying && RadioPlayer.shared.station?.id == station.id
+        } else {
+            playing = FocusAmbientDriver.shared.isPlayingOurs
+        }
+        let skip = context.isPreview || station != nil ? nil : FocusAmbientDriver.shared.skip
+        let text = previewing ? tr("正在试听")
+            : FocusAmbientStatus.text(chosen: !off, running: running, wanted: wanted, playing: playing, skip: skip)
+        let symbol = running && skip != nil ? "speaker.slash"
+            : (playing || previewing ? "speaker.wave.2.fill" : "speaker")
+        return HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(playing || previewing ? accent.panelReadable : Color.panelSecondary)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// 选了「不播放」以外的声音时马上试听几秒（专注在放时直接换过去，不用试听）；
+    /// 选了「不播放」或电台时停掉还在放的试听。
+    private func audition() {
+        guard !context.isPreview else { return }
+        FocusAmbientDriver.shared.audition(TimerStateProvider.shared.state)
     }
 
     /// 选的是电台时调的是这个台记住的音量（`RadioVolumeMemory`，和收音机面板共用），
@@ -690,6 +737,7 @@ struct FocusTimerDetail: View {
                 let chosen = sound == selected && !(sound == nil && radio)
                 Button {
                     update { $0.ambient = sound?.rawValue ?? "" }
+                    audition()
                 } label: {
                     Text(sound?.title ?? tr("不播放"))
                         .font(.system(size: 13, weight: chosen ? .bold : .semibold))
@@ -748,6 +796,7 @@ struct FocusTimerDetail: View {
     private func radioChip(_ station: RadioStation, chosen: Bool) -> some View {
         Button {
             update { $0.ambient = FocusRadio.raw(for: station) }
+            audition()
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: "radio")

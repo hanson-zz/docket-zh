@@ -52,7 +52,7 @@ struct AmbientTile: View {
                 }
             }
         }
-        .onAppear { if !context.isPreview { player.apply(sounds: sounds, levels: levels, volume: volume) } }
+        .onAppear { if !context.isPreview { player.prime(sounds: sounds, levels: levels, volume: volume) } }
         .onChange(of: sounds) { _, now in
             if !context.isPreview { player.apply(sounds: now, levels: levels, volume: volume) }
         }
