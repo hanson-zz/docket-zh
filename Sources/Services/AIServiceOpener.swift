@@ -147,6 +147,14 @@ final class AIPanelState {
 
     func hint(_ id: UUID) -> String? { hints[id] }
 
+    /// 面板上答完的结果卡片，用户点了「继续提问」或关掉的那条回答（每张卡片记一条）。
+    /// 关了面板再打开也不再显示它，下一条回答照常显示。
+    private(set) var dismissedResults: [UUID: UUID] = [:]
+
+    func isResultDismissed(_ messageID: UUID, for id: UUID) -> Bool { dismissedResults[id] == messageID }
+
+    func dismissResult(_ messageID: UUID, for id: UUID) { dismissedResults[id] = messageID }
+
     func setHint(_ text: String?, for id: UUID) {
         hints[id] = text
         hintTokens[id] = text == nil ? nil : UUID()

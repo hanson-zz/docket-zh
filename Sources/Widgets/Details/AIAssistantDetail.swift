@@ -4,21 +4,22 @@ import UniformTypeIdentifiers
 
 /// AI 助手的面板：迷你提问，或者「助手设置」二级页。
 ///
-/// 提问页从上到下（同效果图）：顶栏是小熊猫、「AI 助手」和副标题「码头 · 快捷工作台」，
-/// 右边「…」里是「刘海对话 Pro」开关和设置；中间的大输入框是主角（Enter 提交，
-/// Shift+Enter 换行，中文输入法选字时的 Enter 只确认选字，右下角字数「24 / 2000」）；下面一排
-/// 快捷操作胶囊（截图提问、剪贴板、翻译、润色，可在设置页里换）和「更多」；底部一排三件：
-/// 服务和打开方式合在一起的下拉胶囊「ChatGPT · API」、「回答位置：刘海」（网页、App 方式换成一句
-/// 说明）、唯一的主按钮。
+/// 提问页从上到下（同竖版效果图）：顶栏是小 App 图标和「码头 · AI 助手」，右边齿轮里是
+/// 「刘海对话 Pro」开关和设置；空闲时是欢迎区（左下大字「你好」和一句「今天想让 AI 帮你做
+/// 什么？」，右上笔记本场景小熊猫）和 2×2 快捷操作玻璃块（可在设置页里换，「更多」里是其余
+/// 快捷操作和常用提示词）；下面是伸缩输入框（Enter 提交，Shift+Enter 换行，中文输入法选字时的
+/// Enter 只确认选字，右下角字数「24 / 2000」）、整行宽的主按钮「开始提问」，最底下「使用模型：」
+/// 下拉（服务、打开方式、回答位置）。API 方式这个服务正在回答时，欢迎区和快捷操作换成
+/// 「AI 正在思考…」卡片；答完换成「已完成」结果卡片（复制、再试一次、继续提问），点「继续
+/// 提问」或关掉后回到欢迎区。
 ///
 /// 当前服务和刘海对话共用（`AIChatCenter.current`）。API 方式的问题挂在 `AIChatCenter` 上，
 /// 面板收起，按「回答显示位置」在刘海下方弹快捷结果卡片（刘海被占着时用备用浮窗），或者打开
 /// 刘海里的完整对话；网页方式复制问题，在刘海对话的网页里粘贴发送。App 方式只负责跳转，
 /// 不显示「已发送」「已回答」之类的状态，回答在那个服务里看。
 ///
-/// 字牌、服务的打开方式和 API 密钥这些不常改的，收在设置页（齿轮）里。提问页的高度
-/// 跟内容走（输入框变高、出现状态提示时面板跟着长），不再垫一大块空白；设置页里是
-/// 滚动列表，固定 `bodyHeight` 高。
+/// 字牌、服务的打开方式和 API 密钥这些不常改的，收在设置页里。提问页不自设高度，交给通用
+/// 面板容器（`DetailPanelFit`），内容多时在面板里滚动；设置页里是滚动列表，固定 `bodyHeight` 高。
 struct AIAssistantDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -166,6 +167,10 @@ private struct AIAskView: View {
     @State private var choosingService = false
     /// 顶栏小熊猫的短暂表态：答完庆祝一下、出错举爪提醒一下，几秒后回常态。
     @State private var pandaPulse: PandaPulse?
+    /// 「继续提问」把光标放回输入框（`AskTextEditor.focusToken`）。
+    @State private var focusToken = 0
+    /// 刚点了「复制」的那条回答：按钮短暂显示「已复制」。
+    @State private var copiedID: UUID?
 
     private var state: AIPanelState { AIPanelState.shared }
     private var center: AIChatCenter { AIChatCenter.shared }
@@ -190,19 +195,38 @@ private struct AIAskView: View {
     private var chips: [AIDockChip] { AIDockChips.resolved(center.settings.panelChips) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let phase = context.isPreview ? nil : center.pandaPhase(target)
+        let result = shownResult(phase)
+        VStack(alignment: .leading, spacing: 12) {
             header
             if services.isEmpty {
                 empty
             } else {
+                if let result {
+                    stateSection(result)
+                } else {
+                    welcome(phase)
+                    quickActions
+                }
                 input
-                chipRow
                 statusLine
-                footer
+                primaryButton
+                modeLine
+                modelRow
             }
         }
-        // 状态提示出现、淡出时一起过渡（面板高度也跟着变）。
+        // 状态提示出现、淡出，生成中和结果卡片出现时一起过渡（面板高度也跟着变）。
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: state.hintToken(instance.id))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: result?.key)
+        .onChange(of: phase) { old, new in
+            if let pulse = PandaStateResolver.aiPulse(from: old, to: new, at: .now) { pandaPulse = pulse }
+        }
+        .task(id: copiedID) {
+            guard copiedID != nil else { return }
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            copiedID = nil
+        }
         // 面板开着时每秒看一眼剪贴板有没有变（只比较计数，变了才读内容），
         // 和刘海对话共用同一份。
         .task {
@@ -212,6 +236,229 @@ private struct AIAskView: View {
                 try? await Task.sleep(for: .seconds(1))
             }
         }
+    }
+
+    // MARK: 生成中、结果
+
+    /// 面板上要画的状态卡片：API 方式这个服务最后一条回答。生成中一直显示；答完或失败的
+    /// 显示到用户点「继续提问」或关掉（`AIPanelState.dismissResult`），下次打开也不再出现。
+    /// 网页、App 方式码头拿不到回答，不显示。
+    private struct ShownResult {
+        var serviceID: String
+        var message: AIChatMessage
+        var phase: AIQuickResultPhase
+        /// 过渡动画用：换了一条回答或换了阶段才算变。
+        var key: String { "\(message.id.uuidString)-\(phase.title)" }
+    }
+
+    private func shownResult(_ phase: AIQuickResultPhase?) -> ShownResult? {
+        guard let phase, let service = target,
+              let last = center.messages(service.id).last, last.role == .assistant else { return nil }
+        if phase.isFinished, state.isResultDismissed(last.id, for: instance.id) { return nil }
+        return ShownResult(serviceID: service.id, message: last, phase: phase)
+    }
+
+    /// 生成中：笔记本场景小熊猫（抬头等回答）加「AI 正在思考…」玻璃卡；答完：小熊猫短暂庆祝，
+    /// 「已完成」结果卡片，下面复制、再试一次、继续提问。
+    private func stateSection(_ result: ShownResult) -> some View {
+        VStack(spacing: -10) {
+            PandaStateView(pose: PandaStateResolver.aiPose(result.phase, typing: !state.draft(instance.id).isEmpty),
+                           pulse: pandaPulse, size: 84,
+                           fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
+                .frame(maxWidth: .infinity)
+                .accessibilityHidden(true)
+                .zIndex(0)
+            Group {
+                if result.phase.isFinished {
+                    resultCard(result)
+                } else {
+                    thinkingCard(result)
+                }
+            }
+            .zIndex(1)
+        }
+        .transition(.opacity)
+    }
+
+    private func thinkingCard(_ result: ShownResult) -> some View {
+        let answering = result.phase == .answering
+        let preview = String(result.message.text.suffix(90))
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        return VStack(spacing: 8) {
+            Group {
+                if reduceMotion {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
+                } else {
+                    ProgressView().controlSize(.small)
+                }
+            }
+            .frame(height: 22)
+            .accessibilityHidden(true)
+            Text(answering ? tr("AI 正在回答…") : tr("AI 正在思考…"))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .lineLimit(1)
+            Text(answering && !preview.isEmpty ? preview : tr("正在为你整理内容，请稍候…"))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            if center.current?.id == result.serviceID {
+                Button { center.stop() } label: {
+                    Text(tr("停止生成"))
+                        .font(.system(size: 13, weight: .medium))
+                        .lineLimit(1)
+                        .padding(.horizontal, 12)
+                        .frame(height: 26)
+                }
+                .buttonStyle(PanelChipButtonStyle())
+                .disabled(context.isPreview)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 16)
+        .padding(.bottom, 18)
+        .frame(maxWidth: .infinity)
+        .overlay(alignment: .bottom) {
+            // 一道很淡的静态色带，不做波浪、不发光。
+            LinearGradient(colors: [Color(hex: PaletteColor.indigo.hex), Color(hex: PaletteColor.purple.hex),
+                                    Color(hex: ShelfColor.redPanda.hex)],
+                           startPoint: .leading, endPoint: .trailing)
+                .frame(height: 3)
+                .clipShape(Capsule())
+                .opacity(0.35)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 6)
+                .accessibilityHidden(true)
+        }
+        .readableGlass(in: shape)
+    }
+
+    private func resultCard(_ result: ShownResult) -> some View {
+        let failed: String? = { if case .failed(let reason) = result.phase { return reason } else { return nil } }()
+        let text = result.message.text
+        let shape = RoundedRectangle(cornerRadius: 16, style: .continuous)
+        let hasQuestion = center.messages(result.serviceID).contains { $0.role == .user }
+        return VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: failed == nil ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color(hex: failed == nil ? PaletteColor.green.hex : PaletteColor.orange.hex).panelReadable)
+                        .accessibilityHidden(true)
+                    Text(failed == nil ? tr("已完成") : tr("失败"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color(hex: failed == nil ? PaletteColor.green.hex : PaletteColor.orange.hex).panelReadable)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    smallIconButton("arrow.up.left.and.arrow.down.right", label: tr("在完整对话中打开")) {
+                        WidgetDetailWindow.shared.close()
+                        AINotchController.shared.open()
+                    }
+                    smallIconButton("xmark", label: tr("关闭")) { dismiss(result) }
+                }
+                Text(failed ?? text)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(8)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+            }
+            .padding(12)
+            .readableGlass(in: shape)
+            HStack(spacing: 8) {
+                if failed == nil, !text.isEmpty {
+                    resultButton(copiedID == result.message.id ? tr("已复制") : tr("复制", context: "copy"),
+                                 symbol: copiedID == result.message.id ? "checkmark" : "doc.on.doc") {
+                        center.copy(text)
+                        copiedID = result.message.id
+                    }
+                }
+                if hasQuestion {
+                    resultButton(tr("再试一次"), symbol: "arrow.clockwise") {
+                        center.retry(result.serviceID)
+                    }
+                }
+                Button {
+                    dismiss(result)
+                    focusToken += 1
+                } label: {
+                    Label(tr("继续提问"), systemImage: "bubble.left")
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 30)
+                }
+                .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: ShelfColor.redPanda.hex))))
+                .help(tr("接着这次对话再问一句"))
+            }
+            .disabled(context.isPreview)
+        }
+        .transition(.opacity)
+    }
+
+    private func resultButton(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: symbol)
+                .font(.system(size: 13, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity)
+                .frame(height: 30)
+        }
+        .buttonStyle(PanelChipButtonStyle())
+        .accessibilityLabel(title)
+    }
+
+    private func smallIconButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.panelSecondary)
+                .frame(width: 24, height: 24)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(context.isPreview)
+        .help(label)
+        .accessibilityLabel(label)
+    }
+
+    private func dismiss(_ result: ShownResult) {
+        state.dismissResult(result.message.id, for: instance.id)
+    }
+
+    // MARK: 欢迎区
+
+    /// 空闲时：左下大字「你好」和一句「今天想让 AI 帮你做什么？」，右上笔记本场景小熊猫
+    /// （输入框有字时对着笔记本打字，其余待机；答完短暂庆祝、失败短暂提醒）。
+    private func welcome(_ phase: AIQuickResultPhase?) -> some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(tr("你好"))
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                    .accessibilityAddTraits(.isHeader)
+                Text(tr("今天想让 AI 帮你做什么？"))
+                    .font(.system(size: 14))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.bottom, 2)
+            Spacer(minLength: 0)
+            PandaStateView(pose: PandaStateResolver.aiPose(phase, typing: !state.draft(instance.id).isEmpty),
+                           pulse: pandaPulse, size: 104,
+                           fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
+                .accessibilityHidden(true)
+        }
+        .transition(.opacity)
     }
 
     // MARK: 状态提示
@@ -243,34 +490,25 @@ private struct AIAskView: View {
 
     // MARK: 顶栏
 
-    /// 小熊猫头像、「AI 助手」和副标题「码头 · 快捷工作台」，右边「…」：刘海对话开关、
-    /// 助手设置、AI 设置。
+    /// 小 App 图标和「码头 · AI 助手」，右边齿轮：刘海对话开关、助手设置、AI 设置
+    /// （原来「…」里的那几样，没有新功能）。小熊猫挪到下面的欢迎区和状态卡片。
     private var header: some View {
-        let phase = context.isPreview ? nil : center.pandaPhase(target)
-        return HStack(spacing: 10) {
-            // 输入框有字时对着笔记本打字，提交后到答完抬头等回答，答完短暂完成，失败短暂提醒，其余待机。
-            PandaStateView(pose: PandaStateResolver.aiPose(phase, typing: !state.draft(instance.id).isEmpty),
-                           pulse: pandaPulse, size: PandaStage.small.side,
-                           fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
-                .onChange(of: phase) { old, new in
-                    if let pulse = PandaStateResolver.aiPulse(from: old, to: new, at: .now) { pandaPulse = pulse }
-                }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(tr("AI 助手"))
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-                    .lineLimit(1)
-                    .accessibilityAddTraits(.isHeader)
-                Text(tr("码头 · 快捷工作台"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelSecondary)
-                    .lineLimit(1)
-            }
+        HStack(spacing: 8) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 22, height: 22)
+                .accessibilityHidden(true)
+            Text(tr("码头 · AI 助手"))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.panelPrimary)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 4)
             Button {
                 showingMore.toggle()
             } label: {
-                Image(systemName: "ellipsis")
+                Image(systemName: "gearshape")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.panelSecondary)
                     .frame(width: 28, height: 28)
@@ -280,7 +518,7 @@ private struct AIAskView: View {
             .buttonStyle(.plain)
             .popover(isPresented: $showingMore, arrowEdge: .bottom) { moreMenu }
             .help(tr("刘海对话、助手设置"))
-            .accessibilityLabel(tr("更多"))
+            .accessibilityLabel(tr("设置"))
         }
     }
 
@@ -318,11 +556,12 @@ private struct AIAskView: View {
     private var input: some View {
         ZStack(alignment: .topLeading) {
             AskTextEditor(text: draft, onSubmit: submit,
-                          onCancel: { WidgetDetailWindow.shared.close() })
+                          onCancel: { WidgetDetailWindow.shared.close() },
+                          focusToken: focusToken)
                 .padding(.bottom, 20)
                 .accessibilityLabel("要问的问题")
             if state.draft(instance.id).isEmpty {
-                Text("想让 AI 帮你做什么？")
+                Text(tr("向 AI 提问…"))
                     .font(.system(size: 15))
                     .foregroundStyle(.panelSecondary)
                     .padding(.leading, 5)
@@ -333,9 +572,10 @@ private struct AIAskView: View {
         }
         // 默认放得下 3 行（约 100 点），字多了跟着长，到 200 点后在框里滚动（`AIAsk.inputHeight`）。
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .frame(height: max(0, CGFloat(AIAsk.inputHeight(state.draft(instance.id), width: 360)) - 24),
+        .frame(height: max(0, CGFloat(AIAsk.inputHeight(state.draft(instance.id), width: Self.textWidth)) - 24),
                alignment: .topLeading)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: AIAsk.inputHeight(state.draft(instance.id), width: 360))
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15),
+                   value: AIAsk.inputHeight(state.draft(instance.id), width: Self.textWidth))
         .overlay(alignment: .bottom) {
             // 左边快捷键提示，右下角字数「24 / 2000」；超过 2000 字不提交（不截断，免得打断输入法选字），
             // 字数换成橙色提醒。
@@ -358,28 +598,39 @@ private struct AIAskView: View {
             .allowsHitTesting(false)
         }
         .padding(12)
-        .glassPane(cornerRadius: 14)
+        .readableGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
+
+    /// 输入框里一行文字能用的宽度：面板 380 减两边各 16 的边距和框里各 12 的留白，再让一点给光标。
+    private static let textWidth: Double = 320
 
     // MARK: 快捷操作
 
-    /// 设置页里勾选的几个胶囊，后面是「常用」提示词菜单。文字先取输入框，空着时
-    /// 取剪贴板，套好的提示词照平时提问交给选中的服务。
-    private var chipRow: some View {
-        // 四个胶囊加「常用」在 420 宽的面板里要一排放下（真机上「润色」被「常用」盖掉一半）：
-        // 胶囊左右留白 7、图标和字间距 4、胶囊间距 4。放不下时仍可横滑。
-        HStack(spacing: 4) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
+    /// 2×2 的快捷操作玻璃块：设置页里勾选的那几个（最多四个，默认截图提问、剪贴板总结、
+    /// 翻译、润色），每块一个彩色小图标。上面一行右边是「更多」：其余快捷操作、常用提示词、
+    /// 调整快捷操作。文字先取输入框，空着时取剪贴板，套好的提示词照平时提问交给选中的服务。
+    private var quickActions: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Text(tr("快捷操作"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 4)
+                moreChipsMenu
+            }
+            if !chips.isEmpty {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)],
+                          spacing: 8) {
                     ForEach(chips, id: \.self) { chip in
                         chipButton(chip)
                     }
                 }
             }
-            .frame(height: 30)
-            moreChipsMenu
         }
         .disabled(context.isPreview)
+        .transition(.opacity)
     }
 
     /// 「更多」：没摆在一排上的快捷操作、常用提示词，最后进助手设置调整一排上放哪几个。
@@ -390,7 +641,7 @@ private struct AIAskView: View {
                 Button {
                     run(chip)
                 } label: {
-                    Label(chip.title, systemImage: chip.symbol)
+                    Label(Self.gridTitle(chip), systemImage: chip.symbol)
                 }
                 .disabled(chip.usesClipboardOnly && center.clipboardPreview == nil)
             }
@@ -424,29 +675,62 @@ private struct AIAskView: View {
         .accessibilityLabel(tr("更多快捷操作"))
     }
 
-    /// 剪贴板空时「剪贴板」胶囊画成灰的，但不用 `.disabled`：禁用的按钮在 macOS 上
-    /// 不出悬停说明，用户只看到一个灰胶囊不知道为什么。悬停写「剪贴板里没有文字」，
+    /// 剪贴板空时「剪贴板总结」块画成灰的，但不用 `.disabled`：禁用的按钮在 macOS 上
+    /// 不出悬停说明，用户只看到一块灰的不知道为什么。悬停写「剪贴板里没有文字」，
     /// 点了也在状态行说这一句。
     private func chipButton(_ chip: AIDockChip) -> some View {
         let clipboardEmpty = chip.usesClipboardOnly && center.clipboardPreview == nil
+        let tint = Color(hex: Self.chipTint(chip).hex)
         return Button {
             run(chip)
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 8) {
                 Image(systemName: chip.symbol)
-                    .font(.system(size: 12, weight: .semibold))
-                Text(chip.title)
-                    .font(.system(size: 13))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(clipboardEmpty ? Color.panelTertiary : tint.panelReadable)
+                    .frame(width: 28, height: 28)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint.opacity(clipboardEmpty ? 0.08 : 0.18)))
+                    .accessibilityHidden(true)
+                Text(Self.gridTitle(chip))
+                    .font(.system(size: 14, weight: .medium))
                     .lineLimit(1)
-                    .fixedSize()
+                    .minimumScaleFactor(0.85)
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 7)
-            .frame(height: 28)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, minHeight: 44)
         }
-        .buttonStyle(PanelChipButtonStyle(dimmed: clipboardEmpty))
+        .buttonStyle(AIQuickTileStyle(dimmed: clipboardEmpty))
         .help(chipHelp(chip))
-        .accessibilityLabel(chip.title)
+        .accessibilityLabel(Self.gridTitle(chip))
         .accessibilityHint(clipboardEmpty ? tr("剪贴板里没有文字") : "")
+    }
+
+    /// 玻璃块上的名字，按效果图写得完整一点；做的事和设置页里同名的快捷操作一样。
+    static func gridTitle(_ chip: AIDockChip) -> String {
+        switch chip {
+        case .screenshot: tr("截图提问")
+        case .clipboardSummary: tr("总结剪贴板")
+        case .clipboard: tr("处理剪贴板")
+        case .translate: tr("翻译内容")
+        case .summarize: tr("总结内容")
+        case .polish: tr("写作优化")
+        case .explain: tr("解释内容")
+        }
+    }
+
+    /// 每块小图标的颜色。
+    static func chipTint(_ chip: AIDockChip) -> PaletteColor {
+        switch chip {
+        case .screenshot: .graphite
+        case .clipboardSummary: .purple
+        case .clipboard: .teal
+        case .translate: .blue
+        case .summarize: .indigo
+        case .polish: .orange
+        case .explain: .green
+        }
     }
 
     private func chipHelp(_ chip: AIDockChip) -> String {
@@ -532,35 +816,47 @@ private struct AIAskView: View {
 
     // MARK: 底栏
 
-    /// 一条细线下面一排三件：左边服务胶囊（服务图标加完整名字，宽时再带打开方式
-    /// 「DeepSeek · 网页」），中间 API 方式是「回答位置：刘海 ∨」，网页和 App 方式换成一行
-    /// 小字说明这次怎么处理；右边唯一的主按钮。放不下时依次：胶囊去掉打开方式、「回答
-    /// 位置」缩成图标加「刘海」、去掉中间那句（主按钮的悬停说明里有）、服务名截断。
-    /// 什么时候都只占一行，不折行。
-    private var footer: some View {
-        VStack(spacing: 10) {
-            Rectangle()
-                .fill(.panelSeparator)
-                .frame(height: 0.5)
-            ViewThatFits(in: .horizontal) {
-                footerRow(service: .full, middle: .full)
-                footerRow(service: .name, middle: .full)
-                footerRow(service: .name, middle: .compact)
-                footerRow(service: .name, middle: nil)
-                footerRow(service: .truncated, middle: nil)
-            }
+    /// 最底下一行「使用模型：」加服务下拉（服务、打开方式、API 方式的回答位置都在里面，
+    /// 和原来底栏的下拉同一套）。放不下时依次：去掉打开方式、服务名截断、去掉「使用模型：」。
+    private var modelRow: some View {
+        ViewThatFits(in: .horizontal) {
+            modelRowContent(service: .full, label: true)
+            modelRowContent(service: .name, label: true)
+            modelRowContent(service: .truncated, label: true)
+            modelRowContent(service: .truncated, label: false)
         }
     }
 
     private enum ServiceLabel { case full, name, truncated }
-    private enum MiddleLabel { case full, compact }
 
-    private func footerRow(service: ServiceLabel, middle: MiddleLabel?) -> some View {
+    private func modelRowContent(service: ServiceLabel, label: Bool) -> some View {
         HStack(spacing: 8) {
+            Spacer(minLength: 0)
+            if label {
+                Text(tr("使用模型："))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
             serviceButton(service)
-            Spacer(minLength: 4)
-            if let middle { self.middle(compact: middle == .compact) }
-            primaryButton
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// 网页、App 方式码头拿不到回答，主按钮下面一句说明这次怎么处理；API 方式不占地方。
+    @ViewBuilder private var modeLine: some View {
+        if targetMode != .api, let target {
+            Text(AIHandoff.modeAction(targetMode, appInstalled: AIServiceOpener.installedApp(target) != nil,
+                                      supportsAsk: target.supportsAsk))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .help(AIAsk.modeLine(mode: targetMode, appInstalled: AIServiceOpener.installedApp(target) != nil,
+                                     supportsAsk: target.supportsAsk))
         }
     }
 
@@ -604,7 +900,7 @@ private struct AIAskView: View {
             .padding(.leading, 6)
             .padding(.trailing, 10)
             .frame(height: 32)
-            .background(Capsule().fill(.panelRaised).panelLift())
+            .readableGlass(in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -654,6 +950,23 @@ private struct AIAskView: View {
                     }
                     .disabled(!option.available)
                 }
+                if targetMode == .api {
+                    // 原来底栏中间的「回答位置」下拉挪到这里：回答显示在刘海下方的结果卡片，还是完整对话。
+                    Divider().padding(.vertical, 4)
+                    listHeader(tr("回答位置"))
+                    let placement = center.settings.answerPlacement
+                    ForEach(AIAnswerPlacement.allCases, id: \.self) { option in
+                        listRow(selected: option == placement) {
+                            center.updateSettings { $0.answerPlacement = option }
+                            choosingService = false
+                        } label: {
+                            Text(option.title)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.panelPrimary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
             }
         }
         .padding(8)
@@ -689,84 +1002,25 @@ private struct AIAskView: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    /// 中间：API 方式是「回答位置」下拉；网页和 App 方式码头拿不到回答，换成一句说明。
-    @ViewBuilder private func middle(compact: Bool) -> some View {
-        if targetMode == .api {
-            let placement = center.settings.answerPlacement
-            Menu {
-                ForEach(AIAnswerPlacement.allCases, id: \.self) { option in
-                    Button {
-                        center.updateSettings { $0.answerPlacement = option }
-                    } label: {
-                        if option == placement {
-                            Label(option.title, systemImage: "checkmark")
-                        } else {
-                            Text(option.title)
-                        }
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: placement == .notch ? "macbook" : "rectangle.bottomhalf.inset.filled")
-                        .font(.system(size: 12, weight: .medium))
-                        .accessibilityHidden(true)
-                    Text(compact ? placement.shortTitle : tr("回答位置：\(placement.shortTitle)"))
-                        .font(.system(size: 13))
-                        .lineLimit(1)
-                        .fixedSize()
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 9, weight: .semibold))
-                        .accessibilityHidden(true)
-                }
-                .foregroundStyle(.panelSecondary)
-                .padding(.horizontal, 6)
-                .frame(height: 30)
-                .contentShape(.rect)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .disabled(context.isPreview)
-            .help(tr("回答显示在哪：刘海优先时答案在刘海下方的结果卡片里，选小组件面板时打开完整对话"))
-            .accessibilityLabel(tr("回答位置：\(placement.title)"))
-        } else if let target {
-            Text(AIHandoff.modeAction(targetMode, appInstalled: AIServiceOpener.installedApp(target) != nil,
-                                      supportsAsk: target.supportsAsk))
-                .font(.system(size: 13))
-                .foregroundStyle(.panelSecondary)
-                .lineLimit(1)
-                .fixedSize()
-                .help(AIAsk.modeLine(mode: targetMode, appInstalled: AIServiceOpener.installedApp(target) != nil,
-                                     supportsAsk: target.supportsAsk))
-        }
-    }
-
-    /// 唯一的主按钮：API「提问 ↑」；App 和网页方式照实写「复制并打开豆包」「去网页提问」。
-    /// 小熊猫橙（白字不够 4.5 时 `PanelSolidButtonStyle` 自动加深，见 `PanelButtonLook.solid`），
-    /// 设了主题色按主题色；不发光。
+    /// 唯一的主按钮，整行宽的小熊猫橙实色胶囊：API「开始提问」；App 和网页方式照实写
+    /// 「复制并打开豆包」「去网页提问」。白字不够 4.5 时 `PanelSolidButtonStyle` 自动加深
+    /// （见 `PanelButtonLook.solid`），设了主题色按主题色；不发光。
     private var primaryButton: some View {
         Button(action: submitFromButton) {
             HStack(spacing: 6) {
-                if targetMode != .api {
-                    Image(systemName: "arrow.up.forward.app")
-                        .font(.system(size: 12, weight: .semibold))
-                        .accessibilityHidden(true)
-                }
-                Text(buttonTitle)
+                Image(systemName: targetMode == .api ? "ellipsis.bubble" : "arrow.up.forward.app")
                     .font(.system(size: 14, weight: .semibold))
+                    .accessibilityHidden(true)
+                Text(buttonTitle)
+                    .font(.system(size: 15, weight: .semibold))
                     .lineLimit(1)
-                    .fixedSize()
-                if targetMode == .api {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 12, weight: .bold))
-                        .accessibilityHidden(true)
-                }
+                    .minimumScaleFactor(0.85)
             }
             .padding(.horizontal, 14)
-            .frame(height: 32)
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
         }
         .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: ShelfColor.redPanda.hex))))
-        .fixedSize()
         .disabled(!canSubmit)
         .help(buttonHelp)
         .accessibilityLabel(buttonTitle)
@@ -799,7 +1053,8 @@ private struct AIAskView: View {
 
     /// 主按钮的字要短（「复制并打开豆包」「去网页提问」「提问」），会做什么写在左边那一句里。
     private var buttonTitle: String {
-        AIAsk.buttonTitle(mode: targetMode, service: target,
+        if targetMode == .api { return tr("开始提问") }
+        return AIAsk.buttonTitle(mode: targetMode, service: target,
                           appInstalled: target.map { AIServiceOpener.installedApp($0) != nil } ?? false)
     }
 
@@ -910,6 +1165,36 @@ private struct AIAskView: View {
     }
 }
 
+/// 快捷操作玻璃块：可读玻璃底，按下时盖一层选中色；`dimmed` 时字变淡但还能点、还能悬停出说明
+/// （剪贴板空时的「总结剪贴板」）。点击区就是整块（至少 44 高）。
+private struct AIQuickTileStyle: ButtonStyle {
+    var dimmed = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        AIQuickTileBody(configuration: configuration, dimmed: dimmed)
+    }
+}
+
+private struct AIQuickTileBody: View {
+    var configuration: ButtonStyleConfiguration
+    var dimmed: Bool
+    @Environment(\.isEnabled) private var enabled
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 12, style: .continuous) }
+
+    var body: some View {
+        configuration.label
+            .foregroundStyle(enabled && !dimmed ? Color.panelPrimary : Color.panelTertiary)
+            .readableGlass(in: shape)
+            .overlay {
+                if configuration.isPressed && enabled && !dimmed {
+                    shape.fill(Color.panelSelected)
+                }
+            }
+            .contentShape(shape)
+    }
+}
+
 // MARK: - Manage
 
 private struct AIManageView: View {
@@ -995,7 +1280,7 @@ private struct AIManageView: View {
                     guard !context.isPreview else { return }
                     center.updateSettings { $0.panelChips = AIDockChips.toggled(chip, in: $0.panelChips) }
                 })) {
-                    Label(chip.title, systemImage: chip.symbol)
+                    Label(Self.gridTitle(chip), systemImage: chip.symbol)
                         .font(.system(size: 13))
                         .foregroundStyle(.panelPrimary)
                 }

@@ -2179,6 +2179,28 @@
         }
       }
     },
+    "AI 正在回答…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI is answering…"
+          }
+        }
+      }
+    },
+    "AI 正在思考…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI is thinking…"
+          }
+        }
+      }
+    },
     "API %@，现在先用%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2388,6 +2410,17 @@
         }
       }
     },
+    "今天想让 AI 帮你做什么？" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What can AI help you with today?"
+          }
+        }
+      }
+    },
     "休息时声音停下，回到专注再放" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2417,6 +2450,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Meeting"
+          }
+        }
+      }
+    },
+    "你好" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hello"
+          }
+        }
+      }
+    },
+    "使用模型：" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model:"
           }
         }
       }
@@ -2505,6 +2560,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compatibility and diagnostics"
+          }
+        }
+      }
+    },
+    "再试一次" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
+          }
+        }
+      }
+    },
+    "写作优化" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Improve Writing"
           }
         }
       }
@@ -2641,6 +2718,17 @@
         }
       }
     },
+    "向 AI 提问…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask AI…"
+          }
+        }
+      }
+    },
     "吹气" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2670,6 +2758,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pop"
+          }
+        }
+      }
+    },
+    "回答位置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answer Placement"
           }
         }
       }
@@ -2894,6 +2993,17 @@
         }
       }
     },
+    "开始提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Asking"
+          }
+        }
+      }
+    },
     "当前模型" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2934,6 +3044,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Standby"
+          }
+        }
+      }
+    },
+    "总结内容" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize Text"
+          }
+        }
+      }
+    },
+    "总结剪贴板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize Clipboard"
           }
         }
       }
@@ -3055,6 +3187,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change look"
+          }
+        }
+      }
+    },
+    "接着这次对话再问一句" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask a follow-up in this conversation"
           }
         }
       }
@@ -3246,6 +3389,17 @@
         }
       }
     },
+    "正在为你整理内容，请稍候…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Putting it together for you, one moment…"
+          }
+        }
+      }
+    },
     "正在试听" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3433,6 +3587,17 @@
         }
       }
     },
+    "码头 · AI 助手" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · AI Assistant"
+          }
+        }
+      }
+    },
     "离开时专注结束了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3565,6 +3730,17 @@
         }
       }
     },
+    "继续提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask More"
+          }
+        }
+      }
+    },
     "网络直播" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3572,6 +3748,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Live stream"
+          }
+        }
+      }
+    },
+    "翻译内容" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate Text"
           }
         }
       }
@@ -3594,6 +3781,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hero"
+          }
+        }
+      }
+    },
+    "解释内容" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain Text"
           }
         }
       }
