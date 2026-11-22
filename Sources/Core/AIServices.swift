@@ -473,6 +473,106 @@ public enum AIServices {
         let rows = (cells + 1) / 2
         return max(76, Double(10 + 34 + 6 + rows * 29 - 5 + 10))
     }
+
+    // MARK: 扩展栏模型键
+
+    /// 横版一块模型键的边长和间距（和 `tileWidth` 里的 24、5 一致）。
+    public static let keySide = 24.0
+    public static let keySpacing = 5.0
+
+    /// 模型键上的字：用服务现有的缩写（内置的首字母或首字，自定义的按名称取），
+    /// 空的按名称派生，最多两个字符，免得挤出键外。
+    public static func keyLabel(_ service: AIService) -> String {
+        let trimmed = service.initial.trimmingCharacters(in: .whitespacesAndNewlines)
+        let label = trimmed.isEmpty ? initial(for: service.title) : trimmed
+        return String(label.prefix(2))
+    }
+
+    /// 横版内容区（卡片宽减去左右内边距）放得下几块模型键：先扣掉小熊猫 38、
+    /// 分隔线和两边间距 13、末尾的“＋”24，剩下每块 24 加 5 的间距。“＋”总是留着。
+    public static func keyCapacity(contentWidth: Double) -> Int {
+        guard contentWidth.isFinite else { return 0 }
+        let room = contentWidth - 38 - 13 - keySide
+        guard room >= keySide + keySpacing else { return 0 }
+        return min(maxCount, Int((room / (keySide + keySpacing)).rounded(.down)))
+    }
+
+    /// 放不下全部时显示哪几块：按用户排的顺序取前几块，当前模型不在里面就顶掉
+    /// 最后一块，保证高亮的那块总能看到。顺序不变。
+    public static func shelfKeys(_ services: [AIService], currentID: String?, capacity: Int) -> [AIService] {
+        let room = max(0, capacity)
+        guard services.count > room else { return services }
+        guard room > 0 else { return [] }
+        var picked = Array(services.prefix(room))
+        if let currentID, !picked.contains(where: { $0.id == currentID }),
+           let current = services.first(where: { $0.id == currentID }) {
+            picked[room - 1] = current
+        }
+        return picked
+    }
+
+    /// 卡片上高亮哪块：助手上次用的（还在这张卡片上的话），否则默认服务。
+    public static func currentKeyID(lastUsed: String?, in services: [AIService], defaultID: String?) -> String? {
+        if let lastUsed, services.contains(where: { $0.id == lastUsed }) { return lastUsed }
+        if let defaultID, services.contains(where: { $0.id == defaultID }) { return defaultID }
+        return services.first?.id
+    }
+}
+
+// MARK: - AI 助手：扩展栏卡片的状态
+
+/// 竖版卡片「问 AI」下面那一行的状态点和字。只认码头真拿得到的阶段（API 方式的回答），
+/// 网页、App 方式拿不到就一直是待命，不假装在生成或已完成。
+public enum AIDockStatus: Equatable, Sendable {
+    case idle
+    case generating
+    case done
+    case failed
+
+    /// 由小熊猫六状态来：常态加短暂表态（答完 done、失败 alert）解析后的那一种。
+    public static func resolve(base: PandaState, pulse: PandaPulse?, now: Date) -> AIDockStatus {
+        switch PandaStateResolver.resolve(base: .state(base), pulse: pulse, now: now).state {
+        case .thinking: .generating
+        case .done: .done
+        case .alert: .failed
+        case .idle, .peek, .rest: .idle
+        }
+    }
+
+    public var title: String {
+        switch self {
+        case .idle: tr("待命")
+        case .generating: tr("生成中")
+        case .done: tr("完成")
+        case .failed: tr("出错")
+        }
+    }
+
+    /// 状态点的颜色：待命绿、生成中橙、完成蓝、出错红。
+    public var dotHex: String {
+        switch self {
+        case .idle: "#34C759"
+        case .generating: "#FF9F0A"
+        case .done: "#0A84FF"
+        case .failed: "#FF453A"
+        }
+    }
+
+    /// 小熊猫这一刻的状态。
+    public var pandaState: PandaState {
+        switch self {
+        case .idle: .idle
+        case .generating: .thinking
+        case .done: .done
+        case .failed: .alert
+        }
+    }
+
+    /// 「待命 · D」；没有模型时只有状态。
+    public func line(keyLabel: String?) -> String {
+        guard let keyLabel, !keyLabel.isEmpty else { return title }
+        return title + " · " + keyLabel
+    }
 }
 
 // MARK: - AI 助手：提问

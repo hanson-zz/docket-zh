@@ -2520,6 +2520,17 @@
         }
       }
     },
+    "出错" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
+          }
+        }
+      }
+    },
     "切换节目" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2883,6 +2894,17 @@
         }
       }
     },
+    "当前模型" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current model"
+          }
+        }
+      }
+    },
     "当前设备无法控制充电，充电上限在这台 Mac 上用不了。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2905,6 +2927,17 @@
         }
       }
     },
+    "待命" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standby"
+          }
+        }
+      }
+    },
     "我的收藏" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2912,6 +2945,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "My Favorites"
+          }
+        }
+      }
+    },
+    "打开 AI 助手" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open AI Assistant"
           }
         }
       }
@@ -3312,6 +3356,17 @@
         }
       }
     },
+    "生成中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating"
+          }
+        }
+      }
+    },
     "生效中" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3330,6 +3385,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Effect: %@"
+          }
+        }
+      }
+    },
+    "用 %@ 打开助手" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the assistant with %@"
+          }
+        }
+      }
+    },
+    "用 %@ 打开助手（默认）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the assistant with %@ (default)"
           }
         }
       }
@@ -3418,6 +3495,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chapters"
+          }
+        }
+      }
+    },
+    "管理更多模型" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage more models"
           }
         }
       }

@@ -2,15 +2,19 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// AI 助手：最左边是小熊猫（点它打开提问面板），一道细分隔线，后面是勾选
-/// 的 AI 服务字牌（单色玻璃字牌，首字或短缩写，不用官方图标），末尾一块
-/// 虚线“＋”。默认服务的字牌右上角有一个小蓝点。竖版只有一只大的小熊猫，
-/// 点一下用默认 AI 提问，字牌留给横版。
+/// AI 助手的扩展栏卡片，按「Dock 小组件」效果图精修，尺寸仍用原来的。
 ///
-/// 点字牌：装了它的 Mac App 就开 App，否则开网页。右键字牌：设为默认、
-/// 左移、右移、隐藏。点“＋”：按国内、国外列出全部服务，打勾的显示在卡片
-/// 上，最后一项“自定义…”。右键卡片别处是扩展栏自己的菜单，里面加了
-/// “打开提问面板”和“管理字牌…”。
+/// 横版（多模型快速切换）：左边坐着的小熊猫，一道细分隔线，后面一排圆角方形
+/// 模型键（服务现有的首字母或首字），当前模型高亮（暖橙描边、浅橙底、右上小
+/// 橙点），末尾细虚线“＋”管理更多模型。点模型键直接用那个模型打开助手；放
+/// 不下时按顺序少画几块，当前那块总留着，“＋”总留着。
+///
+/// 竖版（问 AI + 当前状态）：小熊猫、「问 AI」、状态点和「待命 · D」，横着放
+/// 时右边一个 chevron，整块点一下打开助手。状态只认码头拿得到的（API 方式的
+/// 回答：生成中、完成、出错），拿不到就是待命。
+///
+/// 右键模型键：设为默认、左移、右移、隐藏。点“＋”：按国内、国外列出全部服务，
+/// 打勾的显示在卡片上，最后一项“自定义…”。右键卡片别处是扩展栏自己的菜单。
 struct AIAssistantTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -18,20 +22,45 @@ struct AIAssistantTile: View {
     private var config: WidgetConfig { instance.config }
     /// 拖着文字或文件停在卡片上。
     @State private var targeted = false
+    /// 一次回答收尾时的短暂表态（答完、失败），过了回常态。
+    @State private var pulse: PandaPulse?
+
+    private var center: AIChatCenter { AIChatCenter.shared }
     private var services: [AIService] { AIServices.enabled(in: config) }
     private var square: Bool { AIServices.isSquare(config) }
+    private var keySide: CGFloat { CGFloat(AIServices.keySide) }
+    private var keySpacing: CGFloat { CGFloat(AIServices.keySpacing) }
 
     var body: some View {
         let shown = services
         let defaultID = AIServices.defaultService(in: config, enabled: shown)?.id
+        let currentID = AIServices.currentKeyID(lastUsed: context.isPreview ? nil : center.current?.id,
+                                                in: shown, defaultID: defaultID)
+        let current = shown.first { $0.id == currentID }
+        let phase = context.isPreview ? nil : center.pandaPhase(current)
         return WidgetSurface {
             if context.position.isVertical {
-                if square { tallSquare(shown) } else { column(shown, defaultID: defaultID) }
+                if square {
+                    tallSquare(current, phase: phase)
+                } else {
+                    column(shown, currentID: currentID, defaultID: defaultID, phase: phase)
+                }
             } else if square {
-                compact(shown, defaultID: defaultID)
+                compact(current, phase: phase)
             } else {
-                wide(shown, defaultID: defaultID)
+                wide(shown, currentID: currentID, defaultID: defaultID, phase: phase)
             }
+        }
+        .onChange(of: phase) { old, new in
+            if let next = PandaStateResolver.aiPulse(from: old, to: new, at: .now) { pulse = next }
+        }
+        // 表态到期：清掉，状态回到常态。
+        .task(id: pulse) {
+            guard let pulse else { return }
+            let left = pulse.until.timeIntervalSinceNow
+            if left > 0 { try? await Task.sleep(for: .seconds(left + 0.05)) }
+            guard !Task.isCancelled else { return }
+            self.pulse = nil
         }
         // 拖文字或文件过来：蓝色虚线框写“拿去问 AI”，松手打开提问面板并带进去。
         .dropTargetOutline(targeted, prompt: .askAI, compact: context.position.isVertical)
@@ -44,104 +73,163 @@ struct AIAssistantTile: View {
         .accessibilityLabel("AI 助手")
     }
 
-    // MARK: Layouts
-
-    private func wide(_ shown: [AIService], defaultID: String?) -> some View {
-        let visible = Array(shown.prefix(AIServices.visibleCount(shown.count, square: false, vertical: false)))
-        return HStack(spacing: 6) {
-            pandaButton(size: 38)
-            divider(vertical: true)
-            if visible.isEmpty {
-                addButton
-            } else {
-                HStack(spacing: 5) {
-                    ForEach(visible) { letter($0, size: 24, isDefault: $0.id == defaultID) }
-                    plusButton(size: 24)
-                }
-            }
-        }
+    private func status(_ phase: AIQuickResultPhase?) -> AIDockStatus {
+        AIDockStatus.resolve(base: PandaStateResolver.aiBase(phase), pulse: pulse, now: .now)
     }
 
-    /// 竖版（108×62）：一只大的小熊猫，旁边“问 AI”和默认服务。点哪里都是用
-    /// 默认 AI 提问（和横版的小熊猫一样），字牌、排序和“＋”留给横版。
-    private func compact(_ shown: [AIService], defaultID: String?) -> some View {
-        let fallback = AIServices.defaultService(in: config, enabled: shown)
-        return askButton {
-            HStack(spacing: 4) {
-                AIPandaAvatar(size: 50, pose: AIPandaArt.cheer)
-                    .offset(y: 2)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("问 AI")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(WidgetStyle.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    defaultLine(fallback)
+    // MARK: Layouts
+
+    /// 横版：小熊猫、分隔线、一排模型键和“＋”。宽度按键数算（`AIServices.tileWidth`），
+    /// 实际给的宽度不够时按 `keyCapacity` 少画几块。
+    private func wide(_ shown: [AIService], currentID: String?, defaultID: String?,
+                      phase: AIQuickResultPhase?) -> some View {
+        GeometryReader { proxy in
+            let capacity = AIServices.keyCapacity(contentWidth: Double(proxy.size.width))
+            let visible = AIServices.shelfKeys(shown, currentID: currentID, capacity: capacity)
+            HStack(spacing: 6) {
+                pandaButton(size: 38, phase: phase)
+                divider(vertical: true)
+                if shown.isEmpty {
+                    addButton
+                } else {
+                    HStack(spacing: keySpacing) {
+                        ForEach(visible) {
+                            key($0, size: keySide, isCurrent: $0.id == currentID,
+                                isDefault: $0.id == defaultID)
+                        }
+                        plusButton(size: keySide)
+                    }
                 }
                 Spacer(minLength: 0)
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }
 
-    /// 竖版在侧边栏：小熊猫在上，下面“问 AI”和默认服务。
-    private func tallSquare(_ shown: [AIService]) -> some View {
-        let fallback = AIServices.defaultService(in: config, enabled: shown)
-        return askButton {
-            VStack(spacing: 4) {
-                AIPandaAvatar(size: 50, pose: AIPandaArt.cheer)
-                Text("问 AI")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(WidgetStyle.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                defaultLine(fallback)
+    /// 竖版横放（108×62）：小熊猫，旁边「问 AI」和状态，右边 chevron。整块点一下打开助手。
+    /// 放不下时先去 chevron，再去「· D」，最后只留状态点，「问 AI」一直在。
+    private func compact(_ current: AIService?, phase: AIQuickResultPhase?) -> some View {
+        let now = status(phase)
+        return askButton(current, status: now) {
+            HStack(spacing: 4) {
+                pandaArt(size: 38, phase: phase)
+                ViewThatFits(in: .horizontal) {
+                    compactText(now, label: current.map(AIServices.keyLabel), chevron: true)
+                    compactText(now, label: current.map(AIServices.keyLabel), chevron: false)
+                    compactText(now, label: nil, chevron: true)
+                    compactText(now, label: nil, chevron: false)
+                    compactText(now, label: nil, chevron: false, dotOnly: true)
+                }
+            }
+        }
+    }
+
+    private func compactText(_ status: AIDockStatus, label: String?, chevron: Bool,
+                             dotOnly: Bool = false) -> some View {
+        HStack(spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
+                askTitle(size: 15)
+                statusRow(status, label: label, dotOnly: dotOnly)
+            }
+            .fixedSize()
+            Spacer(minLength: 0)
+            if chevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    /// 竖版在侧边栏：小熊猫在上，下面「问 AI」和状态。
+    private func tallSquare(_ current: AIService?, phase: AIQuickResultPhase?) -> some View {
+        let now = status(phase)
+        let label = current.map(AIServices.keyLabel)
+        return askButton(current, status: now) {
+            VStack(spacing: 3) {
+                pandaArt(size: 46, phase: phase)
+                askTitle(size: 14)
+                ViewThatFits(in: .horizontal) {
+                    statusRow(now, label: label, dotOnly: false)
+                    statusRow(now, label: nil, dotOnly: false)
+                    statusRow(now, label: nil, dotOnly: true)
+                }
             }
             .frame(maxWidth: .infinity)
         }
     }
 
-    @ViewBuilder
-    private func defaultLine(_ service: AIService?) -> some View {
-        if let service {
-            HStack(spacing: 3) {
-                AIGlyph(initial: service.initial, size: 15, style: .shelf)
-                Text("默认")
-                    .font(.system(size: 9.5, weight: .medium))
+    private func askTitle(size: CGFloat) -> some View {
+        Text("问 AI")
+            .font(.system(size: size, weight: .bold))
+            .foregroundStyle(WidgetStyle.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(13 / size)
+    }
+
+    /// 状态点加「待命 · D」，字 13pt，放不下时只留点。
+    private func statusRow(_ status: AIDockStatus, label: String?, dotOnly: Bool) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(Color(hex: status.dotHex))
+                .frame(width: 6, height: 6)
+            if !dotOnly {
+                Text(status.line(keyLabel: label))
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
             }
-            .help(tr("默认：\(service.title)，在横版或面板里改"))
         }
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(status.title)
     }
 
-    /// 整块都是提问按钮，和小熊猫按钮做同一件事。
-    private func askButton<Label: View>(@ViewBuilder _ label: () -> Label) -> some View {
+    /// 整块都是打开助手的按钮，和横版的小熊猫做同一件事。
+    private func askButton<Label: View>(_ current: AIService?, status: AIDockStatus,
+                                        @ViewBuilder _ label: () -> Label) -> some View {
         Button {
             ask()
         } label: {
             label().contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .help("问问 AI")
-        .accessibilityLabel("用默认 AI 提问")
+        .help(current.map { tr("用 \($0.title) 打开助手") } ?? tr("问问 AI"))
+        .accessibilityLabel("打开 AI 助手")
+        .accessibilityValue(status.title)
     }
 
+    /// 打开助手：当前服务是网页或 API 时打开刘海里的同一个对话；是跳转（或没解锁刘海对话）
+    /// 时照旧打开原来的提问面板。
     private func ask() {
         guard !context.isPreview else { return }
-        // 当前服务是网页或 API：打开刘海里的同一个对话。是跳转时照旧
-        // 打开原来的提问面板。
         if AINotchController.shared.openFromShelf(instance) { return }
         AIPanelState.shared.requestPanel(instance.id, mode: .ask, toggle: true)
     }
 
-    private func column(_ shown: [AIService], defaultID: String?) -> some View {
-        let visible = Array(shown.prefix(AIServices.visibleCount(shown.count, square: square, vertical: true)))
+    /// 点模型键：用这个模型打开助手。它是网页或 API 方式时打开刘海对话并切到它；
+    /// 是跳转（或没解锁刘海对话）时直接打开它的 App 或网页。都会记成当前模型。
+    private func open(_ service: AIService) {
+        guard !context.isPreview else { return }
+        center.select(service.id)
+        if AINotchController.shared.openFromShelf(instance, preferring: service.id) { return }
+        AIServiceOpener.open(service)
+    }
+
+    private func column(_ shown: [AIService], currentID: String?, defaultID: String?,
+                        phase: AIQuickResultPhase?) -> some View {
+        let count = AIServices.visibleCount(shown.count, square: square, vertical: true)
+        let visible = AIServices.shelfKeys(shown, currentID: currentID, capacity: count)
         return VStack(spacing: 6) {
-            pandaButton(size: 34)
-            LazyVGrid(columns: [GridItem(.fixed(24), spacing: 5), GridItem(.fixed(24), spacing: 5)],
-                      spacing: 5) {
-                ForEach(visible) { letter($0, size: 24, isDefault: $0.id == defaultID) }
-                plusButton(size: 24)
+            pandaButton(size: 34, phase: phase)
+            LazyVGrid(columns: [GridItem(.fixed(keySide), spacing: keySpacing),
+                                GridItem(.fixed(keySide), spacing: keySpacing)],
+                      spacing: keySpacing) {
+                ForEach(visible) {
+                    key($0, size: keySide, isCurrent: $0.id == currentID, isDefault: $0.id == defaultID)
+                }
+                plusButton(size: keySide)
             }
         }
     }
@@ -149,36 +237,45 @@ struct AIAssistantTile: View {
     private func divider(vertical: Bool) -> some View {
         Rectangle()
             .fill(WidgetStyle.primary.opacity(0.14))
-            .frame(width: vertical ? 1 : 30, height: vertical ? 30 : 1)
+            .frame(width: vertical ? 1 : 30, height: vertical ? 34 : 1)
             .accessibilityHidden(true)
     }
 
     // MARK: Pieces
 
-    /// 小熊猫：当前服务是网页或 API 时打开刘海对话（和刘海入口是同一个会话），
-    /// 否则点开提问面板，再点一次关上（面板开着时扩展栏照常切换）。
-    private func pandaButton(size: CGFloat) -> some View {
+    /// 小熊猫：用六状态的素材，生成中换「等回答」那张，答完、出错短暂表态。
+    private func pandaArt(size: CGFloat, phase: AIQuickResultPhase?) -> some View {
+        ZStack(alignment: .bottom) {
+            Color.clear.contentShape(.rect)
+            PandaStateView(pose: PandaStateResolver.aiPose(phase, typing: false), pulse: pulse, size: size,
+                           fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
+        }
+        .frame(width: size, height: size)
+    }
+
+    /// 横版和侧边栏的小熊猫按钮：打开助手（当前模型）。
+    private func pandaButton(size: CGFloat, phase: AIQuickResultPhase?) -> some View {
         Button {
             ask()
         } label: {
-            AIPandaAvatar(size: size)
+            pandaArt(size: size, phase: phase)
         }
         .buttonStyle(.plain)
         .help("问问 AI")
-        .accessibilityLabel("打开提问面板")
+        .accessibilityLabel("打开 AI 助手")
+        .accessibilityValue(status(phase).title)
     }
 
-    private func letter(_ service: AIService, size: CGFloat, isDefault: Bool) -> some View {
+    private func key(_ service: AIService, size: CGFloat, isCurrent: Bool, isDefault: Bool) -> some View {
         Button {
-            guard !context.isPreview else { return }
-            AIServiceOpener.open(service)
+            open(service)
         } label: {
-            AIGlyph(initial: service.initial, size: size, isDefault: isDefault, style: .shelf)
+            AIShelfKey(label: AIServices.keyLabel(service), size: size, isCurrent: isCurrent)
         }
         .buttonStyle(.plain)
-        .help(isDefault ? tr("\(service.title)（默认）") : service.title)
-        .accessibilityLabel(tr("打开 \(service.title)"))
-        .accessibilityHint(isDefault ? tr("默认的提问服务") : "")
+        .help(isDefault ? tr("用 \(service.title) 打开助手（默认）") : tr("用 \(service.title) 打开助手"))
+        .accessibilityLabel(tr("用 \(service.title) 打开助手"))
+        .accessibilityValue(isCurrent ? tr("当前模型") : "")
         .contextMenu {
             Button(isDefault ? tr("已是默认") : tr("设为默认")) { change { AIServices.setDefault(service.id, in: &$0) } }
                 .disabled(isDefault)
@@ -197,7 +294,7 @@ struct AIAssistantTile: View {
             AIServiceMenu.popUp(for: instance)
         } label: {
             RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
-                .strokeBorder(WidgetStyle.primary.opacity(0.38),
+                .strokeBorder(WidgetStyle.primary.opacity(0.32),
                               style: StrokeStyle(lineWidth: 1, dash: [2.5, 2]))
                 .frame(width: size, height: size)
                 .overlay {
@@ -208,11 +305,11 @@ struct AIAssistantTile: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .help("显示或隐藏 AI 字牌")
-        .accessibilityLabel("添加或隐藏 AI 字牌")
+        .help("管理更多模型")
+        .accessibilityLabel("管理更多模型")
     }
 
-    /// 一块字牌都没有时：明明白白的“添加”。
+    /// 一块模型键都没有时：明明白白的“添加”。
     private var addButton: some View {
         Button {
             guard !context.isPreview else { return }
@@ -238,6 +335,49 @@ struct AIAssistantTile: View {
     private func change(_ edit: (inout WidgetConfig) -> Void) {
         guard !context.isPreview else { return }
         WidgetWriter.write(instance, edit)
+    }
+}
+
+// MARK: - Shelf key
+
+/// 扩展栏上的模型键：一块读得清的玻璃方键上一个字。当前模型暖橙描边、浅橙底，右上一个小橙点。
+struct AIShelfKey: View {
+    var label: String
+    var size: CGFloat
+    var isCurrent: Bool
+
+    @Environment(\.colorScheme) private var scheme
+
+    /// 浅色下压深一点，字和描边在浅底上读得清；深色下提亮。
+    private var accent: Color { Color(hex: scheme == .dark ? "#F39A6B" : "#C9572B") }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
+        Text(label)
+            .font(.system(size: size * (label.count > 1 ? 0.4 : 0.5), weight: .bold, design: .rounded))
+            .foregroundStyle(isCurrent ? accent : WidgetStyle.primary.opacity(0.9))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(width: size, height: size)
+            .background {
+                if isCurrent { shape.fill(accent.opacity(scheme == .dark ? 0.2 : 0.12)) }
+            }
+            .readableGlass(in: shape)
+            .overlay {
+                shape.strokeBorder(isCurrent ? accent.opacity(0.85) : WidgetStyle.primary.opacity(0.14),
+                                   lineWidth: isCurrent ? 1.25 : 0.75)
+            }
+            .overlay(alignment: .topTrailing) {
+                if isCurrent {
+                    Circle()
+                        .fill(accent)
+                        .frame(width: 5, height: 5)
+                        .offset(x: 1.5, y: -1.5)
+                        .accessibilityHidden(true)
+                }
+            }
+            .contentShape(.rect)
+            .accessibilityHidden(true)
     }
 }
 

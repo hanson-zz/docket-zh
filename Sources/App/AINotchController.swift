@@ -231,11 +231,13 @@ final class AINotchController {
     /// 会话），是跳转时返回 false，由卡片照旧打开原来的提问面板。
     ///
     /// 没解锁码头 Pro 时也返回 false：小熊猫打开原来的提问面板，跳转照旧免费。
-    func openFromShelf(_ instance: WidgetInstance) -> Bool {
+    /// `serviceID` 是卡片上点的那块模型键，优先用它。
+    func openFromShelf(_ instance: WidgetInstance, preferring serviceID: String? = nil) -> Bool {
         guard ProLicenseGate.canOpenAINotch(unlocked: ProAccess.isUnlocked) else { return false }
         let center = AIChatCenter.shared
         let services = AIServices.enabled(in: instance.config)
-        guard let service = services.first(where: { $0.id == center.current?.id })
+        guard let service = services.first(where: { $0.id == serviceID })
+                ?? services.first(where: { $0.id == center.current?.id })
                 ?? AIServices.defaultService(in: instance.config, enabled: services),
               center.mode(for: service) != .jump else { return false }
         center.select(service.id)
