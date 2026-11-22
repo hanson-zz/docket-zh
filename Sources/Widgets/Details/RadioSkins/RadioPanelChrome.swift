@@ -15,6 +15,7 @@ import SwiftUI
 // （约 64pt），缺图不画、布局自然收拢，不用代码画仿制品。
 
 /// 右上角的收音机插画，按外观找图，找不到是 nil。读过一次就记住（包里的图不会变）。
+/// 用 `Bundle.image(forResource:)` 读，同名的 @2x 一起认，Retina 屏上用 512 那张。
 @MainActor
 enum RadioArtwork {
     private static var cache: [String: NSImage?] = [:]
@@ -22,7 +23,7 @@ enum RadioArtwork {
     static func image(_ skin: RadioSkin) -> NSImage? {
         let name = RadioPanelReadout.artName(skin)
         if let hit = cache[name] { return hit }
-        let image = Bundle.main.url(forResource: name, withExtension: "png").flatMap { NSImage(contentsOf: $0) }
+        let image = Bundle.main.image(forResource: name)
         cache.updateValue(image, forKey: name)
         return image
     }
@@ -104,7 +105,8 @@ struct RadioCompactReadout: View {
                     if let art {
                         Image(nsImage: art)
                             .resizable()
-                            .interpolation(.high)
+                            // 掌机像素是像素画，最近邻缩放保持方块边缘；其余平滑缩放。
+                            .interpolation(model.skin == .pixel ? .none : .high)
                             .scaledToFit()
                             .frame(width: 64, height: 64)
                             .frame(maxWidth: .infinity, alignment: .trailing)
