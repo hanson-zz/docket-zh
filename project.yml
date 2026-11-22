@@ -60,6 +60,9 @@ targets:
       # sprites/ 是桌面宠物和专注陪伴的动作帧（四脚小熊猫的走、跑、叼、跳、坐、趴、探头、拎起、入睡、睡、哈欠、伸懒腰、欢呼、蔫、抬头、吊在上边缘与吊着睡、放下纸团，另有竹竿爬升用的 climb，@2x、256 色 PNG）。
       - path: Resources/Pet
         buildPhase: resources
+      # 小熊猫六状态（待机、思考、探头、提醒、完成、休息），用户按母版用 ChatGPT 画，1024 透明图缩为 256/@2x 512，底部锚点统一，PandaStateResolver 用。
+      - path: Resources/PandaStates
+        buildPhase: resources
       # 专注吉祥物（从拾掇搬来）：小熊猫、柴犬、橘猫、企鹅、水獭、八爪鱼，各有等开始、专注中、
       # 休息、刚完成四种样子（focus-mascot-<吉祥物>-<状态>.png，高 256 像素、压过的透明 PNG），
       # 专注面板和刘海小岛上用，作为普通资源打包。
