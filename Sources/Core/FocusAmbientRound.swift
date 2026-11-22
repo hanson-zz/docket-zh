@@ -119,6 +119,16 @@ public struct FocusAmbientRound: Equatable, Sendable {
         yield(.audioFailed, choice: choice)
     }
 
+    /// 用户在专注面板里又点了一次声音（哪怕和原来选的一样）：「声音设备没准备好」那种让开作废，
+    /// 下一步重试。面板那行小字就是这么提示的；只改选别的才重试时，点同一种声音什么也不会发生。
+    /// 别的让开原因不动。
+    public mutating func retryAfterFailure() {
+        guard skip == .audioFailed else { return }
+        skip = nil
+        skippedChoice = ""
+        insist = true
+    }
+
     private mutating func yield(_ reason: FocusAmbientSkip, choice: String) {
         skip = reason
         skippedChoice = choice

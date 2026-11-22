@@ -69,6 +69,11 @@ final class FocusAmbientDriver {
 
     /// 专注面板里选了一种声音：专注没在放时试听几秒（专注在放时 `sync` 会直接换过去）。
     func audition(_ state: TimerState, now: Date = .now) {
+        // 这一轮声音设备起不来让开了：再点一次声音（哪怕是同一种，`update` 不会触发 `sync`）就马上重试。
+        if round.skip == .audioFailed {
+            round.retryAfterFailure()
+            sync(state, now: now)
+        }
         guard let sound = FocusAmbient.sound(state) else {
             AmbientPlayer.shared.endPreview()
             return

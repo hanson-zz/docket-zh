@@ -54,6 +54,25 @@ final class FocusAmbientRoundTests: XCTestCase {
         XCTAssertEqual(round.step(wanted: .brown, choice: "brown", level: 55, ours: false, blocked: false), .start(.brown))
     }
 
+    func testPickingTheSameSoundAgainRetriesAfterAudioFailure() {
+        var round = FocusAmbientRound()
+        _ = round.step(wanted: .rain, choice: "rain", level: 55, ours: false, blocked: false)
+        round.failed(choice: "rain")
+        XCTAssertEqual(round.step(wanted: .rain, choice: "rain", level: 55, ours: false, blocked: false), .none)
+        round.retryAfterFailure()
+        XCTAssertNil(round.skip)
+        XCTAssertEqual(round.step(wanted: .rain, choice: "rain", level: 55, ours: false, blocked: false), .start(.rain))
+    }
+
+    func testRetryLeavesOtherYieldsAlone() {
+        var round = FocusAmbientRound()
+        XCTAssertEqual(round.step(wanted: .rain, choice: "rain", level: 55, ours: false, blocked: true), .none)
+        XCTAssertEqual(round.skip, .widgetPlaying)
+        round.retryAfterFailure()
+        XCTAssertEqual(round.skip, .widgetPlaying)
+        XCTAssertEqual(round.step(wanted: .rain, choice: "rain", level: 55, ours: false, blocked: true), .none)
+    }
+
     func testOwnershipRules() {
         // 小组件出现时同步组合：只在没放、或放的本来就是小组件自己的时候改。
         XCTAssertTrue(AmbientOwner.primeChangesPlayback(owner: .widget, playing: true))
