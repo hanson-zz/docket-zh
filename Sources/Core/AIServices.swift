@@ -481,11 +481,13 @@ public enum AIServices {
     public static let keySpacing = 5.0
 
     /// 模型键上的字：用服务现有的缩写（内置的首字母或首字，自定义的按名称取），
-    /// 空的按名称派生，最多两个字符，免得挤出键外。
+    /// 空的按名称派生，最多两个字母或一个汉字，免得 13pt 的字挤出键外。
     public static func keyLabel(_ service: AIService) -> String {
         let trimmed = service.initial.trimmingCharacters(in: .whitespacesAndNewlines)
         let label = trimmed.isEmpty ? initial(for: service.title) : trimmed
-        return String(label.prefix(2))
+        // 13pt 的字在 24pt 的键上只放得下一个汉字（或全角字），两个字母可以。
+        let two = label.prefix(2)
+        return two.allSatisfy(\.isASCII) ? String(two) : String(label.prefix(1))
     }
 
     /// 横版内容区（卡片宽减去左右内边距）放得下几块模型键：先扣掉小熊猫 38、

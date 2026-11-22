@@ -390,7 +390,6 @@ private struct AIAskView: View {
                     Label(tr("继续提问"), systemImage: "bubble.left")
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.85)
                         .frame(maxWidth: .infinity)
                         .frame(height: 30)
                 }
@@ -407,7 +406,6 @@ private struct AIAskView: View {
             Label(title, systemImage: symbol)
                 .font(.system(size: 13, weight: .medium))
                 .lineLimit(1)
-                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity)
                 .frame(height: 30)
         }
@@ -695,7 +693,7 @@ private struct AIAskView: View {
                 Text(Self.gridTitle(chip))
                     .font(.system(size: 14, weight: .medium))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                    .minimumScaleFactor(13.0 / 14.0)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 8)
@@ -1004,7 +1002,7 @@ private struct AIAskView: View {
                 Text(buttonTitle)
                     .font(.system(size: 15, weight: .semibold))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                    .minimumScaleFactor(13.0 / 15.0)
             }
             .padding(.horizontal, 14)
             .frame(maxWidth: .infinity)

@@ -374,10 +374,10 @@ struct AIShelfKey: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
         Text(label)
-            .font(.system(size: size * (label.count > 1 ? 0.4 : 0.5), weight: .bold, design: .rounded))
+            // 字不小于 13pt：键 24pt 放得下一个字或两个字母（`AIServices.keyLabel` 保证）。
+            .font(.system(size: max(13, size * 0.5), weight: .bold, design: .rounded))
             .foregroundStyle(isCurrent ? accent : WidgetStyle.primary.opacity(0.9))
             .lineLimit(1)
-            .minimumScaleFactor(0.6)
             .frame(width: size, height: size)
             .background {
                 if isCurrent { shape.fill(accent.opacity(scheme == .dark ? 0.2 : 0.12)) }

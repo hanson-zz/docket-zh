@@ -27,6 +27,8 @@ final class AIDockMiniTests: XCTestCase {
         XCTAssertEqual(AIServices.keyLabel(chinese), "海")
         let long = AIService(id: "custom-z", title: "Long", initial: "ABC", region: .overseas, home: "https://a.b")
         XCTAssertEqual(AIServices.keyLabel(long), "AB")
+        let wide = AIService(id: "custom-w", title: "通义千问", initial: "通义", region: .domestic, home: "https://a.b")
+        XCTAssertEqual(AIServices.keyLabel(wide), "通", "汉字只放一个，13pt 才放得进 24pt 的键")
     }
 
     // MARK: 放得下几块
