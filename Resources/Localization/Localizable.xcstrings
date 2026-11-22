@@ -14556,6 +14556,17 @@
         }
       }
     },
+    "多设备" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multi-Device"
+          }
+        }
+      }
+    },
     "仅小组件" : {
       "extractionState" : "manual",
       "localizations" : {
