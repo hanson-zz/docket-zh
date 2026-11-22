@@ -48,7 +48,7 @@ enum CalendarEventStore {
         let dayStart = calendar.startOfDay(for: now)
         guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return [] }
         let predicate = shared.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: nil)
-        return shared.events(matching: predicate).compactMap { event in
+        return shared.events(matching: predicate).compactMap { event -> LiveCalendarEvent? in
             guard let start = event.startDate else { return nil }
             let title = (event.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let mine = event.participants?.first(where: \.isCurrentUser)?.participantStatus
