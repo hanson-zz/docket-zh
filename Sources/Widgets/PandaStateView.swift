@@ -72,12 +72,13 @@ struct PandaStateView: View {
     var body: some View {
         let shown = pose
         let state = shown.state
-        // 只有画待机图时眨眼；场景图、扩展动作虽按待机算，也不换成待机的眨眼帧。
+        let stateName = PandaStateArt.name(shown)
+        // 只有真画着待机母版时眨眼：眨眼帧是合成在待机母版上的，场景图、扩展动作（按待机算）、
+        // 或缺正式待机图回退到老图时，换上去会跳一下，所以不眨。
         let blinkName = PandaMotion.blinks(state, reduceMotion: reduceMotion,
-                                           hasBlinkFrame: shown == .state(.idle)
+                                           hasBlinkFrame: stateName == PandaStateResolver.preferredName(.idle)
                                                && PandaStateArt.exists(PandaStateResolver.blinkName))
             ? PandaStateResolver.blinkName : nil
-        let stateName = PandaStateArt.name(shown)
         // 眨眼只换一帧，不淡入淡出（动画只跟着状态图走）。
         let name = (blinking ? blinkName : nil) ?? stateName
         ZStack(alignment: .bottom) {

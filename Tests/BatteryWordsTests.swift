@@ -41,4 +41,13 @@ final class BatteryWordsTests: XCTestCase {
         XCTAssertEqual(absent, "鼠标\n未连接")
         XCTAssertEqual(BatteryWords.updatedText(now.addingTimeInterval(-30), now: now), "30 秒前")
     }
+
+    func testHoverMatchesMiniCardWhenCharged() {
+        // 充电上限停在 80%、macOS 认为已充满：悬停和迷你卡片第二行说法一致，数字仍是 80%。
+        let now = Date(timeIntervalSince1970: 50_000)
+        let text = BatteryWords.hover(name: BatteryWords.macName, level: 0.8, charging: false, onPower: true,
+                                      present: true, charged: true, updated: nil, now: now)
+        let card = BatteryWords.powerLine(level: 0.8, charging: false, onPower: true, present: true, charged: true)
+        XCTAssertEqual(text, "MacBook\n已连接 · 80% · \(card)")
+    }
 }

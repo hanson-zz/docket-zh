@@ -35,11 +35,11 @@ struct BatteryTile: View {
             }
         }
         // Mac 电量低于 20% 又没接电源时小熊猫举爪提醒，充满时挥爪一次；其余时间不画。
-        // 只放在显示 Mac 的卡片上，角落里最小号，不挡数字。
+        // 只放在右上角确实空着的卡片上（见 `showsPandaCue`），最小号，收在卡片里面，不挡数字。
         .overlay(alignment: .topTrailing) {
-            if !context.isPreview, showsMac, BatteryPandaCueView.shown != nil {
+            if pandaCueVisible {
                 BatteryPandaCueView(size: PandaStage.mini.side)
-                    .offset(x: 2, y: -2)
+                    .padding(4)
             }
         }
         // A reminder going out flashes the tile twice, so a glance at the
@@ -87,9 +87,21 @@ struct BatteryTile: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 这张卡片有没有 Mac 那一格（小熊猫电量提醒只放在这种卡片上）。
-    private var showsMac: Bool {
-        layout == "multi" || devices.contains(.mac)
+    /// 小熊猫电量提醒放不放在这张卡片的右上角：只放在有 Mac 那一格、右上角又空着的样式上，
+    /// 即单台设备的电量卡片（字在左边）和多设备四圆环（圆环居中，角上留白）。竖排、电池格、
+    /// 仅图标和多台设备的电量卡片，右上角就是数字或圆环，不放，面板里照样有。
+    /// 右上角这一刻有没有小熊猫（预览里没有）。
+    private var pandaCueVisible: Bool {
+        !context.isPreview && showsPandaCue && BatteryPandaCueView.shown != nil
+    }
+
+    private var showsPandaCue: Bool {
+        guard !context.position.isVertical else { return false }
+        switch layout {
+        case "multi": return true
+        case "status": return slots.count == 1 && devices.contains(.mac)
+        default: return false
+        }
     }
 
     /// 多设备卡片这一格现在的轻提示（配件连上、断开、电量跌破 20%）；Mac 和预览没有。
@@ -110,11 +122,21 @@ struct BatteryTile: View {
                                charged: reading.onPower && !context.isPreview && BatteryMetrics.shared.power.charged)
     }
 
+    /// 迷你卡片放不下整句时的短说法：「未充电」「正在充电」「已充满」「使用电池」「未连接」。
+    private func shortPowerLine(_ reading: Reading) -> String {
+        guard reading.present else { return tr("未连接") }
+        return BatteryWords.chargeWord(level: reading.level, charging: reading.charging, onPower: reading.onPower,
+                                       charged: reading.onPower && !context.isPreview
+                                           && BatteryMetrics.shared.power.charged)
+            ?? BatteryWords.source(onPower: reading.onPower, charging: reading.charging)
+    }
+
     /// 悬停说明：设备名；已连接 · 80% · 接通电源 · 未充电（或未连接）；更新于 15:32。
     /// 预览里没有真实采样，不写更新时间。
     private func hoverText(_ slot: Slot, _ reading: Reading) -> String {
         BatteryWords.hover(name: displayName(slot), level: reading.level, charging: reading.charging,
                            onPower: reading.onPower, present: reading.present,
+                           charged: reading.onPower && !context.isPreview && BatteryMetrics.shared.power.charged,
                            updated: context.isPreview ? nil : BatteryMetrics.shared.sampledAt, now: .now)
     }
 
@@ -131,7 +153,11 @@ struct BatteryTile: View {
             peripheral = .accessory(BluetoothBattery(id: "preview.mouse", name: tr("鼠标"),
                                                      kind: .mouse, main: 89))
         } else {
-            let available = metrics.accessories.filter { $0.level != nil && !$0.kind.isAirPods }
+            // 耳机那一格已经在读的设备（比如带左右耳的非 AirPods 耳机）不再放进第四格，免得同一台画两遍。
+            let budsID = metrics.slotSources[.pods]
+            let available = metrics.accessories.filter {
+                $0.level != nil && !$0.kind.isAirPods && $0.id != budsID
+            }
             let candidate = available.first { $0.kind == .mouse }
                 ?? available.first { $0.kind == .trackpad }
                 ?? available.first { $0.kind == .keyboard }
@@ -172,23 +198,30 @@ struct BatteryTile: View {
             HStack(spacing: 10) {
                 let shown = look(for: slot)
                 if BatteryStatusCell.drawsCell(look: shown.rawValue) {
-                    // 经典和液态：画一块横向电池，百分比写在电池里。
-                    statusCell(slot, reading, liquid: shown == .liquid)
-                    // 「MacBook · 80%」，下面「接通电源 · 未充电」：设备、电量、电源一眼看清。
-                    VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
-                        Text(BatteryWords.title(name: displayName(slot), level: reading.level,
-                                                present: reading.present))
-                            .font(.system(size: 13, weight: .semibold))
-                            .monospacedDigit()
-                            .foregroundStyle(statusCaptionColor(reading))
-                        Text(powerLine(reading))
-                            .font(.system(size: 13))
-                            .foregroundStyle(WidgetStyle.secondary)
+                    // 经典和液态：画一块横向电池，百分比写在电池里，右边两行字。字一律 13pt 不缩小：
+                    // 「MacBook · 80%」「接通电源 · 未充电」放得下就写全，放不下（168 宽的卡片、英文）
+                    // 换成短的「MacBook」「未充电」（电量已经写在电池里），再放不下才截断。
+                    // 右上角有小熊猫时字给它让出位置，不压在它下面。
+                    let reserve: CGFloat = pandaCueVisible ? PandaStage.mini.side + 4 : 0
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 10) {
+                            statusCell(slot, reading, liquid: shown == .liquid)
+                            statusWords(slot, reading, compact: false)
+                                .fixedSize()
+                        }
+                        .padding(.trailing, reserve)
+                        HStack(spacing: 10) {
+                            statusCell(slot, reading, liquid: shown == .liquid)
+                            statusWords(slot, reading, compact: true)
+                                .fixedSize()
+                        }
+                        .padding(.trailing, reserve)
+                        HStack(spacing: 10) {
+                            statusCell(slot, reading, liquid: shown == .liquid)
+                            statusWords(slot, reading, compact: true)
+                        }
+                        .padding(.trailing, reserve)
                     }
-                    .help(hoverText(slot, reading))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .modifier(BatteryPlugBounce(trigger: gaugeState(slot).pluggedAt))
                 } else {
                     BatteryGauge(look: shown, state: gaugeState(slot), diameter: 40,
                                  center: shown == .panda ? .none : .symbol(slot.symbol),
@@ -202,6 +235,25 @@ struct BatteryTile: View {
                 Spacer(minLength: 0)
             }
         }
+    }
+
+    /// 「MacBook · 80%」，下面「接通电源 · 未充电」：设备、电量、电源一眼看清。`compact` 时
+    /// 只写「MacBook」和「未充电」「使用电池」这种短词。13pt，放不下时截断，不缩到 13pt 以下。
+    private func statusWords(_ slot: Slot, _ reading: Reading, compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
+            Text(compact ? displayName(slot)
+                         : BatteryWords.title(name: displayName(slot), level: reading.level,
+                                              present: reading.present))
+                .font(.system(size: 13, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(statusCaptionColor(reading))
+            Text(compact ? shortPowerLine(reading) : powerLine(reading))
+                .font(.system(size: 13))
+                .foregroundStyle(WidgetStyle.secondary)
+        }
+        .help(hoverText(slot, reading))
+        .lineLimit(1)
+        .modifier(BatteryPlugBounce(trigger: gaugeState(slot).pluggedAt))
     }
 
     /// 电量样式的电池：约 61 x 29 的横向电池，百分比写在里面，充电时数字前面

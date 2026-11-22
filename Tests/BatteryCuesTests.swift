@@ -62,6 +62,20 @@ final class BatteryCuesTests: XCTestCase {
         XCTAssertTrue(w.update(percent: 80, onPower: true, target: 80))
     }
 
+    func testNoSecondWaveWhenLimitTargetFlaps() {
+        // 上限停在 80% 不动时助手状态一时过期，那条线临时回到 100，再读到时又是 80：不算新的一次。
+        var w = BatteryFullWatch()
+        XCTAssertFalse(w.update(percent: 70, onPower: true, target: 80))
+        XCTAssertTrue(w.update(percent: 80, onPower: true, target: 80))
+        XCTAssertFalse(w.update(percent: 80, onPower: true, target: 100))
+        XCTAssertFalse(w.update(percent: 80, onPower: true, target: 80))
+        XCTAssertFalse(w.update(percent: 79, onPower: true, target: 100))
+        XCTAssertFalse(w.update(percent: 80, onPower: true, target: 80))
+        // 真的掉到 75% 再充回来才算新的一次。
+        XCTAssertFalse(w.update(percent: 75, onPower: true, target: 100))
+        XCTAssertTrue(w.update(percent: 80, onPower: true, target: 80))
+    }
+
     func testUnplugResets() {
         var w = BatteryFullWatch()
         _ = w.update(percent: 90, onPower: true, target: 100)
@@ -171,6 +185,18 @@ final class BatteryCuesTests: XCTestCase {
         // 合盖不算断开；再开盖不重复说电量低。
         XCTAssertEqual(t.update(closed, now: now + 5), [:])
         XCTAssertEqual(t.update(open, now: now + 10), [:])
+    }
+
+    func testRebaselineAfterWakeIsQuiet() {
+        var t = AccessoryChangeTracker()
+        _ = t.update([mouse(80)], now: t0)
+        let wake = t0 + 3600
+        t.rebaseline(now: wake)
+        // 醒来后配件成批断开、再连上，都不提示。
+        XCTAssertEqual(t.update([], now: wake + 1), [:])
+        XCTAssertEqual(t.update([mouse(80)], now: wake + 5), [:])
+        // 过了底数时间照常提示。
+        XCTAssertEqual(t.update([], now: wake + AccessoryChangeTracker.warmup + 1), ["mouse": .disconnected])
     }
 
     func testReconnectClearsGroupDisconnect() {

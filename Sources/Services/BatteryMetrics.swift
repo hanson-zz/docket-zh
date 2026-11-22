@@ -89,6 +89,9 @@ final class BatteryMetrics {
 
     @ObservationIgnored private var fullWatch = BatteryFullWatch()
     @ObservationIgnored private var fullWatchPercent: Int?
+    /// 充电上限打开、接着电源时上一次重读助手状态文件的时刻。电量停在上限不动时也要隔一会儿
+    /// 读一次：状态文件 2 分钟没重读就算过期，上限会被当成没生效，挥爪那条线跟着来回跳。
+    @ObservationIgnored private var limitsReadAt = Date.distantPast
     @ObservationIgnored private var accessoryChanges = AccessoryChangeTracker()
     @ObservationIgnored private var lastOnPower: Bool?
     @ObservationIgnored private var lastLevel: Double?
@@ -162,6 +165,10 @@ final class BatteryMetrics {
     }
 
     private func sample() {
+        // 两次采样隔了半分钟以上（睡眠醒来）：蓝牙配件会成批断开再连上，轻提示重新当底数。
+        if let previous = sampledAt, Date.now.timeIntervalSince(previous) > 30 {
+            accessoryChanges.rebaseline(now: .now)
+        }
         sampledAt = .now
         let registry = Self.registryAccessories()
         refreshProfilerIfDue()
@@ -236,9 +243,14 @@ final class BatteryMetrics {
             let parsed = data.map(SystemProfilerBluetooth.parse) ?? []
             await MainActor.run {
                 let metrics = BatteryMetrics.shared
+                let now = Date.now
+                // 第一次（启动后系统信息可能要十几秒才回来）或过期以后重新报上来的那批配件，
+                // 不算「已连上」，轻提示从这里重新当底数。
+                let wasStale = now.timeIntervalSince(metrics.profiledAt) >= BatteryMetrics.profilerStale
                 metrics.profiling = false
-                metrics.profiledAt = .now
+                metrics.profiledAt = now
                 if data != nil { metrics.profiler = parsed }
+                if wasStale { metrics.accessoryChanges.rebaseline(now: now) }
             }
         }
     }
@@ -272,13 +284,17 @@ final class BatteryMetrics {
         lastLevel = mac.level
     }
 
-    /// 充满时挥爪一次。充电上限打开时，电量每变一格重新看一眼助手的状态文件（平时它只在
-    /// 面板打开时刷新），上限真在生效才把那条线降到上限。
+    /// 充满时挥爪一次。充电上限打开时，电量每变一格、或至少每 30 秒重新看一眼助手的状态文件
+    /// （平时它只在面板打开时刷新），上限真在生效才把那条线降到上限。
     private func noteFull(_ mac: BatteryDevice) {
         let now = Date.now
         let percent = BatteryColorMap.percent(mac.level)
         let limits = ChargeLimitService.shared
-        if mac.onPower, limits.config.isActive, percent != fullWatchPercent { limits.refresh() }
+        if mac.onPower, limits.config.isActive,
+           percent != fullWatchPercent || now.timeIntervalSince(limitsReadAt) >= 30 {
+            limits.refresh()
+            limitsReadAt = now
+        }
         fullWatchPercent = percent
         let effective = limits.effect(unlocked: ProAccess.isUnlocked, now: now).isEffective
         let target = BatteryPandaCue.fullTarget(effectiveLimit: effective ? limits.config.clamped.limit : nil)
@@ -439,6 +455,9 @@ final class BatteryMetrics {
             defer { IOObjectRelease(service) }
 
             guard let properties = properties(of: service) else { continue }
+            // Mac 自己的键盘触控板（Built-In = Yes，走 SPI）不是配件，就算报了电量也不算，
+            // 免得 Mac 的电量被当成一个蓝牙设备再画一遍。
+            if (properties["Built-In"] as? Bool) == true { continue }
             let name = (properties["Product"] as? String) ?? ""
             let main = BluetoothBattery.percent(properties["BatteryPercent"])
             let left = BluetoothBattery.percent(properties["BatteryPercentLeft"])

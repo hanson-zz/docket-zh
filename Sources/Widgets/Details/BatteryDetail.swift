@@ -168,17 +168,21 @@ struct BatteryDetail: View {
                         .font(.system(size: 46, weight: .light))
                         .foregroundStyle(.panelSecondary)
                 }
+                // 头部一行还要放小熊猫和圆环，挤的时候字先占位置（layoutPriority），
+                // 标题最多缩到 13pt、小字不缩，再放不下截断，不小于 13pt。
                 VStack(alignment: .leading, spacing: 1) {
                     Text(heroTitle(device))
                         .font(WidgetStyle.label(14))
                         .foregroundStyle(WidgetStyle.primary)
+                        .minimumScaleFactor(13.0 / 14.0)
                     if let detail = heroDetail(device) {
                         Text(detail)
                             .font(WidgetStyle.caption(13))
                             .foregroundStyle(.panelSecondary)
                     }
                 }
-                .minimumScaleFactor(0.8)
+                .truncationMode(.tail)
+                .layoutPriority(1)
             }
             Spacer(minLength: 0)
             macPanda(device)

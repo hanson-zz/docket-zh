@@ -42,11 +42,12 @@ public enum BatteryWords {
     }
 
     /// 多设备圆环悬停的说明，三行：设备名；连接状态（和电量、电源）；更新时间。
+    /// `charged` 和迷你卡片同一个来源（macOS 认为已充满），两处写法一致。
     public static func hover(name: String, level: Double, charging: Bool, onPower: Bool, present: Bool,
-                             updated: Date?, now: Date) -> String {
+                             charged: Bool = false, updated: Date?, now: Date) -> String {
         var lines = [name]
         if present {
-            lines.append(tr("已连接 · \(percentText(level: level, present: true)) · \(powerLine(level: level, charging: charging, onPower: onPower, present: true))"))
+            lines.append(tr("已连接 · \(percentText(level: level, present: true)) · \(powerLine(level: level, charging: charging, onPower: onPower, present: true, charged: charged))"))
         } else {
             lines.append(tr("未连接"))
         }

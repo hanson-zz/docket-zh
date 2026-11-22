@@ -34,13 +34,17 @@ public enum BatteryPandaCue {
 ///
 /// - 接上电源（或启动时已接着电源）时电量低于那条线，才算「这次在充」，到线时挥爪一次；
 ///   插上时已经满了不挥。
-/// - 挥过以后，电量要掉到线下 `rearmMargin` 个百分点才会再挥（充电上限的缓冲区里来回不算）。
+/// - 挥过以后，电量要掉到挥爪时那一格以下 `rearmMargin` 个百分点才会再挥（充电上限的缓冲区里
+///   来回不算）。那条线临时变高（比如助手状态一时读不到，上限按 100 算）不算掉下去，
+///   线变回上限时也不会再挥一次。
 /// - 拔掉电源全部重来。
 public struct BatteryFullWatch: Equatable, Sendable {
     public static let rearmMargin = 5
 
     private var armed = false
     private var lastOnPower: Bool?
+    /// 上一次挥爪（或插上时已经满了）那一格；重新可以挥要从这里往下掉 `rearmMargin`。
+    private var settledAt: Int?
 
     public init() {}
 
@@ -49,19 +53,26 @@ public struct BatteryFullWatch: Equatable, Sendable {
         defer { lastOnPower = onPower }
         guard onPower else {
             armed = false
+            settledAt = nil
             return false
         }
         if lastOnPower != true {
             // 刚接上电源，或启动后的第一次读数：没满才算在充。
             armed = percent < target
+            settledAt = armed ? nil : percent
             return false
         }
         if percent >= target {
             guard armed else { return false }
             armed = false
+            settledAt = percent
             return true
         }
-        if percent <= target - Self.rearmMargin { armed = true }
+        let line = min(target, settledAt ?? target)
+        if percent <= line - Self.rearmMargin {
+            armed = true
+            settledAt = nil
+        }
         return false
     }
 }
@@ -215,6 +226,13 @@ public struct AccessoryChangeTracker: Equatable, Sendable {
             if change != .disconnected, let group = current[id]?.group { byGroup[group] = nil }
         }
         return changes
+    }
+
+    /// 从现在起再当 `warmup` 秒底数：睡眠醒来、或系统信息那份配件清单过期后重新报上来时，
+    /// 配件会成批消失又出现，不能满屏「已断开」「已连上」。已经在显示的提示照常到期。
+    public mutating func rebaseline(now: Date) {
+        guard known != nil else { return }
+        startedAt = now
     }
 
     /// 去掉到期的提示；有东西被去掉时返回 true（界面据此刷新一次）。
