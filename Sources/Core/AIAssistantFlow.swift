@@ -31,6 +31,19 @@ public enum AIDockChip: String, CaseIterable, Sendable {
         }
     }
 
+    /// 面板玻璃块、设置页和扩展栏竖版提示里用的名字，比 `title` 写得完整一点，做的事一样。
+    public var gridTitle: String {
+        switch self {
+        case .screenshot: tr("截图提问")
+        case .clipboardSummary: tr("总结剪贴板")
+        case .clipboard: tr("处理剪贴板")
+        case .translate: tr("翻译内容")
+        case .summarize: tr("总结内容")
+        case .polish: tr("写作优化")
+        case .explain: tr("解释内容")
+        }
+    }
+
     /// 套提示词的那几个对应的快捷指令；截图和处理剪贴板不套提示词，为 nil。
     /// 剪贴板总结套「总结」，但只用剪贴板里的文字（见 `usesClipboardOnly`）。
     public var quickAction: AIQuickAction? {

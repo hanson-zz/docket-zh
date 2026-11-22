@@ -9,9 +9,10 @@ import UniformTypeIdentifiers
 /// 橙点），末尾细虚线“＋”管理更多模型。点模型键直接用那个模型打开助手；放
 /// 不下时按顺序少画几块，当前那块总留着，“＋”总留着。
 ///
-/// 竖版（问 AI + 当前状态）：小熊猫、「问 AI」、状态点和「待命 · D」，横着放
-/// 时右边一个 chevron，整块点一下打开助手。状态只认码头拿得到的（API 方式的
-/// 回答：生成中、完成、出错），拿不到就是待命。
+/// 竖版（状态陪伴卡）：和横版分工，不放模型键、模型字母和 chevron。对着笔记本的
+/// 小熊猫（生成中换等回答的那张）占大头，旁边一块玻璃写「问 AI」和一行提示：空闲时
+/// 轮换设置里勾选的快捷操作（「可以试试：截图提问」），生成中、完成、出错只认码头
+/// 拿得到的（API 方式的回答）。整块点一下开始提问，右键扩展栏菜单里有「截图提问」。
 ///
 /// 右键模型键：设为默认、左移、右移、隐藏。点“＋”：按国内、国外列出全部服务，
 /// 打勾的显示在卡片上，最后一项“自定义…”。右键卡片别处是扩展栏自己的菜单。
@@ -24,6 +25,7 @@ struct AIAssistantTile: View {
     @State private var targeted = false
     /// 一次回答收尾时的短暂表态（答完、失败），过了回常态。
     @State private var pulse: PandaPulse?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var center: AIChatCenter { AIChatCenter.shared }
     private var services: [AIService] { AIServices.enabled(in: config) }
@@ -106,58 +108,77 @@ struct AIAssistantTile: View {
         }
     }
 
-    /// 竖版横放（108×62）：小熊猫，旁边「问 AI」和状态，右边 chevron。整块点一下打开助手。
-    /// 放不下时先去 chevron，再去「· D」，最后只留状态点，「问 AI」一直在。
+    // MARK: 竖版：状态陪伴卡
+
+    /// 竖版横放（108×62）：左边对着笔记本的小熊猫（比横版占比大），右边一块读得清的玻璃
+    /// 上写「问 AI」和一行提示或状态。整块点一下开始提问；右键里有「截图提问」
+    /// （扩展栏菜单）。模型字母和 chevron 是横版的事，这里不画。
     private func compact(_ current: AIService?, phase: AIQuickResultPhase?) -> some View {
         let now = status(phase)
         return askButton(current, status: now) {
-            HStack(spacing: 4) {
-                pandaArt(size: 38, phase: phase)
-                ViewThatFits(in: .horizontal) {
-                    compactText(now, label: current.map(AIServices.keyLabel), chevron: true)
-                    compactText(now, label: current.map(AIServices.keyLabel), chevron: false)
-                    compactText(now, label: nil, chevron: true)
-                    compactText(now, label: nil, chevron: false)
-                    compactText(now, label: nil, chevron: false, dotOnly: true)
-                }
+            HStack(spacing: 3) {
+                pandaArt(size: 40, phase: phase, pose: PandaStateResolver.aiDockPose(phase), status: now)
+                companionText(now, titleSize: 15)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
 
-    private func compactText(_ status: AIDockStatus, label: String?, chevron: Bool,
-                             dotOnly: Bool = false) -> some View {
-        HStack(spacing: 3) {
-            VStack(alignment: .leading, spacing: 2) {
-                askTitle(size: 15)
-                statusRow(status, label: label, dotOnly: dotOnly)
-            }
-            .fixedSize()
-            Spacer(minLength: 0)
-            if chevron {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(WidgetStyle.secondary)
-                    .accessibilityHidden(true)
-            }
-        }
-    }
-
-    /// 竖版在侧边栏：小熊猫在上，下面「问 AI」和状态。
+    /// 竖版在侧边栏（76×112）：小熊猫在上占大半，下面同一块玻璃写「问 AI」和提示或状态。
     private func tallSquare(_ current: AIService?, phase: AIQuickResultPhase?) -> some View {
         let now = status(phase)
-        let label = current.map(AIServices.keyLabel)
         return askButton(current, status: now) {
-            VStack(spacing: 3) {
-                pandaArt(size: 46, phase: phase)
-                askTitle(size: 14)
-                ViewThatFits(in: .horizontal) {
-                    statusRow(now, label: label, dotOnly: false)
-                    statusRow(now, label: nil, dotOnly: false)
-                    statusRow(now, label: nil, dotOnly: true)
-                }
+            VStack(spacing: 2) {
+                pandaArt(size: 50, phase: phase, pose: PandaStateResolver.aiDockPose(phase), status: now)
+                companionText(now, titleSize: 15)
+                    .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity)
         }
+    }
+
+    /// 「问 AI」加一行提示或状态，垫一层读得清的玻璃。「问 AI」总留着；提示行先试整句
+    /// （「可以试试：截图提问」），放不下用短的（「截图提问」），最多两行，再放不下截断。
+    /// 空闲时每 `AIDockTips.interval` 秒换一条，减弱动态效果时只显示第一条不轮换；
+    /// 生成中、完成、出错显示真实状态（只有 API 方式有）。
+    private func companionText(_ status: AIDockStatus, titleSize: CGFloat) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
+        let rotates = status == .idle && hints.count > 1 && !reduceMotion
+        return VStack(alignment: .leading, spacing: 1) {
+            askTitle(size: titleSize)
+            if rotates {
+                TimelineView(.periodic(from: Date(timeIntervalSinceReferenceDate: 0), by: AIDockTips.interval)) { timeline in
+                    hintLine(AIDockTips.hint(for: status, hints: hints,
+                                             index: AIDockTips.index(at: timeline.date, count: hints.count,
+                                                                     reduceMotion: reduceMotion)),
+                             status: status)
+                }
+            } else {
+                hintLine(AIDockTips.hint(for: status, hints: hints, index: 0), status: status)
+            }
+        }
+        .padding(.horizontal, 5)
+        .padding(.vertical, 4)
+        .readableGlass(in: shape)
+    }
+
+    private func hintLine(_ hint: AIDockHint, status: AIDockStatus) -> some View {
+        ViewThatFits(in: .horizontal) {
+            hintText(hint.full, status: status, lines: 1)
+            hintText(hint.short, status: status, lines: 2)
+        }
+        .id(hint)
+        .transition(.opacity)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: hint)
+    }
+
+    private func hintText(_ text: String, status: AIDockStatus, lines: Int) -> some View {
+        Text(text)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(status == .idle ? WidgetStyle.secondary : WidgetStyle.primary)
+            .lineLimit(lines)
+            .truncationMode(.tail)
+            .fixedSize(horizontal: lines == 1, vertical: lines > 1)
     }
 
     private func askTitle(size: CGFloat) -> some View {
@@ -166,24 +187,12 @@ struct AIAssistantTile: View {
             .foregroundStyle(WidgetStyle.primary)
             .lineLimit(1)
             .minimumScaleFactor(13 / size)
+            .layoutPriority(1)
     }
 
-    /// 状态点加「待命 · D」，字 13pt，放不下时只留点。
-    private func statusRow(_ status: AIDockStatus, label: String?, dotOnly: Bool) -> some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(Color(hex: status.dotHex))
-                .frame(width: 6, height: 6)
-            if !dotOnly {
-                Text(status.line(keyLabel: label))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(WidgetStyle.secondary)
-                    .lineLimit(1)
-            }
-        }
-        .fixedSize()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(status.title)
+    /// 设置里勾选的快捷操作名（和面板玻璃块同名），轮换着当提示。
+    private var hints: [AIDockHint] {
+        AIDockTips.hints(AIDockChips.resolved(center.settings.panelChips).map(\.gridTitle))
     }
 
     /// 整块都是打开助手的按钮，和横版的小熊猫做同一件事。
@@ -197,7 +206,7 @@ struct AIAssistantTile: View {
         .buttonStyle(.plain)
         .help(current.map { tr("用 \($0.title) 打开助手") } ?? tr("问问 AI"))
         .accessibilityLabel("打开 AI 助手")
-        .accessibilityValue(status.title)
+        .accessibilityValue(AIDockTips.hint(for: status, hints: hints, index: 0).full)
     }
 
     /// 打开助手：当前服务是网页或 API 时打开刘海里的同一个对话；是跳转（或没解锁刘海对话）
@@ -244,13 +253,24 @@ struct AIAssistantTile: View {
     // MARK: Pieces
 
     /// 小熊猫：用六状态的素材，生成中换「等回答」那张，答完、出错短暂表态。
-    private func pandaArt(size: CGFloat, phase: AIQuickResultPhase?) -> some View {
+    /// 竖版传进来笔记本场景（`aiDockPose`）和状态，右上角画状态点（待命不画）。
+    private func pandaArt(size: CGFloat, phase: AIQuickResultPhase?, pose: PandaPose? = nil,
+                          status: AIDockStatus? = nil) -> some View {
         ZStack(alignment: .bottom) {
             Color.clear.contentShape(.rect)
-            PandaStateView(pose: PandaStateResolver.aiPose(phase, typing: false), pulse: pulse, size: size,
+            PandaStateView(pose: pose ?? PandaStateResolver.aiPose(phase, typing: false), pulse: pulse, size: size,
                            fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
         }
         .frame(width: size, height: size)
+        .overlay(alignment: .topTrailing) {
+            if let status, status != .idle {
+                Circle()
+                    .fill(Color(hex: status.dotHex))
+                    .frame(width: 7, height: 7)
+                    .overlay { Circle().strokeBorder(.white.opacity(0.85), lineWidth: 1) }
+                    .accessibilityHidden(true)
+            }
+        }
     }
 
     /// 横版和侧边栏的小熊猫按钮：打开助手（当前模型）。

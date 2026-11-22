@@ -355,6 +355,13 @@ public enum PandaStateResolver {
         return typing ? .scene(.aiInput) : .state(.idle)
     }
 
+    /// AI 扩展栏竖版卡片（状态陪伴卡）的小熊猫：和横版（坐着的待机）分开，平时对着笔记本
+    /// （「输入」场景图），提交后到答完换「等回答」场景图。答完、出错仍靠短暂表态。
+    public static func aiDockPose(_ phase: AIQuickResultPhase?) -> PandaPose {
+        if let phase, !phase.isFinished { return .scene(.aiGenerating) }
+        return .scene(.aiInput)
+    }
+
     /// AI 一次回答收尾时该不该冒一个短暂表态（面板顶上那只，答完 done、失败 alert）。
     public static func aiPulse(from old: AIQuickResultPhase?, to new: AIQuickResultPhase?,
                                at now: Date) -> PandaPulse? {

@@ -575,6 +575,66 @@ public enum AIDockStatus: Equatable, Sendable {
     }
 }
 
+// MARK: - AI 助手：竖版卡片的提示行
+
+/// 竖版卡片「问 AI」下面那一行：完整的一句和放不下时的短版本。
+public struct AIDockHint: Hashable, Sendable {
+    public var full: String
+    public var short: String
+
+    public init(full: String, short: String) {
+        self.full = full
+        self.short = short
+    }
+}
+
+/// 竖版「状态陪伴卡」的提示行：空闲时轮换「可以试试：截图提问」这类提示（取设置里勾选的
+/// 快捷操作名，不写死），生成中、完成、出错时显示真实状态（只有 API 方式有）。
+public enum AIDockTips {
+    /// 轮换间隔（秒），不短于 8 秒，免得卡片一直在跳。
+    public static let interval: TimeInterval = 8
+
+    /// 一个快捷操作都没勾时的那一句。
+    public static var fallback: AIDockHint {
+        AIDockHint(full: tr("点一下开始提问"), short: tr("开始提问"))
+    }
+
+    /// 勾选的快捷操作名变成提示：去空白、去空、去重，顺序不变；一个都没有时用 `fallback`。
+    public static func hints(_ titles: [String]) -> [AIDockHint] {
+        var seen = Set<String>()
+        var result: [AIDockHint] = []
+        for raw in titles {
+            let title = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !title.isEmpty, seen.insert(title).inserted else { continue }
+            result.append(AIDockHint(full: tr("可以试试：\(title)"), short: title))
+        }
+        return result.isEmpty ? [fallback] : result
+    }
+
+    /// 这一刻轮到第几条：按 `interval` 往下走一条，到头回第一条。减弱动态效果时不轮换，
+    /// 一直是第一条；只有一条或没有时也是 0。
+    public static func index(at date: Date, count: Int, reduceMotion: Bool,
+                             interval: TimeInterval = interval) -> Int {
+        guard !reduceMotion, count > 1, interval > 0 else { return 0 }
+        let seconds = date.timeIntervalSinceReferenceDate
+        guard seconds.isFinite else { return 0 }
+        let step = Int((seconds / interval).rounded(.down))
+        return ((step % count) + count) % count
+    }
+
+    /// 提示行这一刻显示什么：待命时是轮到的那条提示，其余是真实状态。
+    public static func hint(for status: AIDockStatus, hints: [AIDockHint], index: Int) -> AIDockHint {
+        switch status {
+        case .idle:
+            guard !hints.isEmpty else { return fallback }
+            return hints[((index % hints.count) + hints.count) % hints.count]
+        case .generating: return AIDockHint(full: tr("正在生成回答"), short: status.title)
+        case .done: return AIDockHint(full: tr("回答已完成"), short: status.title)
+        case .failed: return AIDockHint(full: tr("回答出错了"), short: status.title)
+        }
+    }
+}
+
 // MARK: - AI 助手：提问
 
 /// 提问面板的纯逻辑：回车怎么算、问题怎么交出去、按钮和提示怎么写。

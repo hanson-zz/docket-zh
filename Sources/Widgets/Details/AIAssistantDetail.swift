@@ -708,17 +708,7 @@ private struct AIAskView: View {
     }
 
     /// 玻璃块上的名字，按效果图写得完整一点；做的事和设置页里同名的快捷操作一样。
-    static func gridTitle(_ chip: AIDockChip) -> String {
-        switch chip {
-        case .screenshot: tr("截图提问")
-        case .clipboardSummary: tr("总结剪贴板")
-        case .clipboard: tr("处理剪贴板")
-        case .translate: tr("翻译内容")
-        case .summarize: tr("总结内容")
-        case .polish: tr("写作优化")
-        case .explain: tr("解释内容")
-        }
-    }
+    static func gridTitle(_ chip: AIDockChip) -> String { chip.gridTitle }
 
     /// 每块小图标的颜色。
     static func chipTint(_ chip: AIDockChip) -> PaletteColor {

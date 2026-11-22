@@ -2016,6 +2016,10 @@ struct DockShelfView: View {
         if let widget = entry.item.widget, widget.kind == .aiAssistant {
             Divider()
             Button("打开提问面板") { showAIPanel(entry, mode: .ask) }
+            // 竖版（状态陪伴卡）只有整块点击一个动作，截图提问放在右键里。
+            if AIServices.isSquare(widget.config) {
+                Button("截图提问") { ShotEditor.askAIFromScreen(widget: widget.id) }
+            }
             Button("管理字牌…") { showAIPanel(entry, mode: .manage) }
         }
         if let widget = entry.item.widget, DesktopPinController.shared.offers(widget) {

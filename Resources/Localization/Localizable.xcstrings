@@ -61449,6 +61449,61 @@
         }
       }
     },
+    "可以试试：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try: %@"
+          }
+        }
+      }
+    },
+    "点一下开始提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to start asking"
+          }
+        }
+      }
+    },
+    "正在生成回答" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Generating an answer"
+          }
+        }
+      }
+    },
+    "回答已完成" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answer ready"
+          }
+        }
+      }
+    },
+    "回答出错了" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The answer failed"
+          }
+        }
+      }
+    },
     "问点什么… Enter 发送，Shift+Enter 换行" : {
       "extractionState" : "manual",
       "localizations" : {

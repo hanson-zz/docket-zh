@@ -110,4 +110,60 @@ final class AIDockMiniTests: XCTestCase {
         XCTAssertEqual(Set(all.map(\.dotHex)).count, all.count)
         XCTAssertEqual(all.map(\.pandaState), [.idle, .thinking, .done, .alert])
     }
+
+    // MARK: 竖版：状态陪伴卡
+
+    func testHintsComeFromTheChosenQuickActions() {
+        let hints = AIDockTips.hints(["截图提问", " 翻译内容 ", "", "截图提问", "总结剪贴板"])
+        XCTAssertEqual(hints.map(\.short), ["截图提问", "翻译内容", "总结剪贴板"], "去空白、去空、去重，顺序不变")
+        XCTAssertEqual(hints.first?.full, "可以试试：截图提问")
+        XCTAssertEqual(AIDockTips.hints([]), [AIDockTips.fallback], "一个都没勾时有一句兜底，不写死快捷操作")
+        XCTAssertEqual(AIDockTips.hints(["  "]), [AIDockTips.fallback])
+        let names = AIDockChip.allCases.map(\.gridTitle)
+        XCTAssertEqual(Set(names).count, names.count, "每个快捷操作的名字不同")
+        XCTAssertEqual(AIDockChip.screenshot.gridTitle, "截图提问")
+    }
+
+    func testHintsRotateSlowlyAndStopForReduceMotion() {
+        XCTAssertGreaterThanOrEqual(AIDockTips.interval, 8)
+        let start = Date(timeIntervalSinceReferenceDate: 800)
+        XCTAssertEqual(AIDockTips.index(at: start, count: 3, reduceMotion: false), 100 % 3)
+        let first = AIDockTips.index(at: start, count: 3, reduceMotion: false)
+        XCTAssertEqual(AIDockTips.index(at: start.addingTimeInterval(7.9), count: 3, reduceMotion: false), first,
+                       "不到一个间隔不换")
+        XCTAssertEqual(AIDockTips.index(at: start.addingTimeInterval(8), count: 3, reduceMotion: false),
+                       (first + 1) % 3)
+        XCTAssertEqual(AIDockTips.index(at: start.addingTimeInterval(8), count: 3, reduceMotion: true), 0,
+                       "减弱动态效果时只显示第一条")
+        XCTAssertEqual(AIDockTips.index(at: start, count: 1, reduceMotion: false), 0)
+        XCTAssertEqual(AIDockTips.index(at: start, count: 0, reduceMotion: false), 0)
+        XCTAssertEqual(AIDockTips.index(at: Date(timeIntervalSinceReferenceDate: -20), count: 3,
+                                        reduceMotion: false), 0, "负的时间也落在范围里")
+        for seconds in stride(from: -100.0, through: 100, by: 7) {
+            let index = AIDockTips.index(at: Date(timeIntervalSinceReferenceDate: seconds), count: 4, reduceMotion: false)
+            XCTAssertTrue((0 ..< 4).contains(index))
+        }
+    }
+
+    func testHintLineShowsRealStatusWhenBusy() {
+        let hints = AIDockTips.hints(["截图提问", "翻译内容"])
+        XCTAssertEqual(AIDockTips.hint(for: .idle, hints: hints, index: 1).short, "翻译内容")
+        XCTAssertEqual(AIDockTips.hint(for: .idle, hints: hints, index: 5).short, "翻译内容", "越界取余")
+        XCTAssertEqual(AIDockTips.hint(for: .idle, hints: [], index: 0), AIDockTips.fallback)
+        XCTAssertEqual(AIDockTips.hint(for: .generating, hints: hints, index: 0).short, AIDockStatus.generating.title)
+        XCTAssertEqual(AIDockTips.hint(for: .done, hints: hints, index: 0).short, AIDockStatus.done.title)
+        XCTAssertEqual(AIDockTips.hint(for: .failed, hints: hints, index: 0).short, AIDockStatus.failed.title)
+        XCTAssertNotEqual(AIDockTips.hint(for: .generating, hints: hints, index: 0).full, hints[0].full,
+                          "生成中不显示提示")
+    }
+
+    func testVerticalPandaDiffersFromTheShelfRow() {
+        XCTAssertEqual(PandaStateResolver.aiDockPose(nil), .scene(.aiInput))
+        XCTAssertEqual(PandaStateResolver.aiDockPose(.done), .scene(.aiInput))
+        XCTAssertEqual(PandaStateResolver.aiDockPose(.failed("超时")), .scene(.aiInput))
+        XCTAssertEqual(PandaStateResolver.aiDockPose(.thinking), .scene(.aiGenerating))
+        XCTAssertEqual(PandaStateResolver.aiDockPose(.answering), .scene(.aiGenerating))
+        XCTAssertNotEqual(PandaStateResolver.aiDockPose(nil), PandaStateResolver.aiPose(nil, typing: false),
+                          "竖版和横版的小熊猫姿势不同")
+    }
 }
