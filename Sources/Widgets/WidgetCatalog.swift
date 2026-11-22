@@ -217,7 +217,11 @@ public enum WidgetCatalog {
                          (tr("电量"), ["layout": .string("status")]),
                          // 原来的“百分比圆环”，画成电池形状后改名；存的值仍是 gauge，Pro 照旧。
                          (tr("电池格"), ["layout": .string("gauge")]),
-                         (tr("仅图标"), ["layout": .string("icon")])],
+                         (tr("仅图标"), ["layout": .string("icon")]),
+                         // Four stable icon rings, based on real battery readings.
+                         (tr("多设备"), ["layout": .string("multi"),
+                                         "devices": .list([.string("mac")]),
+                                         BatteryShelf.bluetoothKey: .bool(true)])],
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .system, name: tr("系统活动"), category: .system,
@@ -1054,6 +1058,9 @@ public enum WidgetCatalog {
         case .divination:
             return CGSize(width: Divination.tileWidth, height: Divination.tileHeight)
         case .battery:
+            if cfg.string("layout", default: "status") == "multi" {
+                return CGSize(width: 344, height: 112)
+            }
             // The single-device 电量 card keeps its size: connected
             // accessories turn it into three gauges, which fit the same 168.
             if BatteryShelf.isStatusCard(cfg) {
@@ -1234,6 +1241,7 @@ public enum WidgetCatalog {
         case .progress:
             return cfg.string("layout", default: "bars") == "percentage" ? 58 : 80
         case .battery:
+            if cfg.string("layout", default: "status") == "multi" { return 4 * 62 }
             return Double(BatteryShelf.slotCount(cfg) * 62)
         case .system:
             let metrics = max(1, cfg.strings("metrics", default: ["cpu", "memory"]).count)
