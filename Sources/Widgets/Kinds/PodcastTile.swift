@@ -106,28 +106,14 @@ struct PodcastTile: View {
         }
     }
 
-    /// 这张卡片的节目正在放（或暂停在）某一集。
-    private var isCurrentShow: Bool {
-        guard !context.isPreview, let episode else { return false }
-        return player.isCurrent(episode)
-    }
-
+    /// 封面上不叠东西（正在播放看右边的暂停键；新单集数挂在播放键角上）。
     private func cover(size: CGFloat) -> some View {
         PodcastCover(url: show?.imageURL, size: size, preview: context.isPreview)
-            // 正在播放的跳动小竖条，压在封面左下角，和“正在播放”卡片同一套。
-            .overlay(alignment: .bottomLeading) {
-                if isCurrentShow {
-                    PlayingBarsView(playing: playing, tint: .white, height: size * 0.3,
-                                    visible: ShelfVisibility.shared.cardsOnScreen)
-                        .padding(.horizontal, size * 0.1)
-                        .padding(.vertical, size * 0.08)
-                        .background {
-                            RoundedRectangle(cornerRadius: size * 0.12, style: .continuous)
-                                .fill(.black.opacity(0.35))
-                        }
-                        .padding(size * 0.06)
-                }
-            }
+    }
+
+    /// 播放键加新单集角标。
+    private func playButton(size: CGFloat) -> some View {
+        playGlyph(size: size)
             .overlay(alignment: .topTrailing) {
                 if unheard > 0 {
                     Text(unheard > 9 ? "9+" : "\(unheard)")
@@ -136,13 +122,14 @@ struct PodcastTile: View {
                         .padding(.horizontal, 3.5)
                         .frame(minWidth: 13, minHeight: 13)
                         .background(Capsule().fill(Color(hex: "#FF3B30")))
-                        .offset(x: 4, y: -4)
+                        .offset(x: 6, y: -6)
+                        .allowsHitTesting(false)
                         .accessibilityLabel(tr("\(unheard) 个新单集"))
                 }
             }
     }
 
-    private func playButton(size: CGFloat) -> some View {
+    private func playGlyph(size: CGFloat) -> some View {
         TileGlyph(symbol: playing ? "pause.fill" : "play.fill", size: size,
                   tint: playing ? PodcastCover.accent : WidgetStyle.primary,
                   morphs: true,
@@ -188,32 +175,38 @@ enum PodcastRemote {
 }
 
 /// A show's cover from `PodcastService`'s cache, a microphone until it arrives.
+///
+/// 封面一律按比例完整显示（scaledToFit），四周留一圈安全边距，不裁切、不圆角切掉角上的字，
+/// 浅色深色同一规则；也不在封面上叠任何东西（播放状态、角标放在封面外面）。
+/// 没有封面时是中性灰底加麦克风。
 struct PodcastCover: View {
     var url: URL?
     var size: CGFloat
     var preview: Bool = false
 
-    /// 小宇宙's own turquoise.
+    /// 小宇宙's own turquoise. 卡片上的小进度条还在用；播客面板的强调色改从封面取。
     static let accent = Color(hex: "#25B4E1")
+    /// 封面四周的安全边距，按边长的比例。
+    static let inset: CGFloat = 0.06
 
     var body: some View {
         let image = preview ? nil : PodcastService.shared.image(url)
+        let frame = RoundedRectangle(cornerRadius: size * 0.2, style: .continuous)
         ZStack {
+            frame.fill(Color.panelFill)
             if let image {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)
-                    .aspectRatio(contentMode: .fill)
+                    .scaledToFit()
+                    .padding(max(2, size * Self.inset))
             } else {
-                LinearGradient(colors: [Self.accent, Self.accent.mix(with: .black, by: 0.35)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
                 Image(systemName: "mic.fill")
-                    .font(.system(size: size * 0.42, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: size * 0.4, weight: .semibold))
+                    .foregroundStyle(.panelSecondary)
             }
         }
         .frame(width: size, height: size)
-        .clipShape(.rect(cornerRadius: size * 0.24, style: .continuous))
         .accessibilityHidden(true)
     }
 }

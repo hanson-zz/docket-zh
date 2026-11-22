@@ -1002,6 +1002,17 @@
         }
       }
     },
+    "%@ 个订阅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ subscriptions"
+          }
+        }
+      }
+    },
     "%@ 个议题" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2465,6 +2476,17 @@
         }
       }
     },
+    "切换节目" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch Show"
+          }
+        }
+      }
+    },
     "刘海小岛" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2494,17 +2516,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The helper is starting. The limit is not in effect yet."
-          }
-        }
-      }
-    },
-    "单集" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Episodes"
           }
         }
       }
@@ -2593,6 +2604,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pop"
+          }
+        }
+      }
+    },
+    "在小宇宙打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Xiaoyuzhou"
           }
         }
       }
@@ -2714,6 +2736,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plugged in, battery at %@"
+          }
+        }
+      }
+    },
+    "已收听约 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@%% played"
           }
         }
       }
@@ -3037,17 +3070,6 @@
         }
       }
     },
-    "查看全部（%@）" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show All (%@)"
-          }
-        }
-      }
-    },
     "查看兼容性与诊断" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3110,6 +3132,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Message Island and Notch Island"
+          }
+        }
+      }
+    },
+    "添加订阅…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Subscription..."
           }
         }
       }
@@ -3231,6 +3264,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ shelf files expired"
+          }
+        }
+      }
+    },
+    "章节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapters"
           }
         }
       }
@@ -3484,6 +3528,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You stopped or changed the sound this round. It plays again next round"
+          }
+        }
+      }
+    },
+    "这一集没有章节" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This episode has no chapters"
           }
         }
       }

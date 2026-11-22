@@ -128,14 +128,63 @@ final class PodcastPlayerLookTests: XCTestCase {
     // MARK: 折叠
 
     func testListing() {
-        XCTAssertEqual(PodcastEpisodeListing.visibleCount(total: 10, expanded: false), 3)
+        XCTAssertEqual(PodcastEpisodeListing.collapsedCount, 2)
+        XCTAssertEqual(PodcastEpisodeListing.visibleCount(total: 10, expanded: false), 2)
         XCTAssertEqual(PodcastEpisodeListing.visibleCount(total: 10, expanded: true), 10)
-        XCTAssertEqual(PodcastEpisodeListing.visibleCount(total: 2, expanded: false), 2)
-        XCTAssertEqual(PodcastEpisodeListing.hiddenCount(total: 10, expanded: false), 7)
+        XCTAssertEqual(PodcastEpisodeListing.visibleCount(total: 1, expanded: false), 1)
+        XCTAssertEqual(PodcastEpisodeListing.hiddenCount(total: 10, expanded: false), 8)
         XCTAssertEqual(PodcastEpisodeListing.hiddenCount(total: 10, expanded: true), 0)
-        XCTAssertFalse(PodcastEpisodeListing.needsToggle(total: 3))
-        XCTAssertTrue(PodcastEpisodeListing.needsToggle(total: 4))
+        XCTAssertFalse(PodcastEpisodeListing.needsToggle(total: 2))
+        XCTAssertTrue(PodcastEpisodeListing.needsToggle(total: 3))
         XCTAssertEqual(PodcastEpisodeListing.visibleCount(total: -1, expanded: false), 0)
+    }
+
+    // MARK: 强调色
+
+    /// 扫一圈色相、饱和度和亮度：强调色和面板底色、播放图标和播放键底色的对比度都够 4.5:1，
+    /// 浅色下强调色比底色暗、深色下比底色亮。
+    func testPaletteIsReadableForEveryCoverColour() {
+        for hueStep in 0..<36 {
+            for saturation in [0.15, 0.4, 0.7, 1.0] {
+                for value in [0.25, 0.6, 1.0] {
+                    let cover = PodcastArtTint.rgb(Double(hueStep) / 36, saturation, value)
+                    for dark in [false, true] {
+                        let palette = PodcastPalette.make(cover, dark: dark)
+                        let surface = dark ? PodcastPalette.darkSurface : PodcastPalette.lightSurface
+                        XCTAssertFalse(palette.neutral)
+                        XCTAssertGreaterThanOrEqual(PodcastPalette.contrast(palette.accent, surface), 4.5,
+                                                    "hue \(hueStep) s \(saturation) v \(value) dark \(dark)")
+                        XCTAssertGreaterThanOrEqual(PodcastPalette.contrast(palette.playIcon, palette.playFill), 4.5)
+                        let accent = PodcastCoverColor.luminance(palette.accent)
+                        let ground = PodcastCoverColor.luminance(surface)
+                        XCTAssertTrue(dark ? accent > ground : accent < ground)
+                    }
+                }
+            }
+        }
+    }
+
+    func testPaletteFollowsTheCoverHue() {
+        let green = PodcastPalette.make(ColorCode(red: 0.2, green: 0.7, blue: 0.3), dark: false)
+        let orange = PodcastPalette.make(ColorCode(red: 0.95, green: 0.55, blue: 0.1), dark: false)
+        XCTAssertEqual(PodcastArtTint.hsv(green.accent).0, PodcastArtTint.hsv(ColorCode(red: 0.2, green: 0.7, blue: 0.3)).0,
+                       accuracy: 0.01)
+        XCTAssertNotEqual(green.accent, orange.accent, "换节目就换颜色")
+        XCTAssertNotNil(green.backdrop)
+    }
+
+    func testGreyOrMissingCoverFallsBackToNeutral() {
+        for cover in [nil, ColorCode(red: 0.5, green: 0.5, blue: 0.51), ColorCode(red: 0.95, green: 0.95, blue: 0.95)] {
+            for dark in [false, true] {
+                let palette = PodcastPalette.make(cover, dark: dark)
+                XCTAssertTrue(palette.neutral)
+                XCTAssertNil(palette.backdrop)
+                XCTAssertLessThan(PodcastArtTint.hsv(palette.accent).1, 0.1, "中性色不带色相")
+                let surface = dark ? PodcastPalette.darkSurface : PodcastPalette.lightSurface
+                XCTAssertGreaterThanOrEqual(PodcastPalette.contrast(palette.accent, surface), 4.5)
+                XCTAssertGreaterThanOrEqual(PodcastPalette.contrast(palette.playIcon, palette.playFill), 4.5)
+            }
+        }
     }
 
     // MARK: 日期

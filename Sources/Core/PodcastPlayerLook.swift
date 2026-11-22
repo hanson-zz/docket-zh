@@ -104,6 +104,90 @@ public enum PodcastCoverColor {
     }
 }
 
+// MARK: - 强调色
+
+/// 播客面板的整套强调色：选中胶囊描边、「继续收听」标签、进度条、播放大按钮、「查看全部」、
+/// 单集播放图标和背景氛围，全部从当前封面的主色来，换节目就换颜色，代码里没有固定的色相。
+///
+/// 可读性校正：浅色外观把颜色压暗、深色外观提亮，直到和面板底色的对比度够 4.5:1
+/// （WCAG AA 正文）；播放键的图标和底色之间同样够 4.5:1。灰白、低饱和封面和没封面时
+/// 回退中性灰（`neutral` 为 true）。
+public struct PodcastPalette: Equatable, Sendable {
+    /// 文字、细线、进度条用的强调色，和面板底色对比度至少 `minimumContrast`。
+    public var accent: ColorCode
+    /// 播放大按钮的底色和上面的图标色。
+    public var playFill: ColorCode
+    public var playIcon: ColorCode
+    /// 背后的氛围渐变，没主色时 nil。
+    public var backdrop: PodcastCoverColor.Backdrop?
+    /// 没有可用的封面色，用的是中性灰。
+    public var neutral: Bool
+
+    public static let minimumContrast = 4.5
+    /// 拿来校正的面板底色：浅色玻璃接近白，深色玻璃接近 #1C1C1E。
+    public static let lightSurface = ColorCode(red: 0.95, green: 0.95, blue: 0.96)
+    public static let darkSurface = ColorCode(red: 0.12, green: 0.12, blue: 0.13)
+    /// 强调色的饱和度范围：太淡看不出颜色，太艳刺眼。
+    public static let saturationRange = 0.4...0.8
+
+    public static func make(_ cover: ColorCode?, dark: Bool) -> PodcastPalette {
+        let surface = dark ? darkSurface : lightSurface
+        guard let cover else { return neutralPalette(dark: dark) }
+        let (h, s0, _) = PodcastArtTint.hsv(cover)
+        guard s0 >= PodcastCoverColor.greyThreshold else { return neutralPalette(dark: dark) }
+        var s = min(max(s0, saturationRange.lowerBound), saturationRange.upperBound)
+        var accent: ColorCode
+        if dark {
+            // 提亮：先把亮度推到顶，还不够就减饱和度（越接近白越亮）。
+            var v = 0.85
+            accent = PodcastArtTint.rgb(h, s, v)
+            while contrast(accent, surface) < minimumContrast {
+                if v < 1 { v = min(1, v + 0.05) } else if s > 0 { s = max(0, s - 0.05) } else { break }
+                accent = PodcastArtTint.rgb(h, s, v)
+            }
+        } else {
+            // 压暗：亮度一步步往下降。
+            var v = 0.75
+            accent = PodcastArtTint.rgb(h, s, v)
+            while contrast(accent, surface) < minimumContrast, v > 0.05 {
+                v -= 0.04
+                accent = PodcastArtTint.rgb(h, s, v)
+            }
+        }
+        let playFill: ColorCode
+        let playIcon: ColorCode
+        if dark {
+            // 深色：接近白、带一点封面色的圆，图标是同色相的深色。
+            playFill = PodcastArtTint.rgb(h, min(s0, 0.16), 0.97)
+            playIcon = PodcastArtTint.rgb(h, min(max(s0, 0.5), 0.8), 0.24)
+        } else {
+            // 浅色：压暗过的强调色做底，白色图标。
+            playFill = accent
+            playIcon = ColorCode(red: 1, green: 1, blue: 1)
+        }
+        return PodcastPalette(accent: accent, playFill: playFill, playIcon: playIcon,
+                              backdrop: PodcastCoverColor.backdrop(cover, dark: dark), neutral: false)
+    }
+
+    public static func neutralPalette(dark: Bool) -> PodcastPalette {
+        dark
+            ? PodcastPalette(accent: ColorCode(red: 0.86, green: 0.86, blue: 0.88),
+                             playFill: ColorCode(red: 0.95, green: 0.95, blue: 0.96),
+                             playIcon: ColorCode(red: 0.11, green: 0.11, blue: 0.12),
+                             backdrop: nil, neutral: true)
+            : PodcastPalette(accent: ColorCode(red: 0.28, green: 0.28, blue: 0.30),
+                             playFill: ColorCode(red: 0.17, green: 0.17, blue: 0.19),
+                             playIcon: ColorCode(red: 1, green: 1, blue: 1),
+                             backdrop: nil, neutral: true)
+    }
+
+    /// WCAG 对比度，1...21。
+    public static func contrast(_ a: ColorCode, _ b: ColorCode) -> Double {
+        let la = PodcastCoverColor.luminance(a), lb = PodcastCoverColor.luminance(b)
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+    }
+}
+
 // MARK: - 单集状态
 
 /// 列表里一集显示的状态：正在播放、未听、收听中（带百分比）、已听完。
@@ -190,9 +274,9 @@ public enum PodcastEpisodeFilter: String, CaseIterable, Sendable {
 
 // MARK: - 列表折叠
 
-/// 最近单集默认只露几条，其余点「查看全部」展开，在列表里滚动。
+/// 最近单集默认只露两条，其余点「查看全部」展开，在列表里滚动。
 public enum PodcastEpisodeListing {
-    public static let collapsedCount = 3
+    public static let collapsedCount = 2
     /// 展开后列表最高这么多点，再多在里面滚。
     public static let expandedMaxHeight: Double = 280
 
