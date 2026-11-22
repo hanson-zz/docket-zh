@@ -87,10 +87,7 @@ struct DockItemView: View {
         if liveOn(.finder), LiveFinderPandaArt.available {
             LiveFinderPanda(side: geo.icon)
         } else if liveOn(.calendar) {
-            LiveCalendarIcon(side: geo.icon) {
-                icon
-                    .frame(width: geo.icon, height: geo.icon)
-            }
+            LiveCalendarIcon(side: geo.icon)
         } else if let browser = browserApp {
             icon
                 .frame(width: geo.icon, height: geo.icon)

@@ -11,9 +11,8 @@ import AppKit
 /// 最长 60 秒一次，低电量模式不追像素）。换到下一场时先轻轻放大一下，再整枚图标在屏幕平面上
 /// 顺时针转一整圈（0.9 秒，转到 180° 倒立时换成新场次），同一场绝不重复转；减弱动态效果时直接换。
 /// 页眉的星期和中间的日期是图标图案，跟图标一起缩放；倒计时胶囊的字不小于 13pt，放不下就换短的写法。
-struct LiveCalendarIcon<Fallback: View>: View {
+struct LiveCalendarIcon: View {
     var side: CGFloat
-    @ViewBuilder var fallback: () -> Fallback
 
     @AppStorage(LiveCalendar.leadKey) private var leadStored = LiveCalendar.defaultLeadMinutes
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -38,7 +37,7 @@ struct LiveCalendarIcon<Fallback: View>: View {
         let shown = shownID.flatMap { id in monitor.events.first { $0.id == id } } ?? target
         Group {
             // 没有日历权限、今天没有要倒数的日程时也画码头的日历面（红页眉星期 + 大号日期），
-            // 只是不画液面和倒计时胶囊；系统原图标（`fallback`）不再用来回退（用户 11-22 定）。
+            // 只是不画液面和倒计时胶囊；不再回退成系统原图标（用户 11-22 定）。
             face(target != nil ? shown : nil)
                 .scaleEffect(emphasized ? 1.07 : 1)
                 .rotationEffect(.degrees(angle))
