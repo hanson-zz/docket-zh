@@ -246,8 +246,8 @@ final class RadioPlayer {
         return playlist
     }
 
-    /// 能不能换台：收藏或播放列表里不止一台。
-    var canSwitchStation: Bool { playlist.count > 1 || owner != nil }
+    /// 能不能换台：换台按的那份列表（`switchList`）里不止一台；只收藏了一台时上一台、下一台是灰的。
+    var canSwitchStation: Bool { switchList.count > 1 }
 
     /// 暂停后接着放刚才那一台（刘海小岛的播放钮）。
     func resume() {
