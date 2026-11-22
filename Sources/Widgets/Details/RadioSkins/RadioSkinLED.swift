@@ -175,30 +175,32 @@ struct RadioSkinLEDPanel: RadioSkinPanelFace {
     }
 
     var body: some View {
-        // 黑色外壳里的 LED 窗和预设键是机身，两版都是黑的，用暗色调色板。
-        let dark = LEDLook.dark(model)
         VStack(alignment: .leading, spacing: 12) {
-            RadioSkinHeader(model: model)
-            VStack(spacing: 10) {
-                LEDScreen(model: dark)
-                    .frame(height: 118)
-                LEDPresetRow(model: dark)
-            }
-            .padding(10)
-            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(LEDLook.chassis))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8))
-            .padding(.bottom, 2)
-            RadioSkinReadout(model: model)
+            RadioSkinLEDFace(model: model)
             RadioSkinTransport(model: model)
                 .background(
                     Circle()
                         .fill(LEDLook.lamp.opacity(model.playing ? 0.30 : 0.12))
-                        .frame(width: 60, height: 60)
+                        .frame(width: 54, height: 54)
                         .blur(radius: 9)
                         .allowsHitTesting(false))
             RadioSkinVolume(model: model)
         }
+    }
+}
+
+/// 琥珀点阵的主视觉（紧凑布局）：黑色外壳里的点阵窗，左边点阵频道号，右边频谱。
+/// 外壳和点阵窗两版都是黑的（机身），用暗色调色板；比原来矮，屏下预设键去掉了（换台用走带键和收藏列表）。
+struct RadioSkinLEDFace: View {
+    var model: RadioSkinModel
+
+    var body: some View {
+        LEDScreen(model: LEDLook.dark(model))
+            .frame(height: 104)
+            .padding(8)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(LEDLook.chassis))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.10), lineWidth: 0.8))
     }
 }
 

@@ -7,8 +7,8 @@ import SwiftUI
 // （面板按 1.25 倍、卡片按 264 × 62 画，卡片落到 212 × 62 时按比例收窄）。
 //
 // 只改这个文件。数据和回调都在 `RadioSkinModel`（见 RadioSkinKit.swift）。
-// 面板固定用暗色版：白色磨砂玻璃叠层、淡金渐变大字只在深底上看得清，所以这套皮肤的面板
-// （连同下半截）整张保持暗色（RadioDetail 里 `darkOnlySkin`）；卡片跟扩展栏深浅走 `model.tone`。
+// 面板和卡片都跟浅色/深色走 `model.tone`：深色是烟灰底上的白色磨砂玻璃，浅色是暖白底上
+// 更白的玻璃和深色描边（照效果图的烟晶玻璃浅、深两版）。大号频道号挪到了统一头部。
 //
 // 动画：播放中光斑缓慢漂移、电平小柱起伏，都用暂停得了的 TimelineView（低帧率），
 // 暂停、连接中、预览、打开“减少动态效果”时停住不跑。光斑最浓 30%，不用蓝光。
@@ -53,21 +53,72 @@ struct RadioSkinSmokePanel: RadioSkinPanelFace {
 
     /// 整张面板卡片的底：暗色底上两团被玻璃压住的暖色光斑。
     static func backdrop(_ model: RadioSkinModel) -> some View {
-        RadioSkinSmokeBackdrop(model: Smoke.dark(model))
+        RadioSkinSmokeBackdrop(model: model)
     }
 
     var body: some View {
-        let model = Smoke.dark(self.model)
-        VStack(alignment: .leading, spacing: 14) {
-            RadioSkinHeader(model: model)
-                .padding(.bottom, -2)
-            RadioSkinSmokeHero(model: model)
-            RadioSkinReadout(model: model)
-            RadioSkinSmokeTransport(model: model)
-                .padding(.vertical, 2)
-            RadioSkinSmokeVolume(model: model)
+        VStack(alignment: .leading, spacing: 12) {
+            RadioSkinSmokeFace(model: model)
+            if model.tone == .dark {
+                RadioSkinSmokeTransport(model: model)
+                RadioSkinSmokeVolume(model: model)
+            } else {
+                RadioSkinTransport(model: model)
+                RadioSkinVolume(model: model)
+            }
         }
-        .environment(\.colorScheme, .dark)
+    }
+}
+
+/// 烟晶玻璃的主视觉（紧凑布局）：一块磨砂玻璃，上面电平小柱和小熊猫贴纸，下面玻璃频道条，
+/// 比原来矮约两成。
+struct RadioSkinSmokeFace: View {
+    var model: RadioSkinModel
+
+    var body: some View {
+        let light = model.tone == .light
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .bottom, spacing: 8) {
+                RadioSkinSmokeLevels(model: model)
+                Spacer(minLength: 0)
+                sticker
+            }
+            .padding(.horizontal, 6)
+            RadioSkinSmokeStrip(model: model)
+        }
+        .padding(.top, 12)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(LinearGradient(colors: light ? [.white.opacity(0.72), .white.opacity(0.36)]
+                                                   : [.white.opacity(0.16), .white.opacity(0.04)],
+                                     startPoint: .topLeading, endPoint: UnitPoint(x: 0.3, y: 1)))
+                .shadow(color: .black.opacity(light ? 0.10 : 0.35), radius: 10, y: 4)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(light ? model.colors.text.opacity(0.12) : Color.white.opacity(0.28), lineWidth: 1)
+        }
+    }
+
+    /// 玻璃右上角的小熊猫贴纸；播放时头部已经有一只在听的小熊猫，贴纸先收起。
+    @ViewBuilder private var sticker: some View {
+        if model.panda == nil, let image = PandaArt.original("pet-panda-idle") {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 20, height: 26)
+                .padding(.horizontal, 3)
+                .padding(.vertical, 2.5)
+                .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(Smoke.stickerEdge))
+                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .strokeBorder(.black.opacity(0.25), lineWidth: 0.6))
+                .rotationEffect(.degrees(9))
+                .accessibilityHidden(true)
+        }
     }
 }
 
@@ -79,7 +130,7 @@ struct RadioSkinSmokeBackdrop: View {
     var body: some View {
         let live = Smoke.animates(model, reduceMotion: reduceMotion)
         ZStack(alignment: .topLeading) {
-            Rectangle().fill(model.colors.background)
+            Rectangle().fill(model.colors.background.opacity(0.84))
             TimelineView(.animation(minimumInterval: 1.0 / 12, paused: !live)) { context in
                 let t = live ? context.date.timeIntervalSinceReferenceDate : 0
                 ZStack(alignment: .topLeading) {
@@ -207,7 +258,7 @@ private struct RadioSkinSmokeLevels: View {
             HStack(alignment: .bottom, spacing: 4) {
                 ForEach(Smoke.levels.indices, id: \.self) { i in
                     Capsule()
-                        .fill(i % 2 == 1 ? Smoke.numberTop : Smoke.numberBottom)
+                        .fill(i % 2 == 1 ? (model.tone == .light ? Smoke.champagne : Smoke.numberTop) : Smoke.numberBottom)
                         .opacity(lit ? 0.85 : 0.4)
                         .frame(width: 5, height: 8 + height(i, t: t, live: live) * 46)
                 }
@@ -250,10 +301,11 @@ private struct RadioSkinSmokeStrip: View {
         }
         .padding(.horizontal, 8)
         .frame(maxWidth: .infinity)
-        .frame(height: 46)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(.black.opacity(0.22)))
+        .frame(height: 44)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .fill(model.tone == .light ? colors.text.opacity(0.06) : Color.black.opacity(0.22)))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .strokeBorder(.white.opacity(0.16), lineWidth: 0.8))
+            .strokeBorder(model.tone == .light ? colors.text.opacity(0.1) : Color.white.opacity(0.16), lineWidth: 0.8))
     }
 
     private func pill(_ offset: Int, name: String) -> some View {
@@ -307,7 +359,7 @@ private struct RadioSkinSmokeTransport: View {
 
     private func key(_ symbol: String, main: Bool, label: String, action: @escaping () -> Void) -> some View {
         let colors = model.colors
-        let size: CGFloat = main ? 54 : 38
+        let size: CGFloat = main ? 48 : 34
         return Button(action: action) {
             Image(systemName: symbol)
                 .playPauseMorph(symbol, enabled: main)

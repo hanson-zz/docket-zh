@@ -58,18 +58,23 @@ struct RadioSkinPorcelainPanel: RadioSkinPanelFace {
     var body: some View {
         let shade = PorcelainShade(model.tone, palette: model.palette)
         VStack(alignment: .leading, spacing: 0) {
-            RadioSkinHeader(model: model)
-            PorcelainDial(model: model, shade: shade)
-                .frame(maxWidth: .infinity)
-                .frame(height: PorcelainDial.height)
-                .padding(.top, 8)
-            RadioSkinReadout(model: model)
-                .padding(.top, 12)
+            RadioSkinPorcelainFace(model: model)
             PorcelainTransport(model: model, shade: shade)
-                .padding(.top, 14)
+                .padding(.top, 8)
             PorcelainVolume(model: model, shade: shade)
-                .padding(.top, 14)
+                .padding(.top, 10)
         }
+    }
+}
+
+/// 白瓷转盘的主视觉（紧凑布局）：转盘比原来小约两成，拖动旋转换台。
+struct RadioSkinPorcelainFace: View {
+    var model: RadioSkinModel
+
+    var body: some View {
+        PorcelainDial(model: model, shade: PorcelainShade(model.tone, palette: model.palette))
+            .frame(maxWidth: .infinity)
+            .frame(height: PorcelainDial.height)
     }
 }
 
@@ -78,13 +83,13 @@ private struct PorcelainDial: View {
     var model: RadioSkinModel
     var shade: PorcelainShade
 
-    nonisolated static let height: CGFloat = 184
-    /// 外盘半径。
-    nonisolated static let radius: CGFloat = 88
+    nonisolated static let height: CGFloat = 152
+    /// 外盘半径（紧凑布局，原来 88）。
+    nonisolated static let radius: CGFloat = 71
     /// 台位所在的半径。
-    nonisolated static let slotRadius: CGFloat = radius - 23
+    nonisolated static let slotRadius: CGFloat = radius - 19
     /// 读数窗半径。
-    nonisolated static let windowRadius: CGFloat = 52
+    nonisolated static let windowRadius: CGFloat = 40
     /// 拖过两头时最多再转多少度（松手弹回最近的台）。
     nonisolated static let overshoot: Double = 18
 
@@ -276,7 +281,7 @@ private struct PorcelainDial: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(colors.secondary)
                 Text(verbatim: model.station == nil ? "--" : RadioDial.channelText(shownIndex))
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(colors.text)
                     .contentTransition(.numericText())
@@ -370,12 +375,12 @@ private struct PorcelainTransport: View {
                 .disabled(!model.canStep)
             Spacer(minLength: 0)
         }
-        .frame(height: 62)
+        .frame(height: 56)
     }
 
     private func key(_ symbol: String, main: Bool, label: String, action: @escaping () -> Void) -> some View {
         let colors = model.colors
-        let size: CGFloat = main ? 54 : 38
+        let size: CGFloat = main ? 48 : 34
         let spread: CGFloat = main ? 9 : 7
         return Button(action: action) {
             ZStack {

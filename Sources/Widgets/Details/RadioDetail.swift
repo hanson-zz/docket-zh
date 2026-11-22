@@ -12,9 +12,15 @@ import SwiftUI
 /// 没记过时（新用户）默认打开“我的收藏”，其余收起；再点一下打开的那页就收起，
 /// 打开哪页（或都收起）记住。
 ///
-/// 收藏上面一排“添加电台”（贴地址或导入 .m3u / .m3u8 / .pls，见
-/// `RadioAddFlow`）和“检查”（试连收藏，见 `RadioStationCheck`）。有电台所有
+/// 收藏上面一行“我的收藏 · N 个电台”，右边“检查”（试连收藏，见 `RadioStationCheck`）
+/// 和“添加电台”（贴地址或导入 .m3u / .m3u8 / .pls，见 `RadioAddFlow`）。有电台所有
 /// 地址都连不上时顶部出一条可关闭的提示，点开列出来，确认后才删。
+///
+/// 紧凑布局（照 files/uploads/radio-mock 的 CH 03 效果图）：九套外观共用一个头部
+/// （见 RadioSkins/RadioPanelChrome.swift），下面是各外观自己的主视觉、走带键和音量，
+/// 再下面分段和收藏列表。点外观名胶囊打开外观画廊。面板高度交给通用容器
+/// （`DetailPanelFit`）：不自设高度、不另套滚动，内容多时在面板里滚动。
+/// 九套外观都有浅色、深色两版，跟着面板窗口的外观走。
 struct RadioDetail: View {
     /// 颜色面板里选的强调色，没选过是 nil，用原来的颜色（见 `PanelTint`）。
     @Environment(\.panelTint) private var panelTint
@@ -66,9 +72,6 @@ struct RadioDetail: View {
     /// The slider's own value while dragging, so the profile is saved once
     /// at the end of the drag rather than sixty times during it.
     @State private var dragging: Double?
-    /// 收藏行实际高度，见 `favouriteRowHeight`。
-    @State private var classicRowHeight: CGFloat?
-    @State private var retroRowHeight: CGFloat?
     /// 正在改名的收藏和输入框里的字。
     @State private var renamingID: String?
     @State private var renameText = ""
@@ -77,6 +80,10 @@ struct RadioDetail: View {
     @State private var confirmingDelete = false
     /// 关掉提示时记下的那一批（见 `RadioHealth.dismissToken`）。
     @State private var dismissedHealth: String?
+    /// 外观画廊开着。每次打开面板都是收起的。
+    @State private var galleryOpen = false
+    /// 内容区宽度，画廊按它算一排几格。
+    @State private var contentWidth: CGFloat = 308
 
     private var stations: [RadioStation] {
         context.isPreview ? RadioDial.presets : RadioDial.stations(instance.config)
@@ -108,44 +115,28 @@ struct RadioDetail: View {
         ProLicenseGate.radioSkin(config: instance.config,
                                  unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
     }
-    private var retro: Bool { skin.isRetro }
-    /// 五款新外观（烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺），上半部分画在
-    /// RadioSkins/ 下各自的文件里。
-    private var modern: Bool { skin.isModern }
     /// 面板窗口的浅色/深色（设置里的外观，或这张卡片「外观」里选的）。
     @Environment(\.colorScheme) private var scheme
-    /// 只有暗色设计的皮肤：三款复古（木纹、晶体管、卡座）和烟晶，整张面板保持暗色。
-    /// 经典（默认）和其余新外观跟着浅色/深色走。
-    private var darkOnlySkin: Bool { retro || skin == .smoke }
-    /// 这张面板最后画成深色。
-    private var darkPanel: Bool { darkOnlySkin || scheme == .dark }
-    /// 新外观用哪一版配色：跟面板深浅走，下半截收藏列表也跟着画。
-    private var tone: RadioSkinTone { darkPanel ? .dark : .light }
-    /// 新外观这一版的配色，经典和复古皮肤是 nil。
-    private var palette: RadioSkinPalette? { RadioSkinPalette.palette(skin, tone: tone) }
-    /// 面板里的字色：新外观跟调色板（浅色版是深色字），经典跟外观（浅色深字、深色白字），
-    /// 复古皮肤整张保持暗色，解析出来是白字。
-    private var fg: Color { palette.map { Color(code: $0.text) } ?? .panelPrimary }
-
-    /// 复古皮肤用自己的琥珀、红、VFD 绿；新外观跟调色板；经典照旧跟颜色面板走。
-    private var accent: Color {
-        if let palette { return Color(code: palette.accent) }
-        return retro ? skin.accent : panelTint.accent(or: RadioIcon.glow)
+    /// 九套外观都跟面板的浅色/深色走（原来复古皮肤和烟晶整张固定深色，现在都有浅色版）。
+    private var tone: RadioSkinTone { scheme == .dark ? .dark : .light }
+    private var darkPanel: Bool { tone == .dark }
+    /// 这套外观这一版的配色（`RadioSkinPalette.look`）。经典调谐在颜色面板里选了颜色时，
+    /// 强调色跟主题色走，压在底上的强调小字按面板深浅调到 4.5:1。
+    private var palette: RadioSkinPalette {
+        var look = RadioSkinPalette.look(skin, tone: tone)
+        if skin == .classic, let panelTint, let code = WidgetTintPicker.code(panelTint.color) {
+            look.accent = code
+            look.accentText = WidgetTint.readable(code, dark: darkPanel, minimum: 4.5)
+            if let ink = WidgetTintPicker.code(panelTint.ink) { look.ink = ink }
+        }
+        return look
     }
-    /// 压在面板底上的小字用的强调色：晶体管的红换浅一档；经典跟主题色时
-    /// 按面板深浅调到 4.5:1（深色调亮、浅色压深），本来就够的颜色原样用。
-    private var accentText: Color {
-        if let palette { return Color(code: palette.accentText) }
-        if retro { return skin.textAccent }
-        guard let code = WidgetTintPicker.code(accent) else { return accent }
-        return Color(code: WidgetTint.readable(code, dark: darkPanel, minimum: 4.5))
-    }
-    /// 收藏/搜索切换选中那一段：复古皮肤是皮肤强调色，经典跟主题色；字深色。
-    private var segmentInk: Color {
-        if let palette { return Color(code: palette.ink) }
-        return retro ? skin.ink : panelTint.ink(or: RadioRetroInk.inkMetal)
-    }
-    private static let needle = Color(hex: "#FF453A")
+    private var colors: RadioSkinColors { RadioSkinColors(palette) }
+    /// 面板里的字色、强调色、压在底上的强调小字、实心强调上的字，都从调色板取。
+    private var fg: Color { colors.text }
+    private var accent: Color { colors.accent }
+    private var accentText: Color { colors.accentText }
+    private var segmentInk: Color { colors.ink }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { tick in
@@ -168,30 +159,21 @@ struct RadioDetail: View {
     }
 
     private func content(now: Date) -> some View {
-        DetailCard(forceDark: darkOnlySkin) {
-            if let model = skinModel {
-                RadioModernBackdrop(model: model)
-            } else {
-                MeshBackdrop(color: accent)
-            }
+        let model = skinModel
+        return DetailCard {
+            RadioModernBackdrop(model: model)
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 if showsHealthBanner { healthBanner }
-                if let model = skinModel {
-                    RadioModernPanel(model: model)
-                } else if retro {
-                    retroTop
-                } else {
-                    header
-                    readout
-                    RadioArcDial(count: stations.count, index: index, accent: accent, needle: Self.needle, ink: fg) { target in
-                        guard !context.isPreview else { return }
-                        RadioRemote.tune(instance, to: target)
-                    }
-                    .frame(height: 92)
-                    transport
-                    volumeRow
+                RadioPanelTopBar(model: model)
+                RadioCompactReadout(model: model, galleryOpen: galleryOpen,
+                                    onSkinTap: context.isPreview ? nil : { toggleGallery() })
+                if galleryOpen {
+                    RadioSkinGallery(current: skin, preview: { previewModel($0) }, colors: colors, width: contentWidth,
+                                     onPick: { pick($0) })
+                        .transition(.opacity)
                 }
+                RadioModernPanel(model: model)
                 tabSwitch(now: now)
                 switch tab {
                 case .favourites?: favourites
@@ -205,25 +187,61 @@ struct RadioDetail: View {
                         Text(RadioBrowser.attribution)
                         Image(systemName: "arrow.up.right")
                     }
-                    .font(.system(size: 12))
+                    .font(.system(size: 13))
                     .foregroundStyle(fg.opacity(0.62))
                 }
                 .buttonStyle(.plain)
             }
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.width
+            } action: { width in
+                if width > 1, abs(width - contentWidth) > 0.5 { contentWidth = width }
+            }
         }
+    }
+
+    // MARK: Skin gallery
+
+    private func toggleGallery() {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { galleryOpen.toggle() }
+    }
+
+    /// 选一套外观：Pro 外观没解锁时弹付费墙，不改配置；只写 `skin`（存的值不变）。
+    private func pick(_ choice: RadioSkin) {
+        guard !context.isPreview else { return }
+        let overrides: [String: WidgetConfig.Value] = [RadioSkin.key: .string(choice.rawValue)]
+        guard ProLicenseGate.canChoose(.radio, overrides, unlocked: licenseUnlocked || supporterUnlocked) else {
+            PaywallWindow.shared.show()
+            return
+        }
+        if choice != RadioSkin.stored(instance.config) {
+            save { $0.set(RadioSkin.key, .string(choice.rawValue)) }
+        }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { galleryOpen = false }
+    }
+
+    /// 画廊缩略图用的数据：同一份收藏（没有收藏时用预置电台），预览模式，回调什么也不做。
+    private func previewModel(_ look: RadioSkin) -> RadioSkinModel {
+        let shown = stations.isEmpty ? RadioDial.presets : stations
+        return RadioSkinModel(
+            skin: look, tone: tone, palette: RadioSkinPalette.look(look, tone: tone), stations: shown,
+            index: stations.isEmpty ? 0 : index, playing: true, buffering: false,
+            status: tr("正在收听"), detail: "", detailIsProblem: false, caption: "", volume: volume,
+            isPreview: true, panda: nil,
+            onTune: { _ in }, onPrevious: {}, onNext: {}, onToggle: {}, onVolume: { _ in }, onVolumeEnd: {})
     }
 
     // MARK: New looks
 
-    /// 交给新外观的数据和回调（见 RadioSkinKit.swift），经典和复古皮肤是 nil。
-    private var skinModel: RadioSkinModel? {
-        guard modern, let palette else { return nil }
-        return RadioSkinModel(
+    /// 交给外观的数据和回调（见 RadioSkinKit.swift），九套都走这里。
+    private var skinModel: RadioSkinModel {
+        RadioSkinModel(
             skin: skin, tone: tone, palette: palette, stations: stations, index: index,
             playing: playing, buffering: !context.isPreview && playing && player.isBuffering,
-            status: statusText, detail: retroSubline,
+            status: statusText, detail: headerDetail,
             detailIsProblem: player.problem != nil && playing && !context.isPreview,
             caption: statusText, volume: volume, isPreview: context.isPreview, panda: pandaPose,
+            streamLine: RadioPanelReadout.streamLine(station) ?? "",
             onTune: { target in
                 guard !context.isPreview else { return }
                 RadioRemote.tune(instance, to: target)
@@ -315,101 +333,7 @@ struct RadioDetail: View {
         }
     }
 
-    // MARK: Retro skins
-
-    /// 复古皮肤的上半部分：头一行、机身、大字台名、走带键、音量。
-    @ViewBuilder private var retroTop: some View {
-        retroHeader
-        RadioRetroFace(skin: skin, count: stations.count, index: index, playing: playing, volume: volume,
-                       stationName: station?.name ?? tr("还没有电台"), animated: !context.isPreview,
-                       onTune: { target in
-                           guard !context.isPreview else { return }
-                           RadioRemote.tune(instance, to: target)
-                       },
-                       onNext: {
-                           guard !context.isPreview, stations.count > 1 else { return }
-                           RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
-                       })
-        .frame(maxWidth: .infinity, alignment: .center)
-        // 台名右边的空位：播放时小熊猫戴耳机在听（40pt，不高过台名两行，不碰上面机身的指针刻度），
-        // 暂停、停止不画。复古皮肤整张暗色，小熊猫自带毛色，暗底上看得清。
-        HStack(alignment: .center, spacing: 8) {
-            RadioRetroReadout(name: station?.name ?? tr("还没有电台"), detail: retroSubline,
-                              detailColor: player.problem != nil && playing && !context.isPreview
-                                  ? accentText : fg.opacity(0.6))
-            if let pose = pandaPose {
-                PandaStateView(pose: pose, size: PandaStage.regular.side)
-                    .transition(.opacity)
-            }
-        }
-        .animation(pandaFade, value: pandaPose)
-        RadioRetroTransport(skin: skin, playing: playing, canPlay: station != nil, canStep: stations.count > 1,
-                            onPrevious: {
-                                guard !context.isPreview else { return }
-                                RadioRemote.tune(instance, to: RadioDial.previous(index, count: stations.count))
-                            },
-                            onToggle: {
-                                guard !context.isPreview, let station else { return }
-                                player.toggle(station, volume: volume, stations: stations, owner: instance.id)
-                            },
-                            onNext: {
-                                guard !context.isPreview else { return }
-                                RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
-                            })
-        RadioRetroVolume(skin: skin, value: volume, enabled: !context.isPreview,
-                         onChange: { value in
-                             dragging = value
-                             player.setVolume(value)
-                         },
-                         onEnd: {
-                             if let value = dragging {
-                                 save { $0.set("volume", .number(value.rounded())) }
-                                 dragging = nil
-                             }
-                         })
-    }
-
-    private var retroHeader: some View {
-        HStack(spacing: 6) {
-            Text("网络电台")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(fg.opacity(0.72))
-            Spacer()
-            Circle()
-                .fill(playing ? accent : fg.opacity(0.35))
-                .frame(width: 6.4, height: 6.4)
-            Text(statusText)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(fg.opacity(playing ? 0.88 : 0.55))
-        }
-    }
-
-    /// “MP3 · 64 kbps · 频道 03 / 05”；播放中有问题或有节目名时换成那一句。
-    private var retroSubline: String {
-        guard let station else { return tr("在“搜索电台”里找一个，或粘贴串流地址") }
-        if !context.isPreview, playing {
-            if let problem = player.problem { return problem }
-            if let title = player.nowTitle { return tr("正在播放：\(title)") }
-        }
-        return "\(station.detail) · \(RadioDial.channelOfTotal(index, count: stations.count))"
-    }
-
     // MARK: Readout
-
-    private var header: some View {
-        HStack(spacing: 6) {
-            Text("网络电台")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(fg.opacity(0.72))
-            Spacer()
-            if playing {
-                RadioBars(active: !context.isPreview, color: accent, barWidth: 2, height: 10)
-            }
-            Text(statusText)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(fg.opacity(playing ? 0.88 : 0.62))
-        }
-    }
 
     private var statusText: String {
         if context.isPreview { return tr("正在收听") }
@@ -418,144 +342,17 @@ struct RadioDetail: View {
         return tr("正在收听")
     }
 
-    private var readout: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    HStack(spacing: 0) {
-                        Text("0").foregroundStyle(fg.opacity(0.3))
-                        Text(station.map { _ in RadioDial.channelText(index) } ?? "--")
-                            .foregroundStyle(fg)
-                            .contentTransition(.numericText())
-                            .animation(.snappy, value: index)
-                    }
-                    .font(.system(size: 54, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    // CH 和编码是装饰性角标，13pt 等宽，两行叠在大数字旁边。
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("CH")
-                        Text(codecBadge)
-                    }
-                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(accentText)
-                    .fixedSize()
-                }
-                Text(station?.name ?? tr("还没有电台"))
-                    .font(.system(size: 19, weight: .semibold))
-                    .foregroundStyle(fg)
-                    .lineLimit(1)
-                    .minimumScaleFactor(13.0 / 19.0)
-                // 第二行 13pt，长的（连接出错、节目名）折到两行，不缩字。
-                Text(subline)
-                    .font(.system(size: 13))
-                    .foregroundStyle(player.problem != nil && playing ? accentText : fg.opacity(0.65))
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-            // 右边 64pt 那格：播放时换成戴耳机在听的小熊猫，暂停、停止回到收音机图标，大小不变不跳。
-            ZStack {
-                if let pose = pandaPose {
-                    PandaStateView(pose: pose, size: 64)
-                        .transition(.opacity)
-                } else {
-                    RadioIcon(size: 64, playing: playing, animated: !context.isPreview)
-                        .transition(.opacity)
-                }
-            }
-            .frame(width: 64, height: 64)
-            .animation(pandaFade, value: pandaPose)
-        }
-    }
-
-    private var codecBadge: String {
-        guard let station else { return "" }
-        let codec = station.codec.uppercased()
-        if !codec.isEmpty, codec != "UNKNOWN" { return String(codec.prefix(4)) }
-        return station.url.lowercased().contains(".m3u8") ? "HLS" : "FM"
-    }
-
-    private var subline: String {
+    /// 头部台名下面那一行：“HLS · 网络直播”；播放中出错或有节目名时换成那一句。
+    private var headerDetail: String {
         guard let station else { return tr("在“搜索电台”里找一个，或粘贴串流地址") }
         if !context.isPreview, playing {
             if let problem = player.problem { return problem }
             if let title = player.nowTitle { return tr("正在播放：\(title)") }
         }
-        return station.detail
+        return RadioPanelReadout.streamLine(station) ?? station.detail
     }
 
-    // MARK: Controls
-
-    private var transport: some View {
-        HStack(spacing: 22) {
-            Spacer()
-            roundButton("backward.end.fill", size: 34, label: tr("上一个电台")) {
-                RadioRemote.tune(instance, to: RadioDial.previous(index, count: stations.count))
-            }
-            .disabled(stations.count < 2)
-            roundButton(playing ? "pause.fill" : "play.fill", size: 48, label: playing ? tr("暂停") : tr("收听"),
-                        filled: true) {
-                if let station { player.toggle(station, volume: volume, stations: stations, owner: instance.id) }
-            }
-            .disabled(station == nil)
-            roundButton("forward.end.fill", size: 34, label: tr("下一个电台")) {
-                RadioRemote.tune(instance, to: RadioDial.next(index, count: stations.count))
-            }
-            .disabled(stations.count < 2)
-            Spacer()
-        }
-    }
-
-    private func roundButton(_ symbol: String, size: CGFloat, label: String, filled: Bool = false,
-                             action: @escaping () -> Void) -> some View {
-        Button {
-            guard !context.isPreview else { return }
-            action()
-        } label: {
-            Image(systemName: symbol)
-                .playPauseMorph(symbol)
-                .font(.system(size: size * 0.36, weight: .semibold))
-                .foregroundStyle(fg)
-                .frame(width: size, height: size)
-                .background(Circle().fill(fg.opacity(filled ? 0.2 : 0.08)))
-                .overlay(Circle().strokeBorder(fg.opacity(filled ? 0.3 : 0.12), lineWidth: 0.5))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .help(label)
-        .accessibilityLabel(label)
-    }
-
-    private var volumeRow: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "speaker.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(fg.opacity(0.6))
-            Slider(value: Binding(
-                get: { volume },
-                set: { value in
-                    dragging = value
-                    if !context.isPreview { player.setVolume(value) }
-                }), in: 0...100, onEditingChanged: { editing in
-                    if !editing, let value = dragging {
-                        save { $0.set("volume", .number(value.rounded())) }
-                        dragging = nil
-                    }
-                })
-                .controlSize(.small)
-                .tint(accent)
-                .disabled(context.isPreview)
-            Image(systemName: "speaker.wave.3.fill")
-                .font(.system(size: 11))
-                .foregroundStyle(fg.opacity(0.6))
-            Text("\(Int(volume.rounded()))%")
-                .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                .foregroundStyle(fg.opacity(0.78))
-                .lineLimit(1)
-                .fixedSize()
-                .frame(minWidth: 40, alignment: .trailing)
-        }
-    }
+    // MARK: Timer
 
     private func timerRow(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -602,243 +399,105 @@ struct RadioDetail: View {
             if !context.isPreview, addFlow.draft(instance.id).open {
                 addForm
             } else {
-                favouritesToolbar
+                favouritesHeader
             }
             favouriteList
         }
     }
 
-    private var favouriteList: some View {
-        Group {
-            if stations.isEmpty {
-                PandaEmptyState(empty: .radio, title: tr("搜索电台"), panel: true) {
-                    storedTab = Tab.search.rawValue
-                }
-            } else {
-                // 高度按行数自适应：最多露 5 行，超过才滚动，少于 5 行不留空白。
-                // 行高量出来的（经典、复古皮肤不同），没量到时先用估计值。
-                ScrollView {
-                    VStack(spacing: RadioFavouriteList.rowSpacing) {
-                        ForEach(Array(stations.enumerated()), id: \.element.id) { offset, item in
-                            if renamingID == item.id {
-                                renameRow(item)
-                            } else {
-                                favouriteRow(item, offset: offset)
-                                    .onGeometryChange(for: CGFloat.self) { proxy in
-                                        proxy.size.height
-                                    } action: { height in
-                                        noteRowHeight(height)
-                                    }
-                                    .contextMenu { rowMenu(item, offset: offset) }
-                            }
-                        }
-                    }
-                }
-                .frame(height: RadioFavouriteList.height(rowCount: stations.count, rowHeight: favouriteRowHeight))
-                .scrollDisabled(!RadioFavouriteList.scrolls(rowCount: stations.count))
-                .scrollIndicators(.never)
-            }
-        }
-    }
-
-    /// 量到的收藏行高，经典和复古分开记，换皮肤不会拿错。
-    private var favouriteRowHeight: CGFloat {
-        (tallRows ? retroRowHeight : classicRowHeight) ?? RadioFavouriteList.fallbackRowHeight(retro: tallRows)
-    }
-
-    private func noteRowHeight(_ height: CGFloat) {
-        guard height > 1 else { return }
-        let rounded = (height * 2).rounded(.up) / 2
-        if tallRows {
-            if retroRowHeight.map({ abs($0 - rounded) > 0.5 }) ?? true { retroRowHeight = rounded }
-        } else {
-            if classicRowHeight.map({ abs($0 - rounded) > 0.5 }) ?? true { classicRowHeight = rounded }
-        }
-    }
-
-    /// 复古皮肤和新外观的收藏行都是固定 34pt 的单行。
-    private var tallRows: Bool { retro || modern }
-
+    /// 收藏一行一行排下来，不另套滚动、不限高：面板通用容器限高，内容多时整块在面板里滚。
     @ViewBuilder
-    private func favouriteRow(_ item: RadioStation, offset: Int) -> some View {
-        if let palette {
-            modernFavouriteRow(item, offset: offset, palette: palette)
-        } else if retro {
-            retroFavouriteRow(item, offset: offset)
+    private var favouriteList: some View {
+        if stations.isEmpty {
+            PandaEmptyState(empty: .radio, title: tr("搜索电台"), panel: true) {
+                storedTab = Tab.search.rawValue
+            }
         } else {
-            classicFavouriteRow(item, offset: offset)
-        }
-    }
-
-    /// 新外观的收藏行：编号、台名，当前那一行右边写“正在听”。当前行的标法跟
-    /// `RadioSkinPalette.rowStyle`：圆角强调底加竖条、直角强调底加爱心，或只在
-    /// 下面画一根强调色细线。
-    private func modernFavouriteRow(_ item: RadioStation, offset: Int, palette: RadioSkinPalette) -> some View {
-        let tuned = offset == index
-        let style = palette.rowStyle
-        let corner: CGFloat = style == .round ? 9 : 0
-        return HStack(spacing: 8) {
-            Button {
-                guard !context.isPreview else { return }
-                RadioRemote.tune(instance, to: offset, play: true)
-            } label: {
-                HStack(spacing: 10) {
-                    Text(verbatim: RadioDial.channelText(offset))
-                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(fg.opacity(tuned ? 0.9 : palette.secondaryOpacity))
-                        .frame(width: 22, alignment: .leading)
-                    Text(item.name)
-                        .font(.system(size: 15, weight: tuned ? .semibold : .medium))
-                        .foregroundStyle(fg.opacity(tuned ? 1 : 0.9))
-                        .lineLimit(1)
-                    stationTags(item)
-                    Spacer(minLength: 0)
-                    if tuned {
-                        Text(tr("正在听"))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(accentText)
-                            .lineLimit(1)
-                            .fixedSize()
+            VStack(spacing: 6) {
+                ForEach(Array(stations.enumerated()), id: \.element.id) { offset, item in
+                    if renamingID == item.id {
+                        renameRow(item)
+                    } else {
+                        favouriteRow(item, offset: offset)
+                            .contextMenu { rowMenu(item, offset: offset) }
                     }
                 }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .help(tr("收听 \(item.name)"))
-
-            if item.isCustom { renameButton(item) }
-            removeButton(item, offset: offset)
-        }
-        .padding(.leading, 12)
-        .padding(.trailing, 4)
-        .frame(height: 34)
-        .background {
-            if tuned {
-                if style == .line {
-                    Rectangle().fill(fg.opacity(0.05))
-                } else {
-                    RoundedRectangle(cornerRadius: corner, style: .continuous)
-                        .fill(accent.opacity(palette.highlightOpacity))
-                        .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous)
-                            .strokeBorder(accent.opacity(0.5), lineWidth: 0.6))
-                }
-            }
-        }
-        .overlay(alignment: .bottom) {
-            if tuned, style == .line {
-                Rectangle().fill(accentText).frame(height: 1.5)
-            } else if !tuned {
-                Rectangle().fill(Color(code: palette.line).opacity(0.08)).frame(height: 0.5).padding(.horizontal, 10)
-            }
-        }
-        .overlay(alignment: .leading) {
-            if tuned {
-                switch style {
-                case .round:
-                    Capsule().fill(accentText).frame(width: 3, height: 16).padding(.leading, 6)
-                case .square:
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 7, weight: .bold))
-                        .foregroundStyle(accentText)
-                        .padding(.leading, 3)
-                        .accessibilityHidden(true)
-                case .line:
-                    EmptyView()
-                }
             }
         }
     }
 
-    /// 复古皮肤的收藏行：编号、台名、右边按收藏顺序排的“FM 98.0”；当前那一行
-    /// 淡淡一层强调色，左边一道竖条。
-    private func retroFavouriteRow(_ item: RadioStation, offset: Int) -> some View {
+    /// 收藏行：编号格、台名和一行小字、右边。当前台整行描边高亮，小字写“正在收听”，
+    /// 播放时右边是跳动的波形；其余行小字是格式，右边“…”菜单（收听、改名、从收藏中移除）。
+    /// 删除只在右键菜单和“…”菜单里，行内没有叉号。
+    private func favouriteRow(_ item: RadioStation, offset: Int) -> some View {
         let tuned = offset == index
-        return HStack(spacing: 8) {
+        let shape = RoundedRectangle(cornerRadius: palette.rowStyle == .square ? 4 : 11, style: .continuous)
+        return HStack(spacing: 6) {
             Button {
                 guard !context.isPreview else { return }
                 RadioRemote.tune(instance, to: offset, play: true)
             } label: {
                 HStack(spacing: 10) {
                     Text(verbatim: RadioDial.channelText(offset))
-                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(fg.opacity(tuned ? 0.9 : 0.62))
-                        .frame(width: 22, alignment: .leading)
-                    Text(item.name)
-                        .font(.system(size: 15, weight: tuned ? .semibold : .medium))
-                        .foregroundStyle(fg.opacity(tuned ? 1 : 0.88))
-                        .lineLimit(1)
-                    stationTags(item)
-                    Spacer(minLength: 0)
-                    Text(verbatim: RadioDial.fmText(offset, count: stations.count))
-                        .font(.system(size: 13, weight: .medium).monospacedDigit())
-                        .foregroundStyle(tuned ? accentText : fg.opacity(0.65))
-                }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .help(tr("收听 \(item.name)"))
-
-            if item.isCustom { renameButton(item) }
-            removeButton(item, offset: offset)
-        }
-        .padding(.leading, 12)
-        .padding(.trailing, 4)
-        .frame(height: 34)
-        .background {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(tuned ? accent.opacity(0.15) : fg.opacity(0.04))
-                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .strokeBorder(accent.opacity(tuned ? 0.45 : 0), lineWidth: 0.6))
-        }
-        .overlay(alignment: .leading) {
-            if tuned {
-                Capsule().fill(accent).frame(width: 3, height: 16).padding(.leading, 6)
-            }
-        }
-    }
-
-    private func classicFavouriteRow(_ item: RadioStation, offset: Int) -> some View {
-        let tuned = offset == index
-        return HStack(spacing: 8) {
-            Button {
-                guard !context.isPreview else { return }
-                RadioRemote.tune(instance, to: offset, play: true)
-            } label: {
-                HStack(spacing: 8) {
-                    Text(RadioDial.channelText(offset))
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(tuned ? accentText : fg.opacity(0.62))
-                        .frame(width: 24, alignment: .leading)
+                        .font(.system(size: 13, weight: .bold).monospacedDigit())
+                        .foregroundStyle(tuned ? accentText : fg.opacity(0.66))
+                        .frame(width: 32, height: 24)
+                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(tuned ? accent.opacity(0.18) : fg.opacity(0.06)))
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(item.name)
-                            .font(.system(size: 13, weight: tuned ? .semibold : .regular))
-                            .foregroundStyle(fg.opacity(0.95))
-                            .lineLimit(1)
                         HStack(spacing: 4) {
-                            stationTags(item)
-                            Text(item.detail)
-                                .font(.system(size: 13))
-                                .foregroundStyle(fg.opacity(0.62))
+                            Text(item.name)
+                                .font(.system(size: 15, weight: tuned ? .semibold : .medium))
+                                .foregroundStyle(fg)
                                 .lineLimit(1)
+                            stationTags(item)
                         }
+                        Text(verbatim: tuned ? statusText : item.detail)
+                            .font(.system(size: 13, weight: tuned ? .semibold : .regular))
+                            .foregroundStyle(tuned ? accentText : colors.secondary)
+                            .lineLimit(1)
                     }
                     Spacer(minLength: 0)
                     if tuned, playing {
-                        RadioBars(active: !context.isPreview, color: accent, barWidth: 2, height: 10)
+                        RadioBars(active: !context.isPreview && !player.isBuffering, color: accentText,
+                                  barWidth: 2.5, height: 14)
+                            .accessibilityHidden(true)
                     }
                 }
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
             .help(tr("收听 \(item.name)"))
+            .accessibilityAddTraits(tuned ? .isSelected : [])
 
-            if item.isCustom { renameButton(item) }
-            removeButton(item, offset: offset)
+            if !tuned { moreMenu(item, offset: offset) }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(tuned ? accent.opacity(0.14) : fg.opacity(0.05)))
+        .padding(.leading, 8)
+        .padding(.trailing, tuned ? 12 : 2)
+        .padding(.vertical, 6)
+        .background(shape.fill(tuned ? accent.opacity(palette.highlightOpacity) : fg.opacity(0.04)))
+        .overlay(shape.strokeBorder(tuned ? accentText.opacity(0.8) : fg.opacity(0.08), lineWidth: tuned ? 1.2 : 0.5))
+    }
+
+    /// 行尾的“…”：和右键菜单同一套。
+    private func moreMenu(_ item: RadioStation, offset: Int) -> some View {
+        Menu {
+            Button(tr("收听")) { RadioRemote.tune(instance, to: offset, play: true) }
+            rowMenu(item, offset: offset)
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(fg.opacity(0.6))
+                .frame(width: 30, height: 30)
+                .contentShape(.rect)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .disabled(context.isPreview)
+        .help(tr("更多"))
+        .accessibilityLabel(tr("\(item.name) 的更多操作"))
     }
 
     private func remove(_ item: RadioStation, at offset: Int) {
@@ -870,37 +529,6 @@ struct RadioDetail: View {
             .padding(.horizontal, 5)
             .frame(height: 18)
             .background(Capsule().fill(warn ? accent.opacity(0.16) : fg.opacity(0.1)))
-    }
-
-    private func renameButton(_ item: RadioStation) -> some View {
-        Button {
-            guard !context.isPreview else { return }
-            startRename(item)
-        } label: {
-            Image(systemName: "pencil")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(fg.opacity(0.55))
-                .frame(width: 24, height: 24)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .help(tr("改名"))
-        .accessibilityLabel(tr("给 \(item.name) 改名"))
-    }
-
-    private func removeButton(_ item: RadioStation, offset: Int) -> some View {
-        Button {
-            guard !context.isPreview else { return }
-            remove(item, at: offset)
-        } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(fg.opacity(0.55))
-                .frame(width: 24, height: 24)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(tr("从收藏中移除 \(item.name)"))
     }
 
     @ViewBuilder
@@ -941,40 +569,53 @@ struct RadioDetail: View {
             toolChip(tr("取消")) { renamingID = nil }
         }
         .padding(.horizontal, 8)
-        .frame(height: favouriteRowHeight)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(fg.opacity(0.05)))
+        .frame(minHeight: 46)
+        .background(RoundedRectangle(cornerRadius: 11, style: .continuous).fill(fg.opacity(0.05)))
     }
 
-    /// 收藏上面一排：“添加电台”和“检查”。
-    private var favouritesToolbar: some View {
+    /// 收藏上面一行：“我的收藏 · N 个电台”，右边“检查”和“添加电台”；检查的结果写在下面一行。
+    private var favouritesHeader: some View {
         let checking = healthCheck.isRunning(instance.id)
-        return HStack(spacing: 6) {
-            toolChip(tr("添加电台"), symbol: "plus") { addFlow.open(instance.id) }
-            Spacer(minLength: 0)
+        return VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Text(verbatim: tr("我的收藏"))
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(fg)
+                    .lineLimit(1)
+                    .fixedSize()
+                Text(verbatim: RadioPanelReadout.stationCount(stations.count))
+                    .font(.system(size: 13))
+                    .foregroundStyle(colors.secondary)
+                    .lineLimit(1)
+                    .layoutPriority(-1)
+                Spacer(minLength: 4)
+                if checking {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    toolChip(tr("检查"), symbol: "antenna.radiowaves.left.and.right") {
+                        dismissedHealth = nil
+                        RadioStationCheck.clearDismissed(instance.id)
+                        healthCheck.check(instance)
+                    }
+                    .help(tr("逐个试连收藏的电台，找出连不上的"))
+                    .disabled(stations.isEmpty)
+                }
+                toolChip(tr("添加电台"), symbol: "plus") { addFlow.open(instance.id) }
+            }
             if checking {
-                ProgressView().controlSize(.mini)
                 Text(verbatim: tr("正在检查…"))
                     .font(.system(size: 13))
                     .foregroundStyle(fg.opacity(0.65))
-            } else {
-                if !context.isPreview, healthCheck.reports[instance.id] == 0 {
-                    Text(verbatim: tr("都连得上"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(fg.opacity(0.6))
-                } else if !context.isPreview, healthCheck.offline.contains(instance.id) {
-                    Text(verbatim: tr("可能没联网"))
-                        .font(.system(size: 13))
-                        .foregroundStyle(fg.opacity(0.6))
-                        .lineLimit(1)
-                        .help(tr("一个电台也连不上，多半是没联网，没有标记失效"))
-                }
-                toolChip(tr("检查"), symbol: "antenna.radiowaves.left.and.right") {
-                    dismissedHealth = nil
-                    RadioStationCheck.clearDismissed(instance.id)
-                    healthCheck.check(instance)
-                }
-                .help(tr("逐个试连收藏的电台，找出连不上的"))
-                .disabled(stations.isEmpty)
+            } else if !context.isPreview, healthCheck.reports[instance.id] == 0 {
+                Text(verbatim: tr("都连得上"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(colors.secondary)
+            } else if !context.isPreview, healthCheck.offline.contains(instance.id) {
+                Text(verbatim: tr("可能没联网"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(colors.secondary)
+                    .lineLimit(1)
+                    .help(tr("一个电台也连不上，多半是没联网，没有标记失效"))
             }
         }
     }
@@ -1284,23 +925,20 @@ struct RadioDetail: View {
                         run()
                     }
                 } else if !results.isEmpty {
-                    ScrollView {
-                        VStack(spacing: 2) {
-                            ForEach(results) { result in resultRow(result) }
-                            if hasMore {
-                                RadioLoadMoreButton(shown: results.count,
-                                                    total: shownSearch.flatMap {
-                                                        RadioBrowse.knownTotal($0, counts: RadioWorldStore.shared.counts)
-                                                    },
-                                                    loading: loadingMore, style: browseStyle) { loadMore() }
-                                    .padding(.top, 2)
-                            } else if searchFailed {
-                                note(tr("连不上电台目录，请检查网络后再试。"))
-                            }
+                    // 不另套滚动：结果多时整块在面板里滚（面板通用容器限高）。
+                    VStack(spacing: 2) {
+                        ForEach(results) { result in resultRow(result) }
+                        if hasMore {
+                            RadioLoadMoreButton(shown: results.count,
+                                                total: shownSearch.flatMap {
+                                                    RadioBrowse.knownTotal($0, counts: RadioWorldStore.shared.counts)
+                                                },
+                                                loading: loadingMore, style: browseStyle) { loadMore() }
+                                .padding(.top, 2)
+                        } else if searchFailed {
+                            note(tr("连不上电台目录，请检查网络后再试。"))
                         }
                     }
-                    .frame(maxHeight: 230)
-                    .scrollIndicators(.never)
                 }
             }
         }

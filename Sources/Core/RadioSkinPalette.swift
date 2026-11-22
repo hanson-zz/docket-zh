@@ -102,6 +102,40 @@ public struct RadioSkinPalette: Equatable, Sendable {
         }
     }
 
+    /// 九套外观都有的配色：五款新外观就是 `palette(_:tone:)`，经典和三款复古皮肤
+    /// 在这里补上浅色、深色两版（原来复古皮肤整张固定深色，现在跟着系统浅色/深色走）。
+    /// 面板统一的紧凑头部、走带键、音量、分段和收藏列表都从这里取色。
+    public static func look(_ skin: RadioSkin, tone: RadioSkinTone) -> RadioSkinPalette {
+        if let palette = palette(skin, tone: tone) { return palette }
+        switch (skin, tone) {
+        case (.wood, .dark):
+            return RadioSkinPalette(background: "#1E1510", text: "#FFF6EA", accent: "#FFA53A", accentText: "#FFB45C",
+                                    ink: "#2A1606", secondaryOpacity: 0.62, line: "#FFF6EA")
+        case (.wood, .light):
+            return RadioSkinPalette(background: "#F3E9DC", text: "#2A1A0E", accent: "#E8892A", accentText: "#934709",
+                                    ink: "#2A1606", secondaryOpacity: 0.66, line: "#2A1A0E")
+        case (.transistor, .dark):
+            return RadioSkinPalette(background: "#18161A", text: "#FFFFFF", accent: "#FF8A3D", accentText: "#FFA066",
+                                    ink: "#2A0703", secondaryOpacity: 0.62, line: "#FFFFFF")
+        case (.transistor, .light):
+            return RadioSkinPalette(background: "#F2EADD", text: "#2A211B", accent: "#F07A35", accentText: "#A23C0C",
+                                    ink: "#2A0703", secondaryOpacity: 0.68, line: "#2A211B")
+        case (.deck, .dark):
+            return RadioSkinPalette(background: "#121618", text: "#FFFFFF", accent: "#3FD6A0", accentText: "#5FE3B0",
+                                    ink: "#04140D", secondaryOpacity: 0.62, line: "#FFFFFF")
+        case (.deck, .light):
+            return RadioSkinPalette(background: "#EEF1F1", text: "#172022", accent: "#44C2B4", accentText: "#0B6660",
+                                    ink: "#06201E", secondaryOpacity: 0.66, line: "#172022")
+        case (_, .dark):
+            // 经典调谐（以及以后新加还没配色的外观）：琥珀橙。
+            return RadioSkinPalette(background: "#17171A", text: "#FFFFFF", accent: "#FF9F2E", accentText: "#FFB25C",
+                                    ink: "#2A1606", secondaryOpacity: 0.62, line: "#FFFFFF")
+        case (_, .light):
+            return RadioSkinPalette(background: "#F4F1EC", text: "#1E1B18", accent: "#F28A1E", accentText: "#A24E08",
+                                    ink: "#2A1606", secondaryOpacity: 0.66, line: "#1E1B18")
+        }
+    }
+
     /// 次要字实际的颜色：`text` 按 `secondaryOpacity` 叠在底色上。
     public var secondaryText: ColorCode { Self.mix(text, over: background, opacity: secondaryOpacity) }
 

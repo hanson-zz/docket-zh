@@ -199,10 +199,10 @@ final class ProFeaturesTests: XCTestCase {
         XCTAssertTrue(proStyles.contains("progress:四格"))
         XCTAssertTrue(proStyles.contains("water:角色"))
         XCTAssertFalse(proStyles.contains("water:圆环"))
-        for title in ["木壳电子管", "晶体管便携", "数码卡座"] {
+        for title in ["木壳电子管", "复古便携", "数码卡座"] {
             XCTAssertTrue(proStyles.contains("radio:\(title)"), title)
         }
-        XCTAssertFalse(proStyles.contains("radio:经典"))
+        XCTAssertFalse(proStyles.contains("radio:经典调谐"))
         // 便签的纸色不再列成样式，改在面板和设置里选；十五种里免费五种，其余十种是 Pro 选项。
         XCTAssertTrue(proStyles.filter { $0.hasPrefix("notes:") }.isEmpty)
         XCTAssertEqual(PaperColor.picker.filter {

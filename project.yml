@@ -50,6 +50,13 @@ targets:
       # 收音机小组件的图标（阿喵收音机 meowRadio 的猫耳复古收音机，MIT），作为普通资源打包。
       - path: Resources/Radio
         buildPhase: resources
+      # 收音机面板右上角的插画（radio-art-<外观 rawValue>.png，约 64pt，可带 @2x），作者之后补，
+      # 缺图不画；目录里暂时只有占位的 .gitkeep（不打包），optional 让目录不在时也能生成工程。
+      - path: Resources/RadioArt
+        buildPhase: resources
+        optional: true
+        excludes:
+          - ".gitkeep"
       # 喝水小组件的小熊猫（作者自己的应用图标形象，抠图缩小），作为普通资源打包。
       - path: Resources/Water
         buildPhase: resources

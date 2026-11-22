@@ -33,14 +33,45 @@ struct RadioSkinRulerPanel: RadioSkinPanelFace {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            RulerHeader(model: model)
-            RulerHero(model: model)
-                .padding(.bottom, 10)
-            RadioSkinReadout(model: model)
+            RadioSkinRulerFace(model: model)
             RulerTransport(model: model)
-                .padding(.vertical, 2)
             RulerVolume(model: model)
         }
+        .environment(\.colorScheme, model.tone == .dark ? .dark : .light)
+    }
+}
+
+/// 黑白刻度的主视觉（紧凑布局）：一块浅托盘，上面一行“拖动刻度换台”和收藏的台号范围，
+/// 下面横向卷尺刻度和红指针。大号频道号挪到了统一头部的“CH 03 / 06”。
+struct RadioSkinRulerFace: View {
+    var model: RadioSkinModel
+
+    var body: some View {
+        let colors = model.colors
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Text(verbatim: tr("拖动刻度换台"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(colors.secondary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                if model.count > 0 {
+                    Text(verbatim: "01 – \(model.totalText)")
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(colors.text.opacity(0.8))
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+            }
+            .padding(.horizontal, 4)
+            RulerHero(model: model, compact: true)
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(colors.text.opacity(0.04)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .strokeBorder(colors.text.opacity(0.12), lineWidth: 0.8))
         .environment(\.colorScheme, model.tone == .dark ? .dark : .light)
     }
 }
@@ -71,6 +102,8 @@ private struct RulerHeader: View {
 /// 点一下刻度也能直接调到那一台。拖动时大数字跟着指针下那一台变。
 private struct RulerHero: View {
     var model: RadioSkinModel
+    /// 紧凑布局只画刻度，不画大号频道号。
+    var compact = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 拖动或吸附途中刻度的位置（按台计，可以带小数）；nil 时跟 `model.index`。
@@ -92,7 +125,7 @@ private struct RulerHero: View {
     var body: some View {
         let colors = model.colors
         VStack(alignment: .leading, spacing: -14) {
-            numberRow(colors)
+            if !compact { numberRow(colors) }
             ruler(colors)
         }
     }
@@ -386,7 +419,7 @@ private struct RulerTransport: View {
 
     private func key(_ symbol: String, main: Bool, label: String, action: @escaping () -> Void) -> some View {
         let colors = model.colors
-        let size: CGFloat = main ? 54 : 38
+        let size: CGFloat = main ? 48 : 34
         let light = model.palette.isLight
         return Button(action: action) {
             Image(systemName: symbol)

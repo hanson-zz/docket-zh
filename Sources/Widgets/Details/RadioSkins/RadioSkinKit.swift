@@ -1,20 +1,24 @@
 import SwiftUI
 
-// 收音机五款新外观（烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺）共用的接口。
+// 收音机九套外观共用的接口。
 //
 // 面板（RadioDetail）和卡片（RadioTile）把当前台、播放状态、音量和各种回调装进
 // 一个 `RadioSkinModel`，再按 `skin` 分发到 RadioSkins/ 下各皮肤自己的文件：
 //
-//     RadioSkinSmoke.swift      烟晶       RadioSkinSmokePanel / RadioSkinSmokeCard
-//     RadioSkinLED.swift        灯阵       RadioSkinLEDPanel / RadioSkinLEDCard
-//     RadioSkinPorcelain.swift  瓷白圆盘   RadioSkinPorcelainPanel / RadioSkinPorcelainCard
+//     RadioSkinClassicRetro.swift 经典调谐、木壳电子管、复古便携、数码卡座（面板）
+//     RadioSkinSmoke.swift      烟晶玻璃   RadioSkinSmokePanel / RadioSkinSmokeCard
+//     RadioSkinLED.swift        琥珀点阵   RadioSkinLEDPanel / RadioSkinLEDCard
+//     RadioSkinPorcelain.swift  白瓷转盘   RadioSkinPorcelainPanel / RadioSkinPorcelainCard
 //     RadioSkinPixel.swift      掌机像素   RadioSkinPixelPanel / RadioSkinPixelCard
-//     RadioSkinRuler.swift      墨白直尺   RadioSkinRulerPanel / RadioSkinRulerCard
+//     RadioSkinRuler.swift      黑白刻度   RadioSkinRulerPanel / RadioSkinRulerCard
 //
+// 面板是紧凑布局（照 files/uploads/radio-mock 的 CH 03 效果图）：头部（外观名胶囊、
+// CH 03 / 06、台名、HLS · 网络直播、正在收听）统一在 RadioPanelChrome.swift，
+// 每套只画自己的主视觉（表盘、刻度、点阵、转盘……，比原来小约两成）和走带键、音量。
 // 每套皮肤只改自己的文件：
-// - `…Panel` 画面板上半部分：头一行、主视觉、台名和说明、走带键、音量（宽 288pt，
-//   面板 320 减两边 16）。下面的定时关闭、收藏/搜索、收藏列表由 RadioDetail 画，
-//   收藏当前行的标法跟 `RadioSkinPalette.rowStyle` 走，颜色跟调色板走。
+// - `…Face` 是主视觉，画廊里的实时缩略图也用它（缩小画，不用截图）；
+// - `…Panel` 是主视觉加走带键、音量（宽 288pt，面板 320 减两边 16）。下面的分段、
+//   收藏列表由 RadioDetail 画，颜色跟调色板走。
 // - `…Panel.backdrop(_:)` 画面板底（整张卡片的背景），默认 `RadioSkinBackdrop`。
 // - `…Card` 画 212 × 62 卡片里的内容（横排）或侧边竖排时的内容（`vertical`）。
 //   卡片外面的底板由 WidgetSurface 画，卡片上除两个按钮外的点击属于扩展栏（打开面板），
@@ -53,8 +57,10 @@ struct RadioSkinModel {
     /// 0 到 100。
     var volume: Double
     var isPreview: Bool
-    /// 面板里台名右边的小熊猫（播放中才有，见 `PandaStateResolver.radio`）；卡片不画，nil。
+    /// 面板头部右边的小熊猫（播放中才有，见 `PandaStateResolver.radio`）；卡片不画，nil。
     var panda: PandaPose? = nil
+    /// 头部第二行：“HLS · 网络直播”这类，见 `RadioPanelReadout.streamLine`；卡片不用。
+    var streamLine: String = ""
 
     /// 换到第 `index` 个收藏（保持原来的播放状态）。
     var onTune: (Int) -> Void
@@ -137,18 +143,36 @@ protocol RadioSkinCardFace: View {
 
 // MARK: - 分发
 
-/// 面板上半部分，按皮肤分发。
+/// 面板主视觉加走带键、音量，按皮肤分发（九套都走这里，头部见 RadioPanelChrome.swift）。
 struct RadioModernPanel: View {
     var model: RadioSkinModel
 
     var body: some View {
         switch model.skin {
+        case .classic: RadioSkinClassicPanel(model: model)
+        case .wood, .transistor, .deck: RadioSkinRetroPanel(model: model)
         case .smoke: RadioSkinSmokePanel(model: model)
         case .led: RadioSkinLEDPanel(model: model)
         case .porcelain: RadioSkinPorcelainPanel(model: model)
         case .pixel: RadioSkinPixelPanel(model: model)
         case .ruler: RadioSkinRulerPanel(model: model)
-        default: EmptyView()
+        }
+    }
+}
+
+/// 只画主视觉（不带走带键、音量），外观画廊的实时缩略图用。
+struct RadioSkinFace: View {
+    var model: RadioSkinModel
+
+    var body: some View {
+        switch model.skin {
+        case .classic: RadioSkinClassicFace(model: model)
+        case .wood, .transistor, .deck: RadioSkinRetroFace(model: model)
+        case .smoke: RadioSkinSmokeFace(model: model)
+        case .led: RadioSkinLEDFace(model: model)
+        case .porcelain: RadioSkinPorcelainFace(model: model)
+        case .pixel: RadioSkinPixelFace(model: model)
+        case .ruler: RadioSkinRulerFace(model: model)
         }
     }
 }
@@ -188,12 +212,21 @@ struct RadioModernCard: View {
 
 // MARK: - 共用零件（各皮肤可以直接用，也可以自己画）
 
-/// 纯色面板底。
+/// 面板底：叠在面板的液态玻璃上的一层半透明调色板底色（跟浅色/深色走，不铺固定深色），
+/// 右上角一抹很淡的强调色。
 struct RadioSkinBackdrop: View {
     var model: RadioSkinModel
 
     var body: some View {
-        Rectangle().fill(model.colors.background)
+        let colors = model.colors
+        ZStack(alignment: .topTrailing) {
+            LinearGradient(colors: [colors.background.opacity(0.86), colors.background.opacity(0.72)],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [colors.accent.opacity(model.tone == .dark ? 0.14 : 0.12), colors.accent.opacity(0)],
+                           center: .topTrailing, startRadius: 0, endRadius: 220)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -248,7 +281,7 @@ struct RadioSkinReadout: View {
     }
 }
 
-/// 上一台、播放、下一台：两侧 38pt 浅底圆钮，中间 54pt 实心强调圆钮，图标深色。
+/// 上一台、播放、下一台：两侧 34pt 浅底圆钮，中间 48pt 实心强调圆钮，图标深色（紧凑布局）。
 struct RadioSkinTransport: View {
     var model: RadioSkinModel
 
@@ -268,7 +301,7 @@ struct RadioSkinTransport: View {
 
     private func key(_ symbol: String, main: Bool, label: String, action: @escaping () -> Void) -> some View {
         let colors = model.colors
-        let size: CGFloat = main ? 54 : 38
+        let size: CGFloat = main ? 48 : 34
         return Button(action: action) {
             Image(systemName: symbol)
                 .playPauseMorph(symbol, enabled: main)

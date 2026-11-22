@@ -105,8 +105,12 @@ enum RadioRetroDraw {
         c.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: width, lineCap: round ? .round : .butt))
     }
 
-    /// 13pt 起的标签，`anchor` 决定对齐；y 是字的竖直中线。
-    static func label(_ c: inout GraphicsContext, _ text: String, x: CGFloat, y: CGFloat, size: CGFloat = 13,
+    /// 面板里三款复古机身按这个比例缩小画（紧凑布局，约小两成），见 `RadioRetroFace`。
+    static let faceScale: CGFloat = 0.8
+
+    /// 标签，`anchor` 决定对齐；y 是字的竖直中线。机身整体缩到 `faceScale`，默认字号
+    /// 先放大回去，缩完仍是 13pt。
+    static func label(_ c: inout GraphicsContext, _ text: String, x: CGFloat, y: CGFloat, size: CGFloat = 13 / RadioRetroDraw.faceScale,
                       weight: Font.Weight = .semibold, color: Color, anchor: UnitPoint = .leading) {
         c.draw(Text(verbatim: text).font(.system(size: size, weight: weight)).monospacedDigit().foregroundStyle(color),
                at: CGPoint(x: x, y: y), anchor: anchor)
@@ -236,6 +240,8 @@ struct RadioPandaSticker: View {
 /// 面板顶上的机身，按皮肤换。`onTune` 换到某个收藏，`onNext` 换下一台。
 struct RadioRetroFace: View {
     var skin: RadioSkin
+    /// 浅色版：复古便携换奶油色皮革，数码卡座换浅色拉丝机身；木壳两版一样。
+    var light = false
     var count: Int
     var index: Int
     var playing: Bool
@@ -251,9 +257,9 @@ struct RadioRetroFace: View {
             RadioWoodFace(count: count, index: index, playing: playing, volume: volume,
                           onTune: onTune, onNext: onNext)
         case .transistor:
-            RadioTransistorFace(count: count, index: index, playing: playing, onTune: onTune, onNext: onNext)
+            RadioTransistorFace(light: light, count: count, index: index, playing: playing, onTune: onTune, onNext: onNext)
         case .deck:
-            RadioDeckFace(count: count, index: index, playing: playing, stationName: stationName,
+            RadioDeckFace(light: light, count: count, index: index, playing: playing, stationName: stationName,
                           animated: animated, onTune: onTune)
         default:
             // 经典和新外观不走这里（新外观见 RadioSkins/ 下各自的文件）。
@@ -481,6 +487,7 @@ struct RadioWoodFace: View {
 // MARK: 晶体管便携
 
 struct RadioTransistorFace: View {
+    var light = false
     var count: Int
     var index: Int
     var playing: Bool
@@ -502,7 +509,7 @@ struct RadioTransistorFace: View {
         let needleY = Self.scaleStart + (Self.scaleEnd - Self.scaleStart) * CGFloat(fraction)
         ZStack(alignment: .topLeading) {
             Canvas { c, _ in
-                Self.drawSet(&c, count: count, index: index)
+                Self.drawSet(&c, count: count, index: index, light: light)
             }
             .frame(width: Self.bodySize.width, height: Self.bodySize.height + t)
 
@@ -555,7 +562,7 @@ struct RadioTransistorFace: View {
         .padding(.top, -t)
     }
 
-    nonisolated static func drawSet(_ c: inout GraphicsContext, count: Int, index: Int) {
+    nonisolated static func drawSet(_ c: inout GraphicsContext, count: Int, index: Int, light: Bool = false) {
         typealias D = RadioRetroDraw
         let t = top
         let w = bodySize.width, h = bodySize.height
@@ -575,7 +582,8 @@ struct RadioTransistorFace: View {
         c.fill(D.rr(1, t + 3, w, h, 20), with: .color(.black.opacity(0.45)))
         c.fill(D.rr(0, t, w, h, 20), with: chrome)
         let leather = D.rr(6, t + 6, w - 12, h - 12, 14)
-        c.fill(leather, with: .linearGradient(Gradient(colors: [Color(hex: "#45332A"), Color(hex: "#22180F")]),
+        let hide = light ? [Color(hex: "#F1E4CC"), Color(hex: "#D9C3A0")] : [Color(hex: "#45332A"), Color(hex: "#22180F")]
+        c.fill(leather, with: .linearGradient(Gradient(colors: hide),
                                               startPoint: CGPoint(x: 6, y: t + 6),
                                               endPoint: CGPoint(x: w * 0.4, y: t + h)))
         c.drawLayer { layer in
@@ -587,7 +595,8 @@ struct RadioTransistorFace: View {
                 let r = CGFloat(0.4 + rnd.next() * 0.9)
                 let dark = rnd.next() < 0.6
                 let opacity = 0.18 + rnd.next() * 0.2
-                layer.fill(D.circle(x, y, r), with: .color((dark ? Color.black : Color(hex: "#8A6A55")).opacity(opacity)))
+                let grain = light ? (dark ? Color(hex: "#8A6A55") : Color.white) : (dark ? Color.black : Color(hex: "#8A6A55"))
+                layer.fill(D.circle(x, y, r), with: .color(grain.opacity(light ? opacity * 0.6 : opacity)))
             }
         }
         c.stroke(D.rr(11, t + 11, w - 22, h - 22, 10), with: .color(Color(hex: "#B08A6C").opacity(0.55)),
@@ -648,6 +657,7 @@ struct RadioTransistorFace: View {
 // MARK: 数码卡座
 
 struct RadioDeckFace: View {
+    var light = true
     var count: Int
     var index: Int
     var playing: Bool
@@ -668,12 +678,12 @@ struct RadioDeckFace: View {
         let s = Self.screen
         ZStack(alignment: .topLeading) {
             Canvas { c, _ in
-                Self.drawChassis(&c, count: count, index: index, playing: playing)
+                Self.drawChassis(&c, count: count, index: index, playing: playing, light: light)
             }
             .frame(width: Self.size.width, height: Self.size.height)
 
             Text(verbatim: stationName)
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(vfd)
                 .shadow(color: vfd.opacity(0.55), radius: 1.6)
                 .lineLimit(1)
@@ -738,7 +748,7 @@ struct RadioDeckFace: View {
                         .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .strokeBorder(.black.opacity(0.35), lineWidth: 0.6))
                     Text(verbatim: String(key + 1))
-                        .font(.system(size: 15, weight: .heavy))
+                        .font(.system(size: 17, weight: .heavy))
                         .foregroundStyle(RadioRetroInk.inkMetal)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     Capsule()
@@ -762,15 +772,19 @@ struct RadioDeckFace: View {
         .accessibilityAddTraits(pressed ? .isSelected : [])
     }
 
-    nonisolated static func drawChassis(_ c: inout GraphicsContext, count: Int, index: Int, playing: Bool) {
+    nonisolated static func drawChassis(_ c: inout GraphicsContext, count: Int, index: Int, playing: Bool,
+                                        light: Bool = true) {
         typealias D = RadioRetroDraw
         let w = size.width, h = size.height
         c.fill(D.rr(1, 3, w, h, 12), with: .color(.black.opacity(0.45)))
         let body = D.rr(0, 0, w, h, 12)
-        c.fill(body, with: .linearGradient(Gradient(stops: [
-            .init(color: Color(hex: "#E2E4E7"), location: 0), .init(color: Color(hex: "#BFC2C7"), location: 0.5),
-            .init(color: Color(hex: "#CDD0D4"), location: 1),
-        ]), startPoint: .zero, endPoint: CGPoint(x: 0, y: h)))
+        // 浅色版浅色拉丝金属，深色版石墨拉丝。
+        let metal: [Gradient.Stop] = light
+            ? [.init(color: Color(hex: "#E2E4E7"), location: 0), .init(color: Color(hex: "#BFC2C7"), location: 0.5),
+               .init(color: Color(hex: "#CDD0D4"), location: 1)]
+            : [.init(color: Color(hex: "#34373C"), location: 0), .init(color: Color(hex: "#1E2024"), location: 0.5),
+               .init(color: Color(hex: "#272A2E"), location: 1)]
+        c.fill(body, with: .linearGradient(Gradient(stops: metal), startPoint: .zero, endPoint: CGPoint(x: 0, y: h)))
         c.drawLayer { layer in
             layer.clip(to: body)
             var rnd = RadioGrainRandom(seed: 5)
@@ -781,8 +795,9 @@ struct RadioDeckFace: View {
                 D.line(&layer, 0, y, w, y, (light ? Color.white : Color.black).opacity(opacity), 0.35)
             }
         }
-        c.stroke(D.rr(0.5, 0.5, w - 1, h - 1, 11.5), with: .color(.white.opacity(0.6)), lineWidth: 1)
-        D.label(&c, tr("立体声 · 数码调谐"), x: 12, y: 15.5, weight: .bold, color: RadioRetroInk.inkMetal.opacity(0.85))
+        c.stroke(D.rr(0.5, 0.5, w - 1, h - 1, 11.5), with: .color(.white.opacity(light ? 0.6 : 0.14)), lineWidth: 1)
+        D.label(&c, tr("立体声 · 数码调谐"), x: 12, y: 15.5, weight: .bold,
+                color: light ? RadioRetroInk.inkMetal.opacity(0.85) : Color.white.opacity(0.82))
 
         // VFD 屏。
         let s = screen

@@ -378,17 +378,19 @@ public enum RadioSkin: String, CaseIterable, Sendable {
     public static let key = "skin"
     public static let fallback: RadioSkin = .classic
 
+    /// 显示名。只改过显示名（经典调谐、复古便携、烟晶玻璃、琥珀点阵、白瓷转盘、黑白刻度），
+    /// `rawValue` 和存的值没变，旧配置照常读。
     public var title: String {
         switch self {
-        case .classic: tr("经典")
+        case .classic: tr("经典调谐")
         case .wood: tr("木壳电子管")
-        case .transistor: tr("晶体管便携")
+        case .transistor: tr("复古便携")
         case .deck: tr("数码卡座")
-        case .smoke: tr("烟晶")
-        case .led: tr("灯阵")
-        case .porcelain: tr("瓷白圆盘")
+        case .smoke: tr("烟晶玻璃")
+        case .led: tr("琥珀点阵")
+        case .porcelain: tr("白瓷转盘")
         case .pixel: tr("掌机像素")
-        case .ruler: tr("墨白直尺")
+        case .ruler: tr("黑白刻度")
         }
     }
 

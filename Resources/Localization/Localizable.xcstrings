@@ -936,6 +936,17 @@
         }
       }
     },
+    "%@ 个电台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ stations"
+          }
+        }
+      }
+    },
     "%@ 个电台连不上" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2003,6 +2014,17 @@
         }
       }
     },
+    "%@ 的更多操作" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More actions for %@"
+          }
+        }
+      }
+    },
     "%@ 秒前" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2065,6 +2087,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@: %@ left"
+          }
+        }
+      }
+    },
+    "%@，Pro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Pro"
           }
         }
       }
@@ -2630,6 +2663,28 @@
         }
       }
     },
+    "复古便携" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retro Portable"
+          }
+        }
+      }
+    },
+    "外观：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look: %@"
+          }
+        }
+      }
+    },
     "完全磁盘访问权限：看见刚放进废纸篓的文件和它原来的位置。自动化里允许码头控制访达：请访达把文件放回原处，第一次放回时系统会问。没有自动化权限时，小熊猫只把文件叼回来，给一个「放回原处」的按钮。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2828,6 +2883,17 @@
         }
       }
     },
+    "我的收藏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Favorites"
+          }
+        }
+      }
+    },
     "打开下载文件夹" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2901,6 +2967,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus done"
+          }
+        }
+      }
+    },
+    "换外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change look"
           }
         }
       }
@@ -3158,6 +3235,17 @@
         }
       }
     },
+    "烟晶玻璃" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smoked Glass"
+          }
+        }
+      }
+    },
     "环境音小组件正在播放，这一轮不打断它" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3165,6 +3253,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The Ambient Sound widget is playing, so this round leaves it alone"
+          }
+        }
+      }
+    },
+    "琥珀点阵" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amber Dot Matrix"
           }
         }
       }
@@ -3198,6 +3297,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Effect: %@"
+          }
+        }
+      }
+    },
+    "白瓷转盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Porcelain Dial"
           }
         }
       }
@@ -3290,6 +3400,17 @@
         }
       }
     },
+    "经典调谐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic Tuner"
+          }
+        }
+      }
+    },
     "结束提示音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3308,6 +3429,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notify when a session ends"
+          }
+        }
+      }
+    },
+    "网络直播" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live stream"
           }
         }
       }
@@ -3891,6 +4023,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Update helper"
+          }
+        }
+      }
+    },
+    "黑白刻度" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mono Scale"
           }
         }
       }

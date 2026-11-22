@@ -106,7 +106,7 @@ final class RadioSkinTests: XCTestCase {
         XCTAssertEqual(RadioSkin.key, "skin")
         XCTAssertEqual(RadioSkin.allCases.map(\.rawValue),
                        ["classic", "wood", "transistor", "deck", "smoke", "led", "porcelain", "pixel", "ruler"])
-        XCTAssertEqual(RadioSkin.stored(WidgetConfig()), .classic, "旧卡片没存 skin 时是经典")
+        XCTAssertEqual(RadioSkin.stored(WidgetConfig()), .classic, "旧卡片没存 skin 时是经典调谐")
         XCTAssertEqual(RadioSkin.stored(WidgetConfig([RadioSkin.key: .string("deck")])), .deck)
         XCTAssertEqual(RadioSkin.stored(WidgetConfig([RadioSkin.key: .string("bogus")])), .classic)
         XCTAssertFalse(RadioSkin.classic.isPro)
@@ -150,8 +150,8 @@ final class RadioSkinTests: XCTestCase {
 
     func testCatalogOffersClassicFirstAndAsTheDefault() {
         guard let entry = WidgetCatalog.entry(.radio) else { return XCTFail("收音机不在目录里") }
-        XCTAssertEqual(entry.variants.map(\.title), ["经典", "木壳电子管", "晶体管便携", "数码卡座",
-                                                     "烟晶", "灯阵", "瓷白圆盘", "掌机像素", "墨白直尺"])
+        XCTAssertEqual(entry.variants.map(\.title), ["经典调谐", "木壳电子管", "复古便携", "数码卡座",
+                                                     "烟晶玻璃", "琥珀点阵", "白瓷转盘", "掌机像素", "黑白刻度"])
         XCTAssertEqual(entry.defaults[RadioSkin.key], .string("classic"))
         XCTAssertEqual(WidgetCatalog.make(.radio)?.config[RadioSkin.key], .string("classic"))
         XCTAssertFalse(WidgetCatalog.applies(RadioSkin.key, to: WidgetConfig(), kind: .radio),

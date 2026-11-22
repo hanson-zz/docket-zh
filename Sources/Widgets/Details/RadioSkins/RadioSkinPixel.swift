@@ -231,16 +231,23 @@ struct RadioSkinPixelPanel: RadioSkinPanelFace {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            RadioSkinHeader(model: model)
-            PixelHandheld(model: model)
-                .frame(height: 184)
-                .padding(.bottom, 2)
-            RadioSkinReadout(model: model)
+            RadioSkinPixelFace(model: model)
             PixelTransport(model: model)
-                .padding(.vertical, 2)
             PixelVolume(model: model)
         }
         .environment(\.colorScheme, model.tone == .dark ? .dark : .light)
+    }
+}
+
+/// 掌机像素的主视觉（紧凑布局）：掌机外壳加液晶屏，比原来矮约两成
+/// （屏上大号频道号、像素小熊猫、调谐条照旧放得下）。
+struct RadioSkinPixelFace: View {
+    var model: RadioSkinModel
+
+    var body: some View {
+        PixelHandheld(model: model)
+            .frame(height: 150)
+            .environment(\.colorScheme, model.tone == .dark ? .dark : .light)
     }
 }
 
