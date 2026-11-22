@@ -27,13 +27,39 @@ jobs:
       released: ${{ steps.release.outputs.release_created }}
       tag: ${{ steps.release.outputs.tag_name }}
 
+    # 拆成两步，各管一件事：
+    #
+    # 第一步只发版：只有发版 PR（带 autorelease: pending 标签）被人手动合并后，
+    # 它才会打 tag、建 Release；平常推 main 什么都不做。它只需要 contents 写权限，
+    # 失败就是真失败，照常让整个 run 变红。
+    #
+    # 第二步只开或更新发版 PR，不发版、不打 tag、不合并。仓库设置里没打开
+    # Settings > Actions > General > Workflow permissions >
+    # 「Allow GitHub Actions to create and approve pull requests」时，GitHub 会拒绝
+    # GITHUB_TOKEN 建 PR（报 "GitHub Actions is not permitted to create or approve
+    # pull requests"）。这不是代码问题，所以这一步失败只记一条警告，不让 run 失败。
     steps:
       # Pinned to an exact version rather than the floating v5 tag. This action
       # decides what number the next release gets and rewrites the changelog to
       # match; that is not behaviour to let change underneath the project on
       # someone else's schedule.
-      - uses: googleapis/release-please-action@v5.0.0
+      - name: Cut a release if a release pull request was merged
+        uses: googleapis/release-please-action@v5.0.0
         id: release
+        with:
+          skip-github-pull-request: true
+
+      - name: Open or update the release pull request
+        uses: googleapis/release-please-action@v5.0.0
+        id: pr
+        continue-on-error: true
+        with:
+          skip-github-release: true
+
+      - name: Explain a refused release pull request
+        if: steps.pr.outcome == 'failure'
+        run: |
+          echo "::warning title=发版 PR 没建成::release-please 已经算好下一版并推到 release-please--branches--main 分支，但没能开 PR。最常见原因：仓库 Settings > Actions > General > Workflow permissions 里没勾「Allow GitHub Actions to create and approve pull requests」。勾上后下次推 main 会自动开发版 PR（只开 PR，不会自动合并、不会自动发版）。不勾也不影响手动测试版打包。"
 
   # The binary build is called directly instead of being triggered by the
   # release. Wiring the other workflow to `release: published` is the obvious
