@@ -40,35 +40,39 @@ final class DesktopPetPointerPeekTests: XCTestCase {
         XCTAssertEqual(DesktopPetPointerPeek.cut(forImage: "pet-sprite-cat-sit", mascot: .cat), DesktopPetPointerPeek.uncut)
     }
 
-    /// 扒边探头：遮罩边在前爪压边那条线上（图底下一点点），头约占露出来那截的七成。
+    /// 扒边探头：六只的耳朵尖和前爪压边线对齐到同一行（遮罩边在图底上面一点），头约占露出来那截的四分之三。
     func testCutsKeepHeadPawsAndALittleChest() {
         for mascot in FocusMascot.allCases {
             let cut = DesktopPetPointerPeek.cut(mascot)
-            XCTAssertLessThan(cut.top, 0.02, "\(mascot) 耳朵尖露全")
+            XCTAssertEqual(cut.top, 2.0 / 192, accuracy: 0.0001, "\(mascot) 耳朵尖露全")
+            XCTAssertEqual(cut.edge, 184.0 / 192, accuracy: 0.0001, "\(mascot) 压边线六只同一高度")
             XCTAssertGreaterThan(cut.edge, 0.92, "\(mascot) 边在前爪下沿，不切在身子中段")
-            XCTAssertLessThanOrEqual(cut.edge, 0.97, "\(mascot) 图底参差的毛边藏到边后面")
+            XCTAssertLessThanOrEqual(cut.edge, 0.97, "\(mascot) 爪子圆底藏到边后面")
             XCTAssertGreaterThan(cut.chin, cut.top)
-            XCTAssertLessThan(cut.chin, cut.edge, "\(mascot) 下巴下面还有爪子和一点胸口")
-            XCTAssertEqual(cut.headShare, 0.72, accuracy: 0.1, "\(mascot) 头约占七成")
+            XCTAssertLessThan(cut.chin, cut.edge - 0.1, "\(mascot) 下巴下面还有爪子和一点胸口")
+            XCTAssertEqual(cut.headShare, 0.76, accuracy: 0.05, "\(mascot) 头约占四分之三")
         }
+        XCTAssertEqual(DesktopPetPointerPeek.cut(.cat).chin, 146.0 / 192, accuracy: 0.0001)
+        XCTAssertEqual(DesktopPetPointerPeek.cut(.otter).chin, 138.0 / 192, accuracy: 0.0001)
     }
 
-    /// 可见高度六只统一，比原来整张 64 点小。
+    /// 可见高度六只统一，比原来整张 64 点小；宽度按新图（@2x 都是 192 像素高）。
     func testVisibleHeightIsUniform() {
         XCTAssertEqual(DesktopPetPointerPeek.visibleHeight, 40)
-        let sizes: [FocusMascot: CGSize] = [.cat: CGSize(width: 190, height: 192), .octopus: CGSize(width: 194, height: 192),
-                                            .otter: CGSize(width: 256, height: 192), .panda: CGSize(width: 184, height: 192),
-                                            .penguin: CGSize(width: 234, height: 192), .shiba: CGSize(width: 164, height: 192)]
+        let sizes: [FocusMascot: CGSize] = [.cat: CGSize(width: 218, height: 192), .octopus: CGSize(width: 212, height: 192),
+                                            .otter: CGSize(width: 258, height: 192), .panda: CGSize(width: 244, height: 192),
+                                            .penguin: CGSize(width: 244, height: 192), .shiba: CGSize(width: 216, height: 192)]
         for (mascot, size) in sizes {
             let layout = DesktopPetPointerPeek.layout(imageSize: size, cut: DesktopPetPointerPeek.cut(mascot), scale: 1)
             XCTAssertEqual(layout.visible.height, 40, accuracy: 0.001, "\(mascot)")
-            XCTAssertLessThanOrEqual(layout.visible.width, 56, "\(mascot)")
-            // 图底下一截在边下面（y < 0），图顶几乎齐着露出来那截的顶。
+            // 最宽的水獭约 57 点。
+            XCTAssertLessThanOrEqual(layout.visible.width, 58, "\(mascot)")
+            // 图底下一截在边下面（y < 0），图顶比露出来那截的顶高一点点（耳朵尖上面留的 2 行）。
             XCTAssertLessThan(layout.image.minY, 0)
-            XCTAssertEqual(layout.image.maxY, 40, accuracy: 0.5)
+            XCTAssertEqual(layout.image.maxY, 40, accuracy: 0.6)
             XCTAssertEqual(layout.panel.height, 40 + DesktopPetPointerPeek.margin * 2, accuracy: 0.001)
         }
-        let large = DesktopPetPointerPeek.layout(imageSize: CGSize(width: 164, height: 192),
+        let large = DesktopPetPointerPeek.layout(imageSize: CGSize(width: 216, height: 192),
                                                  cut: DesktopPetPointerPeek.cut(.shiba), scale: 1.25)
         XCTAssertEqual(large.visible.height, 50, accuracy: 0.001)
     }

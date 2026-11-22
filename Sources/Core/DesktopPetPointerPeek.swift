@@ -7,9 +7,10 @@ import Foundation
 // 麦克风在用（通话、开会讲解）时不出来；人走开约 3 分钟也收起。静止时只是一张图，不开显示刷新。
 // 这里只有纯逻辑，窗口在 App 的 `DesktopPetPointerPeekController`。
 //
-// 图用 desk-<吉祥物>-peek（@2x 高 192 像素），六只都是趴姿，底边就在前爪下面。真机上早先的问题是
-// 这条截平的底边浮在空中、没有东西挡着，看着像被切掉一块。现在把遮罩边（那条看不见的边）放在每只
-// 前爪压边的那条线上（`cut`），图底下参差的那几行藏到边后面，边上画一道极淡的接触阴影，
+// 图用 desk-<吉祥物>-peek（@1x 高 96、@2x 高 192 像素），六只都是扒边探头的画法，统一缩放对齐：
+// 耳朵尖在第 2 行，前爪压边那条线都在第 184 行，左右居中各留 4 像素。真机上早先的问题是截平的底边
+// 浮在空中、没有东西挡着，看着像被切掉一块。现在把遮罩边（那条看不见的边）放在前爪压边的那条线上
+// （`cut`），爪子圆圆的底和下面垂着的（柴犬的围巾尖）藏到边后面，边上画一道极淡的接触阴影，
 // 整体朝指针歪一点，出场时从边后面升起、停一下、轻轻回弹。可见高度六只统一（`visibleHeight`）。
 
 public enum DesktopPetPointerPeek {
@@ -52,19 +53,23 @@ public enum DesktopPetPointerPeek {
         public var headShare: Double { (chin - top) / (edge - top) }
     }
 
-    /// 六只探头图各自的裁法（按 @2x 192 像素高的图量出来的行号）。前爪下沿往下那几行只剩零碎的
-    /// 毛边（不透明的不到一半），遮罩边放在它上面一点。
+    /// 探头图里耳朵尖那一行和前爪压边那条线（@2x 192 像素高的行号），六只对齐到同一高度。
+    public static let artTopRow: Double = 2
+    public static let artEdgeRow: Double = 184
+
+    /// 六只探头图各自的裁法：头顶和压边线六只一样，只有下巴（头的下沿）各自量。前爪压边线取爪子
+    /// 不透明宽度掉到一半出头的那一行，爪子圆底那一两行藏到边后面，像压在边上。
     public static func cut(_ mascot: FocusMascot) -> Cut {
-        func rows(_ top: Double, _ chin: Double, _ edge: Double) -> Cut {
-            Cut(top: top / 192, chin: chin / 192, edge: edge / 192)
+        func rows(_ chin: Double) -> Cut {
+            Cut(top: artTopRow / 192, chin: chin / 192, edge: artEdgeRow / 192)
         }
         switch mascot {
-        case .cat: return rows(1, 132, 186)
-        case .octopus: return rows(0, 146, 184)
-        case .otter: return rows(0, 148, 185)
-        case .panda: return rows(0, 128, 185)
-        case .penguin: return rows(1, 122, 183)
-        case .shiba: return rows(1, 128, 181)
+        case .cat: return rows(146)
+        case .octopus: return rows(140)
+        case .otter: return rows(138)
+        case .panda: return rows(142)
+        case .penguin: return rows(140)
+        case .shiba: return rows(144)
         }
     }
 
