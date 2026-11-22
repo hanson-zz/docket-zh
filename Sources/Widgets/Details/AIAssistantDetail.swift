@@ -296,8 +296,11 @@ private struct AIAskView: View {
                     .accessibilityHidden(true)
             }
         }
-        // 输入框占掉中间剩下的高度，字多了在框里滚动；最少放得下三行。
-        .frame(maxWidth: .infinity, minHeight: 76, maxHeight: .infinity, alignment: .topLeading)
+        // 默认放得下 3 行（约 100 点），字多了跟着长，到 200 点后在框里滚动（`AIAsk.inputHeight`）。
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(height: max(0, CGFloat(AIAsk.inputHeight(state.draft(instance.id), width: 360)) - 24),
+               alignment: .topLeading)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: AIAsk.inputHeight(state.draft(instance.id), width: 360))
         .overlay(alignment: .bottomLeading) {
             Text("Enter 提交 · Shift+Enter 换行")
                 .font(.system(size: 13))
@@ -327,11 +330,51 @@ private struct AIAskView: View {
                 }
             }
             .frame(height: 30)
-            AIPromptMenu(prompts: center.prompts,
-                         runPrompt: { run(template: $0.content) },
-                         managePrompts: openAISettings)
+            moreChipsMenu
         }
         .disabled(context.isPreview)
+    }
+
+    /// 「更多」：没摆在一排上的快捷操作、常用提示词，最后进助手设置调整一排上放哪几个。
+    private var moreChipsMenu: some View {
+        let rest = AIDockChip.allCases.filter { !chips.contains($0) }
+        return Menu {
+            ForEach(rest, id: \.self) { chip in
+                Button {
+                    run(chip)
+                } label: {
+                    Label(chip.title, systemImage: chip.symbol)
+                }
+                .disabled(chip.usesClipboardOnly && center.clipboardPreview == nil)
+            }
+            if !center.prompts.isEmpty {
+                Divider()
+                ForEach(center.prompts) { prompt in
+                    Button(prompt.name) {
+                        guard !AskTextView.keyWindowIsComposing else { return }
+                        run(template: prompt.content)
+                    }
+                }
+            }
+            Divider()
+            Button(tr("调整快捷操作…")) { state.mode = .manage }
+            Button(tr("管理常用提示词…"), action: openAISettings)
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                Text(tr("更多"))
+                    .font(.system(size: 13))
+            }
+            .foregroundStyle(.panelPrimary)
+            .padding(.horizontal, 7)
+            .frame(height: 28)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(tr("更多快捷操作和常用提示词"))
+        .accessibilityLabel(tr("更多快捷操作"))
     }
 
     private func chipButton(_ chip: AIDockChip) -> some View {
@@ -439,91 +482,88 @@ private struct AIAskView: View {
 
     // MARK: 底栏
 
-    /// 一条细线下面：左边服务分段按钮（卡片上启用的前三个，其余进「…」，放不下时少露
-    /// 一个），中间模式胶囊（API 模式 / 网页模式 / App 模式，点一下换），右边主按钮。
+    /// 一条细线下面分左右两栏（按效果图）：左边当前服务（始终露出、带勾）、再露一个别的服务和「…」，
+    /// 下面一句说清楚这次会怎么处理；右边打开方式下拉和唯一的主按钮。
     private var footer: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Rectangle()
                 .fill(.panelSeparator)
                 .frame(height: 0.5)
-            HStack(spacing: 8) {
-                ViewThatFits(in: .horizontal) {
-                    serviceSegments(limit: AIServiceSegments.fallbackLimits[0])
-                    serviceSegments(limit: AIServiceSegments.fallbackLimits[1])
-                    serviceSegments(limit: AIServiceSegments.fallbackLimits[2])
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ViewThatFits(in: .horizontal) {
+                        serviceChips(showsOther: true)
+                        serviceChips(showsOther: false)
+                    }
+                    // 弹出列表挂在整组上（ViewThatFits 会量几种摆法，按钮里不挂弹窗），列出全部服务。
+                    .popover(isPresented: $choosing, arrowEdge: .top) { serviceList(services) }
+                    if let target {
+                        HStack(alignment: .firstTextBaseline, spacing: 5) {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 12))
+                                .accessibilityHidden(true)
+                            Text(AIAsk.modeLine(mode: targetMode,
+                                                appInstalled: AIServiceOpener.installedApp(target) != nil,
+                                                supportsAsk: target.supportsAsk))
+                                .font(.system(size: 13))
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .foregroundStyle(.panelSecondary)
+                    }
                 }
-                // 弹出列表挂在整组上（ViewThatFits 会量几种摆法，按钮里不挂弹窗），列出全部服务。
-                .popover(isPresented: $choosing, arrowEdge: .top) { serviceList(services) }
-                .layoutPriority(-1)
-                Spacer(minLength: 0)
-                if let target { modeCapsule(target) }
-                Button(action: submitFromButton) {
-                    Text(buttonTitle)
-                        .font(.system(size: 14, weight: .semibold))
-                        .lineLimit(1)
-                        .padding(.horizontal, 16)
-                        .frame(height: 30)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Rectangle()
+                    .fill(.panelSeparator)
+                    .frame(width: 0.5)
+                    .frame(maxHeight: 64)
+                VStack(spacing: 8) {
+                    if let target { modeMenu(target) }
+                    Button(action: submitFromButton) {
+                        HStack(spacing: 6) {
+                            Image(systemName: targetMode == .api ? "paperplane.fill" : "arrow.up.forward.app")
+                                .font(.system(size: 12, weight: .semibold))
+                                .accessibilityHidden(true)
+                            Text(buttonTitle)
+                                .font(.system(size: 14, weight: .semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.9)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                    }
+                    // 只这一个按钮用实心强调色；设了主题色按 PanelButtonLook.solid(for:) 配，对比度不低于 4.5。
+                    .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex))))
+                    .disabled(!canSubmit)
+                    .help(buttonHelp)
+                    .accessibilityLabel(buttonTitle)
+                    .accessibilityHint(buttonHelp)
                 }
-                // 可用：实心强调色白字（只这一个按钮用强调色）；设了主题色按 PanelButtonLook.solid(for:)
-                // 配，对比度不低于 4.5。空着时中性灰底 + 次级字色。
-                .buttonStyle(PanelSolidButtonStyle(fill: panelTint.accent(or: Color(hex: PanelButtonLook.solidBlueHex))))
-                .fixedSize()
-                .layoutPriority(1)
-                .disabled(!canSubmit)
-                .help(buttonHelp)
-                .accessibilityLabel(buttonTitle)
-                .accessibilityHint(buttonHelp)
+                .frame(width: 168)
             }
         }
     }
 
-    /// 服务分段按钮：选中的一段凸起、前面一个小勾；收在「…」里的被选中时「…」凸起。
-    private func serviceSegments(limit: Int) -> some View {
-        let split = AIServiceSegments.split(services.map(\.id), limit: limit)
-        let shown = split.shown.compactMap { id in services.first { $0.id == id } }
-        let overflow = split.overflow.compactMap { id in services.first { $0.id == id } }
-        let overflowSelected = AIServiceSegments.overflowSelected(target?.id, overflow: split.overflow)
-        return HStack(spacing: 2) {
-            ForEach(shown) { service in
-                let selected = service.id == target?.id
-                Button {
-                    pick(service)
-                } label: {
-                    HStack(spacing: 4) {
-                        if selected {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(Color(hex: AIGlyph.dotHex).panelReadable)
-                                .accessibilityHidden(true)
-                        }
-                        Text(service.title)
-                            .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                            .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
-                            .lineLimit(1)
-                            .fixedSize()
-                    }
-                    .padding(.horizontal, 9)
-                    .frame(height: 28)
-                    .background {
-                        if selected { Capsule().fill(.panelRaised).panelLift() }
-                    }
-                    .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .help(center.modeLabel(for: service))
-                .accessibilityLabel(selected ? tr("\(service.title)，当前") : tr("切换到 \(service.title)"))
-            }
-            if !overflow.isEmpty {
+    /// 服务胶囊：当前服务始终排第一、凸起、带勾；`showsOther` 时再露一个别的服务（卡片上的下一个），
+    /// 其余进「…」。放不下时只留当前服务和「…」。
+    private func serviceChips(showsOther: Bool) -> some View {
+        let current = target
+        let others = services.filter { $0.id != current?.id }
+        let other = showsOther ? others.first : nil
+        let hidden = others.count - (other == nil ? 0 : 1)
+        return HStack(spacing: 6) {
+            if let current { serviceChip(current, selected: true) }
+            if let other { serviceChip(other, selected: false) }
+            if hidden > 0 {
                 Button {
                     choosing.toggle()
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(overflowSelected ? Color.panelPrimary : Color.panelSecondary)
+                        .foregroundStyle(.panelSecondary)
                         .frame(width: 28, height: 28)
-                        .background {
-                            if overflowSelected { Capsule().fill(.panelRaised).panelLift() }
-                        }
+                        .background(Capsule().fill(.panelFill))
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -531,37 +571,98 @@ private struct AIAskView: View {
                 .accessibilityLabel(tr("更多服务"))
             }
         }
-        .padding(2)
-        .background(Capsule().fill(.panelFill))
         .fixedSize()
         .disabled(context.isPreview)
     }
 
-    /// 模式胶囊：「API 模式」「网页模式」「App 模式」。点一下换到下一种能用的
-    /// （没填 API 密钥时跳过 API），和设置 ▸ AI 里改的是同一个键。
-    private func modeCapsule(_ service: AIService) -> some View {
-        let options = center.modeOptions(for: service)
-        let usable = options.filter(\.available).count
-        return Button {
-            center.cycleMode(for: service)
+    private func serviceChip(_ service: AIService, selected: Bool) -> some View {
+        Button {
+            if selected { choosing.toggle() } else { pick(service) }
         } label: {
-            Text(AIModeChoice.capsuleTitle(targetMode))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.panelPrimary)
-                .lineLimit(1)
-                .fixedSize()
-                .padding(.horizontal, 11)
-                .frame(height: 30)
-                .background(Capsule().fill(.panelFill))
-                .contentShape(Capsule())
+            HStack(spacing: 5) {
+                AIGlyph(initial: service.initial, size: 18, style: .panel)
+                Text(service.title)
+                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? Color.panelPrimary : Color.panelSecondary)
+                    .lineLimit(1)
+                    .fixedSize()
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color(hex: AIGlyph.dotHex).panelReadable)
+                        .accessibilityHidden(true)
+                }
+            }
+            .padding(.leading, 5)
+            .padding(.trailing, 8)
+            .frame(height: 28)
+            .background {
+                if selected {
+                    Capsule().fill(.panelRaised).panelLift()
+                } else {
+                    Capsule().fill(.panelFill)
+                }
+            }
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .disabled(context.isPreview || usable < 2)
-        .help([AIHandoff.modeAction(targetMode, appInstalled: AIServiceOpener.installedApp(service) != nil,
-                                    supportsAsk: service.supportsAsk),
-               tr("点一下换打开方式")].joined(separator: " · "))
-        .accessibilityLabel(AIModeChoice.capsuleTitle(targetMode))
-        .accessibilityHint(tr("点一下换打开方式"))
+        .help(selected ? tr("当前服务：\(service.title)，点一下换别的") : center.modeLabel(for: service))
+        .accessibilityLabel(selected ? tr("\(service.title)，当前") : tr("切换到 \(service.title)"))
+    }
+
+    /// 打开方式下拉：API 模式 / 网页模式 / App 模式，不能选的灰掉并写原因。和设置 ▸ AI 里改的是同一个键。
+    private func modeMenu(_ service: AIService) -> some View {
+        let options = center.modeOptions(for: service)
+        return Menu {
+            ForEach(options, id: \.mode) { option in
+                Button {
+                    center.setMode(option.mode, for: service)
+                } label: {
+                    if option.mode == targetMode {
+                        Label(AIModeChoice.capsuleTitle(option.mode), systemImage: "checkmark")
+                    } else {
+                        Text(option.available
+                             ? AIModeChoice.capsuleTitle(option.mode)
+                             : [AIModeChoice.capsuleTitle(option.mode),
+                                AIModeChoice.unavailableReason(option.mode) ?? ""].joined(separator: " · "))
+                    }
+                }
+                .disabled(!option.available)
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: Self.modeSymbol(targetMode))
+                    .font(.system(size: 12, weight: .medium))
+                    .accessibilityHidden(true)
+                Text(AIModeChoice.capsuleTitle(targetMode))
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(1)
+                Spacer(minLength: 2)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .semibold))
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(.panelPrimary)
+            .padding(.horizontal, 11)
+            .frame(maxWidth: .infinity)
+            .frame(height: 30)
+            .background(Capsule().fill(.panelFill))
+            .contentShape(Capsule())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .disabled(context.isPreview)
+        .help(AIHandoff.modeAction(targetMode, appInstalled: AIServiceOpener.installedApp(service) != nil,
+                                   supportsAsk: service.supportsAsk))
+        .accessibilityLabel(tr("打开方式：\(AIModeChoice.capsuleTitle(targetMode))"))
+    }
+
+    private static func modeSymbol(_ mode: AIOpenMode) -> String {
+        switch mode {
+        case .api: "bolt.horizontal"
+        case .web: "globe"
+        case .jump: "app.badge"
+        }
     }
 
     private func pick(_ service: AIService) {

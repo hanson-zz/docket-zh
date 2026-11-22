@@ -523,29 +523,57 @@ public enum AIAsk {
         return .copyThenOpen(question)
     }
 
-    /// 主按钮上的字。
-    /// 主按钮上的字：要短，具体会做什么写在下面的提示句里，不重复。
-    /// API 方式「发送」；App 方式装了 App 时「打开 豆包」；其余（网页方式、
-    /// 没装 App 走浏览器）「去网页问」。
+    /// 主按钮上的字：说清楚码头做到哪一步，App 和网页方式不能让人以为码头已经替他问了。
+    /// API 方式「发送」；App 方式装了 App 时「复制并打开 豆包」；其余（网页方式、
+    /// 没装 App 走浏览器）「去网页提问」。
     public static func buttonTitle(mode: AIOpenMode, service: AIService?, appInstalled: Bool) -> String {
         switch mode {
         case .api: return tr("发送")
-        case .web: return tr("去网页问")
+        case .web: return tr("去网页提问")
         case .jump:
-            guard let service, appInstalled else { return tr("去网页问") }
+            guard let service, appInstalled else { return tr("去网页提问") }
             return appButtonTitle(service)
         }
     }
 
-    /// 服务名超过这么多个字时按钮写「打开 App」，免得把按钮撑得太宽。
-    public static let maxButtonNameLength = 10
+    /// 服务名超过这么多个字时按钮写「复制并打开 App」，免得把按钮撑得太宽。
+    public static let maxButtonNameLength = 8
 
-    /// 「打开 豆包」；名字太长（自定义服务）时「打开 App」。
+    /// 「复制并打开 豆包」；名字太长（自定义服务）时「复制并打开 App」。
     public static func appButtonTitle(_ service: AIService) -> String {
         let name = service.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, name.count <= maxButtonNameLength else { return tr("打开 App") }
-        return tr("打开 \(name)")
+        guard !name.isEmpty, name.count <= maxButtonNameLength else { return tr("复制并打开 App") }
+        return tr("复制并打开 \(name)")
     }
+
+    /// 主按钮左边那一句：当前服务会怎么处理这次提问。App 和网页方式写明要用户自己粘贴发送。
+    public static func modeLine(mode: AIOpenMode, appInstalled: Bool, supportsAsk: Bool) -> String {
+        switch mode {
+        case .api: return tr("通过 API 直接提问，回答显示在刘海对话")
+        case .web: return tr("复制问题并打开网页，到那边粘贴发送")
+        case .jump:
+            if appInstalled { return tr("复制问题并打开 App，到那边粘贴发送") }
+            return supportsAsk ? tr("在浏览器打开，问题带在网址里") : tr("复制问题并打开网页，到那边粘贴发送")
+        }
+    }
+
+    /// 输入框高度：默认放得下 3 行（约 100 点），字多了跟着长，到 200 点后在框里滚动。
+    /// `width` 是可写字的宽度，按 14 点字估：中日韩字一个字宽，其它字半个。
+    public static func inputHeight(_ text: String, width: Double, fontSize: Double = 14) -> Double {
+        let perLine = max(1, (width / fontSize).rounded(.down))
+        var lines = 0
+        for paragraph in text.split(separator: "\n", omittingEmptySubsequences: false) {
+            var units = 0.0
+            for scalar in paragraph.unicodeScalars { units += scalar.isASCII ? 0.55 : 1 }
+            lines += max(1, Int((units / perLine).rounded(.up)))
+        }
+        let lineHeight = fontSize * 1.25
+        let chrome = 24.0 + 20.0  // 上下留白 12 + 12，底下一行「Enter 提交」提示
+        let height = chrome + Double(max(3, lines)) * lineHeight
+        return min(inputMaxHeight, max(inputMinHeight, height))
+    }
+    public static let inputMinHeight = 96.0
+    public static let inputMaxHeight = 200.0
 
     /// 做完之后面板上的一句话。只说做了什么，不假装已经发送或已经回答。
     public static func hint(after plan: Plan, service: AIService) -> String? {

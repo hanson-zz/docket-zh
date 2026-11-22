@@ -7469,6 +7469,138 @@
         }
       }
     },
+    "去网页提问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask on the Web"
+          }
+        }
+      }
+    },
+    "复制并打开 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy and Open %@"
+          }
+        }
+      }
+    },
+    "复制并打开 App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy and Open App"
+          }
+        }
+      }
+    },
+    "通过 API 直接提问，回答显示在刘海对话" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asks directly over the API; the answer shows in the notch chat"
+          }
+        }
+      }
+    },
+    "复制问题并打开网页，到那边粘贴发送" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copies the question and opens the website; paste and send it there"
+          }
+        }
+      }
+    },
+    "复制问题并打开 App，到那边粘贴发送" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copies the question and opens the app; paste and send it there"
+          }
+        }
+      }
+    },
+    "在浏览器打开，问题带在网址里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens in the browser with the question in the address"
+          }
+        }
+      }
+    },
+    "调整快捷操作…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Quick Actions…"
+          }
+        }
+      }
+    },
+    "更多快捷操作和常用提示词" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More quick actions and saved prompts"
+          }
+        }
+      }
+    },
+    "更多快捷操作" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More quick actions"
+          }
+        }
+      }
+    },
+    "当前服务：%@，点一下换别的" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current service: %@. Click to pick another"
+          }
+        }
+      }
+    },
+    "打开方式：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open with: %@"
+          }
+        }
+      }
+    },
     "双向同步 ·" : {
       "extractionState" : "manual",
       "localizations" : {

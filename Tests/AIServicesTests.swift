@@ -280,27 +280,39 @@ final class AIServicesTests: XCTestCase {
         XCTAssertEqual(AIAsk.hint(after: .copyThenOpen("你好"), service: deepseek), "已复制，到 DeepSeek 里粘贴即可。")
     }
 
-    /// 主按钮的字要短：装了 App「打开 豆包」，没装或网页方式「去网页问」，API「发送」。
+    /// 主按钮的字：装了 App「复制并打开 豆包」，没装或网页方式「去网页提问」，API「发送」。
     func testAskButtonTitleIsShort() throws {
         let doubao = try XCTUnwrap(AIServices.builtIn("doubao"))
         let chatgpt = try XCTUnwrap(AIServices.builtIn("chatgpt"))
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: true), "打开 豆包")
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: true), "打开 ChatGPT")
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: false), "去网页问")
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: false), "去网页问")
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: nil, appInstalled: true), "去网页问")
-        XCTAssertEqual(AIAsk.buttonTitle(mode: .web, service: doubao, appInstalled: true), "去网页问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: true), "复制并打开 豆包")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: true), "复制并打开 ChatGPT")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: doubao, appInstalled: false), "去网页提问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: chatgpt, appInstalled: false), "去网页提问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .jump, service: nil, appInstalled: true), "去网页提问")
+        XCTAssertEqual(AIAsk.buttonTitle(mode: .web, service: doubao, appInstalled: true), "去网页提问")
         XCTAssertEqual(AIAsk.buttonTitle(mode: .api, service: doubao, appInstalled: false), "发送")
         for service in AIServices.builtIn {
             let title = AIAsk.buttonTitle(mode: .jump, service: service, appInstalled: true)
-            XCTAssertLessThanOrEqual(title.count, 3 + AIAsk.maxButtonNameLength, service.id)
-            XCTAssertFalse(title.contains("复制"), service.id)
+            XCTAssertLessThanOrEqual(title.count, 6 + AIAsk.maxButtonNameLength, service.id)
+            XCTAssertTrue(title.hasPrefix("复制并打开"), service.id)
         }
         var long = doubao
         long.title = "一个名字特别特别长的自定义服务"
-        XCTAssertEqual(AIAsk.appButtonTitle(long), "打开 App")
+        XCTAssertEqual(AIAsk.appButtonTitle(long), "复制并打开 App")
         long.title = "   "
-        XCTAssertEqual(AIAsk.appButtonTitle(long), "打开 App")
+        XCTAssertEqual(AIAsk.appButtonTitle(long), "复制并打开 App")
+    }
+
+    /// 输入框默认约 100 点放 3 行，字多了长高，最高 200 点。App 和网页方式的说明写明要用户自己粘贴发送。
+    func testAskInputGrowsAndModeLineIsHonest() {
+        XCTAssertEqual(AIAsk.inputHeight("", width: 360), 96, accuracy: 0.5)
+        XCTAssertEqual(AIAsk.inputHeight("你好", width: 360), 96, accuracy: 0.5)
+        let five = Array(repeating: "一行", count: 5).joined(separator: "\n")
+        XCTAssertGreaterThan(AIAsk.inputHeight(five, width: 360), 96)
+        XCTAssertEqual(AIAsk.inputHeight(String(repeating: "长", count: 2000), width: 360), 200)
+        XCTAssertTrue(AIAsk.modeLine(mode: .jump, appInstalled: true, supportsAsk: false).contains("粘贴"))
+        XCTAssertTrue(AIAsk.modeLine(mode: .web, appInstalled: false, supportsAsk: false).contains("粘贴"))
+        XCTAssertTrue(AIAsk.modeLine(mode: .api, appInstalled: false, supportsAsk: false).contains("API"))
     }
 
     func testAVeryLongQuestionIsCopiedInsteadOfStuffedIntoAURL() throws {
