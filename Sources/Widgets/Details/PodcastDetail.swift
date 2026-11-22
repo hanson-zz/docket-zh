@@ -18,6 +18,7 @@ struct PodcastDetail: View {
     @Environment(\.panelTint) private var panelTint
     @Environment(\.colorScheme) private var scheme
     @Environment(\.panelForcedDark) private var forcedDark
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var instance: WidgetInstance
     var context: WidgetContext
@@ -434,7 +435,7 @@ struct PodcastDetail: View {
             Rectangle().fill(.panelSeparator).frame(height: 0.5)
             HStack(spacing: 0) {
                 footerAction("list.bullet", title: tr("章节"), enabled: !chapters.isEmpty) {
-                    withAnimation(.easeInOut(duration: 0.25)) { chaptersShown.toggle() }
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { chaptersShown.toggle() }
                 }
                 .help(chapters.isEmpty ? tr("这一集没有章节") : tr("章节"))
                 Rectangle().fill(.panelSeparator).frame(width: 0.5, height: 18)
@@ -633,7 +634,7 @@ struct PodcastDetail: View {
                 Spacer(minLength: 4)
                 if PodcastEpisodeListing.needsToggle(total: filtered.count) {
                     Button {
-                        withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() }
+                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { expanded.toggle() }
                     } label: {
                         HStack(spacing: 3) {
                             Text(expanded ? tr("收起") : tr("查看全部"))
@@ -709,7 +710,7 @@ struct PodcastDetail: View {
         }
         .padding(2)
         .background(Capsule().fill(.panelFill))
-        .animation(.easeInOut(duration: 0.2), value: filter)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: filter)
     }
 
     /// 刷新中列表最上面的一行小转圈。

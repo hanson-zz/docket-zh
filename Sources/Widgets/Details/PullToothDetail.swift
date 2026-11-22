@@ -14,6 +14,7 @@ import SwiftUI
 struct PullToothDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var game: ToothGame {
         context.isPreview ? ToothSamples.game : PullTooth.game(instance.config)
@@ -145,7 +146,7 @@ struct PullToothDetail: View {
         .padding(.vertical, 10)
         .readableGlass(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.panelStroke, lineWidth: 0.5))
-        .animation(.snappy(duration: 0.2), value: game.pulledCount)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: game.pulledCount)
     }
 
     // MARK: 底部提示条
