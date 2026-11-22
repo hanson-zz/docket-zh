@@ -2498,6 +2498,17 @@
         }
       }
     },
+    "单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Episodes"
+          }
+        }
+      }
+    },
     "即将" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2516,6 +2527,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Starting"
+          }
+        }
+      }
+    },
+    "发布于 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Published %@"
           }
         }
       }
@@ -2905,6 +2927,28 @@
         }
       }
     },
+    "收听中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Progress"
+          }
+        }
+      }
+    },
+    "收听中 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listening %@%%"
+          }
+        }
+      }
+    },
     "收音机已暂停 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2971,6 +3015,17 @@
         }
       }
     },
+    "未听" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unplayed"
+          }
+        }
+      }
+    },
     "未生效" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2978,6 +3033,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not in effect"
+          }
+        }
+      }
+    },
+    "查看全部（%@）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show All (%@)"
           }
         }
       }
@@ -3011,6 +3077,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previewing"
+          }
+        }
+      }
+    },
+    "没有收听中的单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No episodes in progress"
+          }
+        }
+      }
+    },
+    "没有未听的单集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No unplayed episodes"
           }
         }
       }
@@ -3147,6 +3235,17 @@
         }
       }
     },
+    "管理订阅" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Subscription"
+          }
+        }
+      }
+    },
     "结束提示音" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3165,6 +3264,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Notify when a session ends"
+          }
+        }
+      }
+    },
+    "节目更新于 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show updated %@"
           }
         }
       }

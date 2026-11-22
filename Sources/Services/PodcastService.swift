@@ -23,6 +23,8 @@ final class PodcastService {
     private(set) var artwork: [URL: NSImage] = [:]
     /// 封面压淡后的颜色（面板顶上那一抹），灰白封面没有，按封面地址。
     private(set) var artworkTint: [URL: ColorCode] = [:]
+    /// 封面的主色（没压淡），面板 2.0 的播放器背景按它生成克制的渐变；灰白封面没有。
+    private(set) var coverColor: [URL: ColorCode] = [:]
     /// 启动时存档没读全：有几条旧订阅读不出来、原文件备份在哪。面板上提示。
     private(set) var loadIssue: LoadIssue?
     /// 正在重新获取旧订阅（启动后的迁移、点「重新获取」）。
@@ -290,37 +292,39 @@ final class PodcastService {
             artworkLoading.remove(url)
             if let image {
                 artwork[url] = image
-                if let average = Self.averageColor(image), let wash = PodcastArtTint.wash(average) {
+                let samples = Self.samples(image)
+                if let average = PodcastCoverColor.average(samples), let wash = PodcastArtTint.wash(average) {
                     artworkTint[url] = wash
+                }
+                if let dominant = PodcastCoverColor.dominant(samples) {
+                    coverColor[url] = dominant
                 }
             }
         }
         return nil
     }
 
-    /// 封面缩到 8×8 取平均色（太白、太黑的点不算，免得白边、黑底把颜色冲掉）。
-    private static func averageColor(_ image: NSImage) -> ColorCode? {
-        let side = 8
+    /// 封面缩到 12×12 读出每个点的颜色，平均色、主色都在 Core 里算（`PodcastCoverColor`）。
+    private static func samples(_ image: NSImage) -> [ColorCode] {
+        let side = 12
         guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side,
                                          bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
                                          colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
-              let context = NSGraphicsContext(bitmapImageRep: rep) else { return nil }
+              let context = NSGraphicsContext(bitmapImageRep: rep) else { return [] }
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = context
         image.draw(in: NSRect(x: 0, y: 0, width: side, height: side))
         NSGraphicsContext.restoreGraphicsState()
-        var red = 0.0, green = 0.0, blue = 0.0, count = 0.0
+        var out: [ColorCode] = []
+        out.reserveCapacity(side * side)
         for x in 0..<side {
             for y in 0..<side {
-                guard let color = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
-                let r = Double(color.redComponent), g = Double(color.greenComponent), b = Double(color.blueComponent)
-                let peak = max(r, g, b), floor = min(r, g, b)
-                if peak < 0.08 || floor > 0.94 { continue }
-                red += r; green += g; blue += b; count += 1
+                guard let color = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), color.alphaComponent > 0.5 else { continue }
+                out.append(ColorCode(red: Double(color.redComponent), green: Double(color.greenComponent),
+                                     blue: Double(color.blueComponent)))
             }
         }
-        guard count > 0 else { return nil }
-        return ColorCode(red: red / count, green: green / count, blue: blue / count)
+        return out
     }
 
     private nonisolated static func download(_ url: URL) async -> NSImage? {

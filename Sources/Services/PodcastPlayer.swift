@@ -22,6 +22,8 @@ final class PodcastPlayer {
     private(set) var duration: Double = 0
     /// Set when the audio cannot be played; cleared by the next play.
     private(set) var problem: String?
+    /// 刚听完一整集时的那一下（面板上小熊猫短暂表态「完成」），过了 `until` 就不再显示。
+    private(set) var finishPulse: PandaPulse?
 
     @ObservationIgnored private var player: AVPlayer?
     @ObservationIgnored private var timeObserver: Any?
@@ -267,6 +269,7 @@ final class PodcastPlayer {
         isPlaying = false
         isBuffering = false
         position = duration
+        finishPulse = PodcastPandaCue.finishPulse(at: .now)
         PodcastService.shared.markFinished(episode.id, duration: duration)
         MediaSessionCoordinator.shared.end(.podcast)
     }

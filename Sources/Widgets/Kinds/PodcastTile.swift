@@ -73,7 +73,8 @@ struct PodcastTile: View {
             } else if context.position.isVertical {
                 VStack(spacing: 4) {
                     cover(size: 34)
-                    Text(show?.title ?? tr("播客"))
+                    // 竖排卡片很窄：用短名（去掉副标题），不再截成一半看不出是哪个节目。
+                    Text(show.map { PodcastShowName.short($0.title) } ?? tr("播客"))
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(WidgetStyle.primary)
                         .lineLimit(1)
