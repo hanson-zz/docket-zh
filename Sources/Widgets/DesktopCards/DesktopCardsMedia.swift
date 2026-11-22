@@ -705,29 +705,36 @@ private struct DMPodcastCard: View {
         player.toggle(episode, show: show.id)
     }
 
+    // 封面完整显示，上面不叠任何东西；正在播放和新单集放到节目名旁边。
     private func cover(_ show: PodcastShow, side: CGFloat) -> some View {
         PodcastCover(url: show.imageURL, size: side)
-            .overlay(alignment: .bottomLeading) {
-                if isCurrent {
-                    PlayingBarsView(playing: playing, tint: .white, height: max(11, side * 0.18), visible: true)
-                        .padding(5)
-                        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(.black.opacity(0.4)))
-                        .padding(6)
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                if unheard > 0 {
-                    Text(unheard > 9 ? "9+" : "\(unheard)")
-                        .font(.system(size: DM.small, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .frame(minWidth: 22, minHeight: 22)
-                        .background(Capsule().fill(Color(hex: "#FF3B30")))
-                        .offset(x: 6, y: -6)
-                        .accessibilityLabel(tr("\(unheard) 个新单集"))
-                }
-            }
             .shadow(color: .black.opacity(0.16), radius: 6, y: 3)
+    }
+
+    @ViewBuilder
+    private var badges: some View {
+        if isCurrent {
+            PlayingBarsView(playing: playing, tint: accent.panelGraphic, height: 11, visible: true)
+        }
+        if unheard > 0 {
+            Text(unheard > 9 ? "9+" : "\(unheard)")
+                .font(.system(size: DM.small, weight: .bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 5)
+                .frame(minWidth: 20, minHeight: 18)
+                .background(Capsule().fill(Color(hex: "#FF3B30")))
+                .accessibilityLabel(tr("\(unheard) 个新单集"))
+        }
+    }
+
+    private func showLine(_ show: PodcastShow, size font: CGFloat, weight: Font.Weight, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Text(show.title)
+                .font(.system(size: font, weight: weight))
+                .foregroundStyle(color)
+                .lineLimit(1)
+            badges.fixedSize()
+        }
     }
 
     private func playKey(_ show: PodcastShow, size key: CGFloat) -> some View {
@@ -764,10 +771,7 @@ private struct DMPodcastCard: View {
                 playKey(show, size: 44)
             }
             Spacer(minLength: 8)
-            Text(show.title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Color.panelPrimary)
-                .lineLimit(1)
+            showLine(show, size: 15, weight: .semibold, color: Color.panelPrimary)
             Text(episode?.title ?? caption)
                 .font(.system(size: DM.small))
                 .foregroundStyle(Color.panelSecondary)
@@ -782,10 +786,7 @@ private struct DMPodcastCard: View {
         HStack(spacing: 14) {
             cover(show, side: 132)
             VStack(alignment: .leading, spacing: 2) {
-                Text(show.title)
-                    .font(.system(size: DM.small, weight: .medium))
-                    .foregroundStyle(Color.panelSecondary)
-                    .lineLimit(1)
+                showLine(show, size: DM.small, weight: .medium, color: Color.panelSecondary)
                 Text(episode?.title ?? caption)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Color.panelPrimary)
@@ -817,10 +818,7 @@ private struct DMPodcastCard: View {
             HStack(alignment: .top, spacing: 12) {
                 cover(show, side: 80)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(show.title)
-                        .font(.system(size: DM.small, weight: .medium))
-                        .foregroundStyle(Color.panelSecondary)
-                        .lineLimit(1)
+                    showLine(show, size: DM.small, weight: .medium, color: Color.panelSecondary)
                     Text(episode?.title ?? caption)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Color.panelPrimary)
