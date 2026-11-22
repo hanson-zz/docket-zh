@@ -2,8 +2,9 @@ import AppKit
 import SwiftUI
 @preconcurrency import Translation
 
-/// Where text is typed or pasted and comes back translated, with the last
-/// twenty translations underneath.
+/// Where text is typed or pasted and comes back translated: a language bar,
+/// the original and the translation on two glass cards, three buttons, and
+/// the last translations underneath once there are any.
 ///
 /// Apple's on-device Translation does the work: free, no key, and nothing
 /// leaves the Mac. It translates a moment after typing stops, or at once on
@@ -23,6 +24,9 @@ struct TranslateDetail: View {
     /// does not translate the same text again.
     @State private var doneKey: String?
     @State private var copied = false
+    /// 原文按字号量出的自然高度，输入框据此在上下限之间长高。
+    @State private var naturalHeight = 0.0
+    @State private var showsAllRecent = false
     @State private var supported: Set<String> = []
     @FocusState private var editing: Bool
 
@@ -60,20 +64,15 @@ struct TranslateDetail: View {
         DetailCard {
             MeshBackdrop(color: WidgetStyle.tint(.blue))
         } content: {
+            // 不设固定高度、不另套滚动：内容少面板就矮，多了交给通用面板容器
+            // （DetailPanelFit）限高并在面板里滚动。
             VStack(alignment: .leading, spacing: 10) {
                 languageBar
                 sourcePane
                 resultPane
                 statusLine
-                HStack(spacing: 8) {
-                    PanelButton(title: tr("粘贴剪贴板"), symbol: "doc.on.clipboard") { pasteClipboard() }
-                    PanelButton(title: tr("截图翻译", context: "button"), symbol: "text.viewfinder") { translateScreenshot() }
-                        .help(tr("框选屏幕上的一块，本机识别并把译文盖在原文的位置上"))
-                    PanelButton(title: tr("翻译"), symbol: "translate", prominent: true) { translate(force: true) }
-                        .keyboardShortcut(.return, modifiers: .command)
-                        .help("⌘↩ 立即翻译")
-                }
-                historySection
+                actionRow
+                if !history.isEmpty { historySection }
             }
         }
         .translationTask(configuration) { session in
@@ -111,12 +110,13 @@ struct TranslateDetail: View {
         .onChange(of: draft) { _, text in
             if text.count > Translate.maxCharacters { draft = Translate.clamped(text) }
         }
+        // 换语言保留原文和译文，有原文就按新方向重新翻译。
         .onChange(of: "\(source)|\(smart)|\(chosenTarget)") { _, _ in translate(force: true) }
         .onAppear {
             guard !context.isPreview else { return }
             editing = true
             if takeShotText() { return }
-            if Translate.clickAction(config) == .clipboard { pasteClipboard() }
+            if Translate.clickAction(config) == .clipboard { pasteClipboard(now: true) }
         }
         .onChange(of: ShotInbox.shared.translate[instance.id]) { _, _ in _ = takeShotText() }
         .onDisappear { TranslateSpeaker.shared.stop() }
@@ -135,6 +135,7 @@ struct TranslateDetail: View {
         Translate.target(source: detectedSource, text: draft, chosen: chosenTarget, smart: smart)
     }
 
+    /// 源语言胶囊、交换键、目标语言胶囊，一排撑满。
     private var languageBar: some View {
         HStack(spacing: 8) {
             Menu {
@@ -153,15 +154,16 @@ struct TranslateDetail: View {
             .menuStyle(.button)
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
-            .fixedSize()
+            .frame(maxWidth: .infinity)
             .help("源语言")
 
             Button(action: swap) {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.panelPrimary)
-                    .frame(width: 26, height: 26)
-                    .background(Circle().fill(.panelRaised).panelLift())
+                    .frame(width: 32, height: 28)
+                    .readableGlass(in: Capsule())
+                    .contentShape(.capsule)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("交换语言")
@@ -181,10 +183,8 @@ struct TranslateDetail: View {
             .menuStyle(.button)
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
-            .fixedSize()
+            .frame(maxWidth: .infinity)
             .help("目标语言")
-
-            Spacer(minLength: 0)
         }
     }
 
@@ -194,22 +194,42 @@ struct TranslateDetail: View {
     }
 
     private func chip(_ title: String) -> some View {
-        HStack(spacing: 4) {
-            Text(title).lineLimit(1)
-            Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold)).opacity(0.7)
+        HStack(spacing: 5) {
+            Text(title)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).opacity(0.6)
         }
         .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(.panelPrimary)
-        .padding(.horizontal, 10)
-        .frame(height: 24)
-        .background(Capsule().fill(.panelRaised).panelLift())
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity)
+        .frame(height: 28)
+        .readableGlass(in: Capsule())
+        .contentShape(.capsule)
     }
 
     // MARK: Panes
 
+    private func paneTitle(_ title: String) -> some View {
+        Text(title)
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(.panelSecondary)
+    }
+
+    /// 原文卡：输入框默认约两行高，随文字长高到上限，再多在卡内滚动。
     private var sourcePane: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
+            paneTitle(tr("原文"))
             ZStack(alignment: .topLeading) {
+                // 看不见的同字号文字量出自然高度，输入框跟着它长高。
+                Text(draft.isEmpty ? " " : draft + " ")
+                    .font(.system(size: 14))
+                    .padding(.leading, 5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .hidden()
+                    .onGeometryChange(for: Double.self) { Double($0.size.height) } action: { naturalHeight = $0 }
                 if draft.isEmpty {
                     Text("输入或粘贴要翻译的文字")
                         .font(.system(size: 14))
@@ -222,13 +242,14 @@ struct TranslateDetail: View {
                     .font(.system(size: 14))
                     .foregroundStyle(.panelPrimary)
                     .scrollContentBackground(.hidden)
-                    .scrollIndicators(.never)
+                    .scrollIndicators(.automatic)
                     .focused($editing)
                     .disabled(context.isPreview)
             }
-            .frame(height: 78)
+            .frame(height: Translate.editorHeight(content: naturalHeight + 6))
+            .clipped()
             HStack(spacing: 6) {
-                Text("\(draft.count) / \(Translate.maxCharacters)")
+                Text(Translate.countText(draft.count))
                     .font(WidgetStyle.caption(13).monospacedDigit())
                     .foregroundStyle(.panelPrimary.opacity(draft.count >= Translate.maxCharacters ? 0.9 : 0.5))
                 Spacer(minLength: 0)
@@ -244,46 +265,63 @@ struct TranslateDetail: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .glassPane(cornerRadius: 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .readableGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
+    /// 译文卡：比原文更突出（字大一号、描一圈强调色），双击译文拷贝。
     private var resultPane: some View {
         let text = result?.resultText ?? ""
-        return VStack(alignment: .leading, spacing: 4) {
-            ScrollView {
-                Text(text.isEmpty ? (working ? tr("正在翻译…") : tr("译文会显示在这里")) : text)
-                    .font(.system(size: 14, weight: text.isEmpty ? .regular : .medium))
-                    .foregroundStyle(.panelPrimary.opacity(text.isEmpty ? 0.4 : 1))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, 5)
-            }
-            .scrollIndicators(.never)
-            .frame(height: 78)
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(result.map { Translate.pairText(source: $0.source, target: $0.target) } ?? " ")
-                    .font(WidgetStyle.caption(13))
-                    .foregroundStyle(.panelTertiary)
+                paneTitle(tr("译文"))
+                if let result {
+                    Text(Translate.pairText(source: result.source, target: result.target))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelTertiary)
+                }
+            }
+            Text(text.isEmpty ? (working ? tr("正在翻译…") : tr("译文会显示在这里")) : text)
+                .font(.system(size: 16, weight: text.isEmpty ? .regular : .medium))
+                .foregroundStyle(.panelPrimary.opacity(text.isEmpty ? 0.4 : 1))
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .topLeading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, 5)
+                .contentShape(.rect)
+                .onTapGesture(count: 2) { copyResult(text) }
+                .help(text.isEmpty ? "" : tr("双击拷贝译文"))
+            HStack(spacing: 6) {
                 Spacer(minLength: 0)
                 paneButton("speaker.wave.2", label: tr("朗读译文"), disabled: text.isEmpty) {
                     TranslateSpeaker.shared.toggle(text, language: result?.target ?? currentTarget)
                 }
                 paneButton(copied ? "checkmark" : "doc.on.doc", label: copied ? tr("已拷贝") : tr("拷贝译文"),
                            disabled: text.isEmpty) {
-                    ColorSampling.copy(text)
-                    copied = true
-                    Task {
-                        try? await Task.sleep(for: .seconds(1.5))
-                        copied = false
-                    }
+                    copyResult(text)
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .glassPane(cornerRadius: 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .readableGlass(in: shape)
+        .overlay { shape.strokeBorder(accent.opacity(0.45), lineWidth: 1) }
+        .contextMenu {
+            if !text.isEmpty { Button("拷贝译文") { copyResult(text) } }
+        }
+    }
+
+    private var accent: Color { WidgetStyle.tint(.blue) }
+
+    private func copyResult(_ text: String) {
+        guard !context.isPreview, !text.isEmpty else { return }
+        ColorSampling.copy(text)
+        copied = true
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            copied = false
+        }
     }
 
     private func paneButton(_ symbol: String, label: String, disabled: Bool,
@@ -293,10 +331,10 @@ struct TranslateDetail: View {
             action()
         } label: {
             Image(systemName: symbol)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.panelPrimary.opacity(disabled ? 0.3 : 0.85))
-                .frame(width: 24, height: 22)
-                .background(Color.panelFill, in: .rect(cornerRadius: 6, style: .continuous))
+                .frame(width: 30, height: 26)
+                .background(Color.panelFill, in: .rect(cornerRadius: 8, style: .continuous))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -305,85 +343,142 @@ struct TranslateDetail: View {
         .help(label)
     }
 
-    /// One line, always there, so the panel does not change height under
-    /// the pointer: the language pack hint, an error, or the reassurance.
+    /// The language pack hint, an error, or the reassurance. Every path here
+    /// is on the Mac: Apple's Translation, Vision for the screenshot's text
+    /// and the system voice for reading aloud.
     private var statusLine: some View {
-        HStack(spacing: 5) {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
             Image(systemName: message == nil ? "lock.shield" : "info.circle")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
             Text(message ?? tr("由 macOS 在本机翻译，免费，文字不会上传。"))
-                .lineLimit(2)
+                .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(WidgetStyle.caption(13))
-        .foregroundStyle(.panelPrimary.opacity(message == nil ? 0.5 : 0.8))
-        .frame(minHeight: 26, alignment: .leading)
+        .foregroundStyle(.panelPrimary.opacity(message == nil ? 0.55 : 0.8))
+        .padding(.horizontal, 4)
+    }
+
+    // MARK: Buttons
+
+    /// 粘贴、截图翻译、翻译一排；放不下带图标的就只留文字，文字不截断。
+    private var actionRow: some View {
+        ViewThatFits(in: .horizontal) {
+            buttons(icons: true)
+            buttons(icons: false)
+        }
+    }
+
+    private func buttons(icons: Bool) -> some View {
+        HStack(spacing: 8) {
+            actionButton(tr("粘贴"), symbol: icons ? "doc.on.clipboard" : nil) {
+                pasteClipboard(now: Translate.pasteTranslates(config))
+            }
+            .help(tr("把剪贴板里的文字放进原文"))
+            actionButton(tr("截图翻译", context: "button"), symbol: icons ? "text.viewfinder" : nil) {
+                translateScreenshot()
+            }
+            .help(tr("框选屏幕上的一块，本机识别并把译文盖在原文的位置上"))
+            actionButton(tr("翻译"), symbol: icons ? "translate" : nil, prominent: true) {
+                translate(force: true)
+            }
+            .keyboardShortcut(.return, modifiers: .command)
+            .help("⌘↩ 立即翻译")
+        }
+    }
+
+    private func actionButton(_ title: String, symbol: String?, prominent: Bool = false,
+                              action: @escaping () -> Void) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            action()
+        } label: {
+            HStack(spacing: 5) {
+                if let symbol { Image(systemName: symbol).font(.system(size: 12, weight: .semibold)) }
+                Text(title).font(.system(size: 13, weight: .semibold))
+            }
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(prominent ? Color.white : Color.panelPrimary)
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .background {
+                if prominent {
+                    Capsule().fill(accent)
+                } else {
+                    ReadableGlass(shape: Capsule())
+                }
+            }
+            .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: History
 
+    /// 最近翻译：有记录才出现，先列三条，「全部」展开到最多二十条。
     private var historySection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
+        let shown = Translate.recentShown(history.count, expanded: showsAllRecent)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
                 Text("最近翻译")
                     .font(.system(size: 13, weight: .semibold))
-                    .tracking(0.6)
-                    .foregroundStyle(.panelTertiary)
+                    .foregroundStyle(.panelSecondary)
                 Spacer(minLength: 0)
-                if !history.isEmpty {
-                    Button("清除") {
-                        guard !context.isPreview else { return }
-                        WidgetWriter.write(instance) { Translate.store([], in: &$0) }
+                if history.count > Translate.recentCollapsed {
+                    Button(showsAllRecent ? tr("收起") : tr("全部 \(history.count) 条")) {
+                        showsAllRecent.toggle()
                     }
                     .buttonStyle(.plain)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.panelSecondary)
                 }
+                Button("清除") {
+                    guard !context.isPreview else { return }
+                    showsAllRecent = false
+                    WidgetWriter.write(instance) { Translate.store([], in: &$0) }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelSecondary)
             }
             .padding(.horizontal, 4)
-            if history.isEmpty {
-                PanelNote(symbol: "clock.arrow.circlepath", text: tr("翻译过的内容会保存在这里，最多 \(Translate.maxHistory) 条。"))
-                    .frame(height: 132)
-            } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(history.enumerated()), id: \.offset) { index, record in
-                            historyRow(record, index: index)
-                        }
-                    }
+            VStack(spacing: 6) {
+                ForEach(Array(history.prefix(shown).enumerated()), id: \.offset) { index, record in
+                    historyRow(record, index: index)
                 }
-                .scrollIndicators(.never)
-                .frame(height: 132)
             }
         }
     }
 
     private func historyRow(_ record: TranslateRecord, index: Int) -> some View {
-        HStack(spacing: 8) {
-            Text(Translate.pairText(source: record.source, target: record.target))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.panelSecondary)
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        return Button {
+            restore(record)
+        } label: {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(Translate.snippet(record.sourceText))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelPrimary)
+                    Text(Translate.snippet(record.resultText))
+                        .font(WidgetStyle.caption(13))
+                        .foregroundStyle(.panelSecondary)
+                }
                 .lineLimit(1)
-                .fixedSize()
-                .padding(.horizontal, 6)
-                .frame(height: 16)
-                .background(Color.panelFill, in: .capsule)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(Translate.snippet(record.resultText))
-                    .font(WidgetStyle.label(13))
-                    .foregroundStyle(.panelPrimary)
-                Text(Translate.snippet(record.sourceText))
-                    .font(WidgetStyle.caption(13))
-                    .foregroundStyle(.panelSecondary)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.panelTertiary)
             }
-            .lineLimit(1)
-            Spacer(minLength: 0)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .readableGlass(in: shape)
+            .contentShape(shape)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .glassPane(cornerRadius: 9)
-        .contentShape(.rect(cornerRadius: 9))
-        .onTapGesture { restore(record) }
+        .buttonStyle(.plain)
+        .help(tr("重新填入这条"))
         .contextMenu {
             Button("拷贝译文") { ColorSampling.copy(record.resultText) }
             Button("拷贝原文") { ColorSampling.copy(record.sourceText) }
@@ -451,7 +546,9 @@ struct TranslateDetail: View {
         }
     }
 
-    private func pasteClipboard() {
+    /// 只在点「粘贴」（或卡片设成点按即翻译剪贴板）时读一次剪贴板，从不轮询。
+    /// `now`：设置里开了「粘贴即翻译」就立刻翻译，否则和打字一样停顿后再翻。
+    private func pasteClipboard(now: Bool) {
         guard !context.isPreview,
               let text = NSPasteboard.general.string(forType: .string),
               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -459,7 +556,7 @@ struct TranslateDetail: View {
             return
         }
         draft = Translate.clamped(text)
-        translate(force: true)
+        if now { translate(force: true) }
     }
 
     /// Turns the direction round: the target becomes the source, and the

@@ -200,10 +200,43 @@ final class TranslateTests: XCTestCase {
         let entry = WidgetCatalog.entry(.translate)
         XCTAssertEqual(entry?.name, "翻译")
         XCTAssertEqual(entry?.category, .ai)
-        XCTAssertEqual(WidgetCatalog.configurableKeys(.translate), ["autoDirection", "clickAction"])
+        XCTAssertEqual(WidgetCatalog.configurableKeys(.translate), ["autoDirection", "clickAction", "pasteTranslate"])
         let widget = WidgetCatalog.make(.translate)!
         XCTAssertEqual(WidgetCatalog.contentSize(widget, position: .bottom).height, 58)
         XCTAssertGreaterThanOrEqual(WidgetCatalog.verticalHeight(widget), 76)
         XCTAssertNil(WidgetCatalog.openTarget(.translate), "its click opens the panel")
+    }
+
+    // MARK: Panel
+
+    func testHistoryKeepsTwentyAndThePanelListsThreeUntilExpanded() {
+        XCTAssertEqual(Translate.maxHistory, 20)
+        XCTAssertEqual(Translate.recentShown(0, expanded: false), 0)
+        XCTAssertEqual(Translate.recentShown(2, expanded: false), 2)
+        XCTAssertEqual(Translate.recentShown(12, expanded: false), Translate.recentCollapsed)
+        XCTAssertEqual(Translate.recentShown(12, expanded: true), 12)
+        XCTAssertEqual(Translate.recentShown(40, expanded: true), 20)
+    }
+
+    func testTheCountReadsAgainstTheLimitWithCommas() {
+        XCTAssertEqual(Translate.maxCharacters, 5000)
+        XCTAssertEqual(Translate.countText(0), "0 / 5,000")
+        XCTAssertEqual(Translate.countText(47), "47 / 5,000")
+        XCTAssertEqual(Translate.countText(1234), "1,234 / 5,000")
+        XCTAssertEqual(Translate.grouped(1_000_000), "1,000,000")
+    }
+
+    func testTheEditorGrowsBetweenItsBounds() {
+        XCTAssertEqual(Translate.editorHeight(content: 10), Translate.editorMinHeight)
+        XCTAssertEqual(Translate.editorHeight(content: 80.2), 81)
+        XCTAssertEqual(Translate.editorHeight(content: 900), Translate.editorMaxHeight)
+        XCTAssertEqual(Translate.editorHeight(content: .infinity), Translate.editorMinHeight)
+        XCTAssertLessThan(Translate.editorMinHeight, Translate.editorMaxHeight)
+    }
+
+    func testPasteToTranslateIsOffUntilTurnedOn() {
+        XCTAssertFalse(Translate.pasteTranslates(WidgetConfig()))
+        XCTAssertTrue(Translate.pasteTranslates(WidgetConfig(["pasteTranslate": .bool(true)])))
+        XCTAssertEqual(WidgetCatalog.make(.translate)?.config.bool("pasteTranslate", default: true), false)
     }
 }

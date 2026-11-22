@@ -680,6 +680,7 @@ struct WidgetSettingsSections: View {
         "character": tr("角色形象"),
         "clickAction": tr("点按卡片时"),
         "autoDirection": tr("智能方向（中文译成英语，其他译成中文）"),
+        "pasteTranslate": tr("粘贴即翻译（点面板里的「粘贴」后立刻翻译）"),
         "workdays": tr("工作日"),
         "payday": tr("发薪日"),
         "income": tr("每天的收入"),

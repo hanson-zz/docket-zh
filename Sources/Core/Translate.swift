@@ -259,6 +259,44 @@ public enum Translate {
         text.count > maxCharacters ? String(text.prefix(maxCharacters)) : text
     }
 
+    /// "47 / 5,000" under the editor: the count against the limit, both with
+    /// a thousands comma whatever the Mac's locale, so the pair lines up.
+    public static func countText(_ count: Int) -> String {
+        "\(grouped(count)) / \(grouped(maxCharacters))"
+    }
+
+    static func grouped(_ value: Int) -> String {
+        let digits = String(abs(value))
+        var out = ""
+        for (i, character) in digits.enumerated() {
+            if i > 0, (digits.count - i) % 3 == 0 { out += "," }
+            out.append(character)
+        }
+        return value < 0 ? "-" + out : out
+    }
+
+    // MARK: Panel layout
+
+    /// The editor starts about two lines high and grows with its text up to
+    /// this, then scrolls inside its card, so a short phrase keeps the panel
+    /// short and a long paste does not push everything else away.
+    public static let editorMinHeight = 44.0
+    public static let editorMaxHeight = 160.0
+
+    public static func editorHeight(content: Double) -> Double {
+        guard content.isFinite else { return editorMinHeight }
+        return min(max(content.rounded(.up), editorMinHeight), editorMaxHeight)
+    }
+
+    /// 最近翻译 shows this many until 「全部」 is clicked.
+    public static let recentCollapsed = 3
+
+    /// How many of `count` recent translations the panel lists.
+    public static func recentShown(_ count: Int, expanded: Bool) -> Int {
+        let count = max(0, min(count, maxHistory))
+        return expanded ? count : min(count, recentCollapsed)
+    }
+
     /// The first line of a text, for a one-line glance.
     public static func snippet(_ text: String, limit: Int = 60) -> String {
         let line = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -374,6 +412,16 @@ public enum Translate {
             case .clipboard: tr("翻译剪贴板")
             }
         }
+    }
+
+    /// 粘贴即翻译 (off by default): the panel's 「粘贴」 button translates what it
+    /// pastes at once instead of waiting for the usual pause after a change.
+    /// Only text the user pastes with that button; the clipboard is never
+    /// watched.
+    public static let pasteTranslateKey = "pasteTranslate"
+
+    public static func pasteTranslates(_ config: WidgetConfig) -> Bool {
+        config.bool(pasteTranslateKey, default: false)
     }
 
     public static func clickAction(_ config: WidgetConfig) -> ClickAction {

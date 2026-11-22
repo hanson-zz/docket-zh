@@ -2476,6 +2476,17 @@
         }
       }
     },
+    "全部 %@ 条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All %@"
+          }
+        }
+      }
+    },
     "八爪鱼" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2571,6 +2582,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Starting"
+          }
+        }
+      }
+    },
+    "双击拷贝译文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double-click to copy the translation"
           }
         }
       }
@@ -2923,6 +2945,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Calendar"
+          }
+        }
+      }
+    },
+    "把剪贴板里的文字放进原文" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Put the text on the clipboard into the original"
           }
         }
       }
@@ -3400,6 +3433,28 @@
         }
       }
     },
+    "粘贴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste"
+          }
+        }
+      }
+    },
+    "粘贴即翻译（点面板里的「粘贴」后立刻翻译）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate on paste (the panel's Paste button translates at once)"
+          }
+        }
+      }
+    },
     "经典调谐" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3704,6 +3759,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pick a sound to play when focus starts"
+          }
+        }
+      }
+    },
+    "重新填入这条" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill this one in again"
           }
         }
       }
