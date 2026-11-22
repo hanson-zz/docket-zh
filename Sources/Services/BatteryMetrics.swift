@@ -80,7 +80,16 @@ final class BatteryMetrics {
     private(set) var unpluggedAt: Date?
     /// When the battery last reached 100% on the adapter, for the gold glow.
     private(set) var fullAt: Date?
+    /// 充满（100% 或到达生效中的充电上限）时小熊猫挥爪那一下，停 2.4 秒；到期后清掉，
+    /// 电池卡片和面板就不再画小熊猫（判定在 Core，见 `BatteryFullWatch`）。
+    private(set) var fullPulse: PandaPulse?
+    /// 蓝牙配件连上、断开、电量低的轻提示有变化（出现或到期）时加一，多设备卡片读它来刷新；
+    /// 提示本身在 `accessoryFlash(id:group:)`。不随每秒的采样变化。
+    private(set) var accessoryFlashVersion = 0
 
+    @ObservationIgnored private var fullWatch = BatteryFullWatch()
+    @ObservationIgnored private var fullWatchPercent: Int?
+    @ObservationIgnored private var accessoryChanges = AccessoryChangeTracker()
     @ObservationIgnored private var lastOnPower: Bool?
     @ObservationIgnored private var lastLevel: Double?
     @ObservationIgnored private var healthReadAt = Date.distantPast
@@ -113,6 +122,12 @@ final class BatteryMetrics {
     func source(of kind: BatteryDeviceKind) -> BluetoothBattery? {
         guard let id = slotSources[kind] else { return nil }
         return accessories.first { $0.id == id }
+    }
+
+    /// 多设备卡片某一格现在的轻提示（2.5 秒内）；没有时 nil。读 `accessoryFlashVersion` 跟着刷新。
+    func accessoryFlash(id: String?, group: String, now: Date = .now) -> AccessoryChange? {
+        _ = accessoryFlashVersion
+        return accessoryChanges.flash(id: id, group: group, now: now)
     }
 
     /// The panel's summary line for the Mac, or nil without a battery.
@@ -161,6 +176,7 @@ final class BatteryMetrics {
             found[.mac] = mac
             if macPower != power { power = macPower }
             noteTransitions(mac)
+            noteFull(mac)
             recordHistory(mac)
         } else if power != MacPower() {
             power = MacPower()
@@ -194,6 +210,8 @@ final class BatteryMetrics {
         if !Self.same(next, devices) { devices = next }
         if merged != accessories { accessories = merged }
         slotSources = sources
+        noteAccessoryChanges(merged)
+        if let pulse = fullPulse, !pulse.isActive(at: .now) { fullPulse = nil }
         BatteryAlerts.shared.check(devices: devices, accessories: merged)
     }
 
@@ -252,6 +270,29 @@ final class BatteryMetrics {
         lastOnPower = mac.onPower
         if mac.onPower, mac.level >= 0.995, let previous = lastLevel, previous < 0.995 { fullAt = now }
         lastLevel = mac.level
+    }
+
+    /// 充满时挥爪一次。充电上限打开时，电量每变一格重新看一眼助手的状态文件（平时它只在
+    /// 面板打开时刷新），上限真在生效才把那条线降到上限。
+    private func noteFull(_ mac: BatteryDevice) {
+        let now = Date.now
+        let percent = BatteryColorMap.percent(mac.level)
+        let limits = ChargeLimitService.shared
+        if mac.onPower, limits.config.isActive, percent != fullWatchPercent { limits.refresh() }
+        fullWatchPercent = percent
+        let effective = limits.effect(unlocked: ProAccess.isUnlocked, now: now).isEffective
+        let target = BatteryPandaCue.fullTarget(effectiveLimit: effective ? limits.config.clamped.limit : nil)
+        if fullWatch.update(percent: percent, onPower: mac.onPower, target: target) {
+            fullPulse = BatteryPandaCue.fullPulse(at: now)
+        }
+    }
+
+    /// 配件连上、断开、跌破 20%：只给多设备卡片画 2 到 3 秒的轻提示，不发系统通知。
+    private func noteAccessoryChanges(_ merged: [BluetoothBattery]) {
+        let now = Date.now
+        let expired = accessoryChanges.prune(now: now)
+        let changes = accessoryChanges.update(AccessoryPresence.from(merged), now: now)
+        if expired || !changes.isEmpty { accessoryFlashVersion &+= 1 }
     }
 
     // MARK: - History

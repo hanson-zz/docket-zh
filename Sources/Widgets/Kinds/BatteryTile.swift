@@ -34,6 +34,14 @@ struct BatteryTile: View {
                 }
             }
         }
+        // Mac 电量低于 20% 又没接电源时小熊猫举爪提醒，充满时挥爪一次；其余时间不画。
+        // 只放在显示 Mac 的卡片上，角落里最小号，不挡数字。
+        .overlay(alignment: .topTrailing) {
+            if !context.isPreview, showsMac, BatteryPandaCueView.shown != nil {
+                BatteryPandaCueView(size: PandaStage.mini.side)
+                    .offset(x: 2, y: -2)
+            }
+        }
         // A reminder going out flashes the tile twice, so a glance at the
         // shelf says which widget the notification came from.
         .phaseAnimator([0.0, 1.0, 0.0, 1.0, 0.0],
@@ -55,9 +63,19 @@ struct BatteryTile: View {
         HStack(spacing: 8) {
             ForEach(multiSlots) { slot in
                 let reading = reading(slot)
+                let change = flash(slot)
                 VStack(spacing: 7) {
-                    iconRing(slot, reading, diameter: 52, emphasized: true)
-                    iconReading(reading, size: 17, available: 68)
+                    iconRing(slot, reading, diameter: 52, emphasized: true, flash: change)
+                    // 配件连上、断开、电量低时，数字那一行换成小胶囊 2 到 3 秒；数字留着占位，高度不跳。
+                    ZStack {
+                        iconReading(reading, size: 17, available: 68)
+                            .opacity(change == nil ? 1 : 0)
+                        if let change {
+                            AccessoryFlashCapsule(change: change)
+                                .transition(.opacity)
+                        }
+                    }
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: change)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
@@ -67,6 +85,17 @@ struct BatteryTile: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 这张卡片有没有 Mac 那一格（小熊猫电量提醒只放在这种卡片上）。
+    private var showsMac: Bool {
+        layout == "multi" || devices.contains(.mac)
+    }
+
+    /// 多设备卡片这一格现在的轻提示（配件连上、断开、电量跌破 20%）；Mac 和预览没有。
+    private func flash(_ slot: Slot) -> AccessoryChange? {
+        guard !context.isPreview, let key = slot.flashKey else { return nil }
+        return BatteryMetrics.shared.accessoryFlash(id: key.id, group: key.group)
     }
 
     /// 迷你卡片和悬停里的设备名：Mac 写 MacBook，其余照设备自己的名字。
@@ -454,9 +483,10 @@ struct BatteryTile: View {
     /// `emphasized`（多设备卡片）：轨道深一点，圆里铺一层淡底，图标用中号字重，
     /// 浅色深色桌面上都看得清。
     private func iconRing(_ slot: Slot, _ reading: Reading, diameter: CGFloat,
-                          emphasized: Bool = false) -> some View {
+                          emphasized: Bool = false, flash: AccessoryChange? = nil) -> some View {
         let tint = reading.present ? accent(reading) : WidgetStyle.secondary
         let line = max(2, diameter * 0.08)
+        let fill = ShapeMeters.cellFill(level: reading.level, present: reading.present)
         return ZStack {
             if emphasized {
                 Circle()
@@ -465,6 +495,10 @@ struct BatteryTile: View {
             }
             Circle()
                 .stroke(WidgetStyle.primary.opacity(emphasized ? 0.2 : 0.13), lineWidth: line)
+            // 充电时电量弧下面一层慢慢呼吸的光；减弱动态效果或卡片不在屏幕上时不画。
+            BatteryChargeBreath(trim: Double(fill), tint: tint, lineWidth: line, rotation: -90,
+                                active: reading.present && reading.charging && !context.isPreview
+                                    && ShelfVisibility.shared.cardsOnScreen)
             Circle()
                 .trim(from: 0, to: CGFloat(ShapeMeters.cellFill(level: reading.level, present: reading.present)))
                 .stroke(tint, style: StrokeStyle(lineWidth: line, lineCap: .round))
@@ -473,10 +507,12 @@ struct BatteryTile: View {
                 .font(.system(size: diameter * (emphasized ? 0.4 : 0.42), weight: emphasized ? .medium : .regular))
                 .foregroundStyle(reading.present ? WidgetStyle.primary
                                  : (emphasized ? WidgetStyle.primary.opacity(0.55) : WidgetStyle.secondary))
+            AccessoryFlashRing(change: flash, lineWidth: max(1.5, line * 0.6))
         }
         .padding(line / 2)
         .frame(width: diameter, height: diameter)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: reading.level)
+        // 数值变化时圆环 0.3 秒平滑走过去；减弱动态效果时直接换。
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: reading.level)
     }
 
     /// 仅图标的大号百分比：放不下先去 %，再缩小（最小 13pt）。
@@ -525,7 +561,8 @@ struct BatteryTile: View {
                     let shown = look(for: slot)
                     if layout == "icon" || layout == "multi" {
                         // 仅图标：电量环里是设备图标，下面是百分比。
-                        iconRing(slot, reading, diameter: single ? 38 : 32, emphasized: layout == "multi")
+                        iconRing(slot, reading, diameter: single ? 38 : 32, emphasized: layout == "multi",
+                                 flash: layout == "multi" ? flash(slot) : nil)
                         iconReading(reading, size: single ? 16 : 14, available: 56)
                     } else if layout == ProFeatures.batteryGaugeLayout,
                               BatteryHourglass.drawsHourglass(look: shown.rawValue) {
@@ -664,6 +701,26 @@ struct BatteryTile: View {
             case .fixed(let kind, _): kind.name
             case .accessory(let device): device.displayName
             case .unavailable(_, let name, _): name
+            }
+        }
+
+        /// 这一格在 `AccessoryChangeTracker` 里用哪个配件 id、哪一格去找轻提示；Mac 没有。
+        /// 配件不在时 id 为 nil，只找得到这一格的「已断开」。
+        var flashKey: (id: String?, group: String)? {
+            switch self {
+            case .fixed(.mac, _):
+                return nil
+            case .fixed(.pods, let source):
+                return (source?.id, AccessoryPresence.budsGroup)
+            case .fixed(.podsCase, let source):
+                return (source.map { AccessoryPresence.caseID($0.id) }, AccessoryPresence.caseGroup)
+            case .fixed(.keyboard, let source):
+                return (source?.id, AccessoryPresence.peripheralGroup)
+            case .accessory(let device):
+                let buds = device.kind.isAirPods || device.hasBuds
+                return (device.id, buds ? AccessoryPresence.budsGroup : AccessoryPresence.peripheralGroup)
+            case .unavailable:
+                return (nil, AccessoryPresence.peripheralGroup)
             }
         }
 

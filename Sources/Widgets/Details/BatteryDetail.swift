@@ -12,6 +12,7 @@ struct BatteryDetail: View {
     var context: WidgetContext
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let all = items
@@ -39,6 +40,16 @@ struct BatteryDetail: View {
                                 .glassPane(cornerRadius: 10)
                         }
                     }
+                }
+                // 底部一行小字「更新于 15:32」：采样器最近一次真实采样的时刻；
+                // 预览、没有任何一台设备有数据、还没采过样时不显示。
+                if !context.isPreview, all.contains(where: \.present),
+                   let updated = BatteryWords.panelUpdated(BatteryMetrics.shared.sampledAt) {
+                    Text(updated)
+                        .font(WidgetStyle.caption(13))
+                        .monospacedDigit()
+                        .foregroundStyle(.panelSecondary)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
         }
@@ -170,6 +181,7 @@ struct BatteryDetail: View {
                 .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
+            macPanda(device)
             if look != .classic {
                 // The look, smaller than before so the panel is shorter; it
                 // still animates, since the panel is looked at.
@@ -199,11 +211,26 @@ struct BatteryDetail: View {
                             .foregroundStyle(WidgetStyle.primary)
                     }
                 }
+                // 充电时圆环下面慢慢呼吸的一层光（MetricProgressRing 的开口朝下，320° 弧）。
+                .background {
+                    BatteryChargeBreath(trim: 320.0 / 360 * min(max(device.level, 0), 1), tint: tint(device),
+                                        lineWidth: 6, rotation: 110,
+                                        active: device.present && device.charging && !context.isPreview)
+                }
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: device.level)
                 .accessibilityHidden(true)
             }
         }
         .lineLimit(1)
         .accessibilityElement(children: .combine)
+    }
+
+    /// Mac 电量低于 20% 又没接电源时的小熊猫提醒、充满时挥爪那一下；其余时间不占位置。
+    @ViewBuilder
+    private func macPanda(_ device: Item) -> some View {
+        if device.isMac, !context.isPreview, BatteryPandaCueView.shown != nil {
+            BatteryPandaCueView(size: PandaStage.small.side)
+        }
     }
 
     /// 「MacBook · 已接电源」；配件是「AirPods Pro · 正在充电」这类。
@@ -243,6 +270,7 @@ struct BatteryDetail: View {
                     .font(.system(size: 12, weight: .regular))
                     .foregroundStyle(device.present ? tint(device).panelReadable : WidgetStyle.secondary)
             }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: device.level)
             VStack(alignment: .leading, spacing: 1) {
                 Text(device.name)
                     .font(WidgetStyle.label(13))
@@ -321,6 +349,7 @@ struct BatteryDetail: View {
                     .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
+            macPanda(device)
             BatteryHourglassCell(level: device.level, present: device.present, charging: device.charging,
                                  lowPower: state.lowPower, visible: !context.isPreview, theme: sandTheme,
                                  panel: true)

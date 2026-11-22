@@ -54,14 +54,24 @@ public enum BatteryWords {
         return lines.joined(separator: "\n")
     }
 
+    /// 时刻「15:32」，详情面板底部「更新于 15:32」用。
+    public static func clock(_ date: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let parts = calendar.dateComponents([.hour, .minute], from: date)
+        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
+    }
+
+    /// 详情面板底部那一行：「更新于 15:32」；没有采样时 nil，不显示。
+    public static func panelUpdated(_ sampledAt: Date?) -> String? {
+        sampledAt.map { tr("更新于 \(clock($0))") }
+    }
+
     /// 「刚刚」（10 秒内）、「12 秒前」（1 分钟内），再往前写时刻「15:32」。
     public static func updatedText(_ date: Date, now: Date) -> String {
         let seconds = max(0, Int(now.timeIntervalSince(date)))
         if seconds < 10 { return tr("刚刚") }
         if seconds < 60 { return tr("\(seconds) 秒前") }
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .current
-        let parts = calendar.dateComponents([.hour, .minute], from: date)
-        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
+        return clock(date)
     }
 }

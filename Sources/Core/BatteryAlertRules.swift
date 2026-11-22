@@ -17,6 +17,9 @@ public struct BatteryAlertSettings: Equatable, Sendable {
     public static let accessoryLevel = 15
     /// An accessory has to climb back above this before it can warn again.
     public static let accessoryRearm = 25
+    /// 电量低提醒说过一次以后，要回到那一档以上这么多个百分点才会再说，
+    /// 在阈值附近插拔或来回跳不会反复提醒。
+    public static let lowRearmMargin = 5
     public static let hotCelsius = 40.0
     public static let coolCelsius = 35.0
     public static let fullAfter: TimeInterval = 2 * 60 * 60
@@ -85,6 +88,7 @@ public struct AccessoryReading: Sendable {
 /// Plugging in or unplugging rearms the other direction. The first reading
 /// after either, and the first reading at launch, marks every level already
 /// passed as said: plugging in at 85% is not "charged to 80%".
+/// 电量低那几档例外：插上电源不重置，电量回到阈值以上 5% 才重新可以提醒。
 public struct BatteryAlertTracker: Sendable {
     private var lastOnPower: Bool?
     private var firedCharge: Set<Int> = []
@@ -121,16 +125,19 @@ public struct BatteryAlertTracker: Sendable {
         let percent = mac.percent
         if lastOnPower != mac.onPower {
             if mac.onPower {
-                firedLow = []
+                // 电量低那几档不在插上电源时重置，等电量回到阈值以上 5% 再说（见下面）。
                 firedCharge = Set(BatteryAlertSettings.chargeChoices.filter { percent >= $0 })
             } else {
                 firedCharge = []
                 firedFull = false
                 fullSince = nil
-                firedLow = Set(BatteryAlertSettings.lowChoices.filter { percent <= $0 })
+                firedLow.formUnion(BatteryAlertSettings.lowChoices.filter { percent <= $0 })
             }
             lastOnPower = mac.onPower
         }
+
+        // 回到阈值以上 5% 的那几档重新可以提醒。
+        firedLow = firedLow.filter { percent < $0 + BatteryAlertSettings.lowRearmMargin }
 
         if mac.onPower {
             let reached = settings.charge.filter { percent >= $0 && !firedCharge.contains($0) }
