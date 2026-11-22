@@ -5,7 +5,7 @@ import AppKit
 
 /// 程序坞里的日历图标整张换成码头画的日历：红色页眉写星期，中间是几号，下部一层液面随下一场
 /// 日程的剩余时间下降，底部小胶囊写倒计时。数据来自 `LiveCalendarMonitor`（今天的定时日程，
-/// 不含全天和已拒绝的），没有日历权限、今天没有要倒数的日程时画回系统原来的图标（`fallback`）。
+/// 不含全天和已拒绝的）；没有日历权限、今天没有要倒数的日程时只画页眉和日期，不画液面和胶囊。
 ///
 /// 不是动画循环：只在倒计时的分钟数变、阶段变、液面降 1 像素时重画（`LiveCalendar.nextTick`，
 /// 最长 60 秒一次，低电量模式不追像素）。换到下一场时先轻轻放大一下，再整枚图标在屏幕平面上
@@ -37,13 +37,11 @@ struct LiveCalendarIcon<Fallback: View>: View {
         let target = LiveCalendar.target(monitor.events, now: now, calendar: .current)
         let shown = shownID.flatMap { id in monitor.events.first { $0.id == id } } ?? target
         Group {
-            if let shown, target != nil {
-                face(shown)
-                    .scaleEffect(emphasized ? 1.07 : 1)
-                    .rotationEffect(.degrees(angle))
-            } else {
-                fallback()
-            }
+            // 没有日历权限、今天没有要倒数的日程时也画码头的日历面（红页眉星期 + 大号日期），
+            // 只是不画液面和倒计时胶囊；系统原图标（`fallback`）不再用来回退（用户 11-22 定）。
+            face(target != nil ? shown : nil)
+                .scaleEffect(emphasized ? 1.07 : 1)
+                .rotationEffect(.degrees(angle))
         }
         .frame(width: side, height: side)
         .allowsHitTesting(false)
@@ -130,25 +128,27 @@ struct LiveCalendarIcon<Fallback: View>: View {
 
     // MARK: 画面
 
-    private func face(_ event: LiveCalendarEvent) -> some View {
+    private func face(_ event: LiveCalendarEvent?) -> some View {
         let g = LiveIconGeometry.content(side: Double(side))
         let length = CGFloat(g.length)
         let corner = CGFloat(g.corner)
         let header = length * CGFloat(LiveCalendarFace.headerFraction)
         let pillFont = max(13, length * 0.3)
-        let pillHeight = pillFont + 4
+        let pillHeight = event == nil ? 0 : pillFont + 4
         let margin = max(1.5, length * 0.05)
         let dateArea = max(0, length - header - pillHeight - margin)
-        let dateFont = max(1, min(length * 0.42, dateArea * 1.35))
-        let phase = LiveCalendar.phase(start: event.start, now: now, lead: lead)
-        let level = LiveCalendar.level(start: event.start, now: now, lead: lead)
-        let label = LiveCalendar.label(start: event.start, now: now, lead: lead, calendar: .current)
-        let palette = LiveCalendarPalette(dark: scheme == .dark, warm: phase.isWarm)
+        let dateFont = max(1, min(length * (event == nil ? 0.5 : 0.42), dateArea * 1.35))
+        let phase = event.map { LiveCalendar.phase(start: $0.start, now: now, lead: lead) }
+        let level = event.map { LiveCalendar.level(start: $0.start, now: now, lead: lead) } ?? 0
+        let label = event.map { LiveCalendar.label(start: $0.start, now: now, lead: lead, calendar: .current) }
+        let palette = LiveCalendarPalette(dark: scheme == .dark, warm: phase?.isWarm ?? false)
         let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
 
         return ZStack(alignment: .top) {
             shape.fill(LinearGradient(colors: palette.body, startPoint: .top, endPoint: .bottom))
-            liquid(level: level, header: header, palette: palette)
+            if event != nil {
+                liquid(level: level, header: header, palette: palette)
+            }
             VStack(spacing: 0) {
                 ZStack {
                     LinearGradient(colors: [Color(hex: "#FF5F52"), Color(hex: "#DE322A")],
@@ -166,8 +166,10 @@ struct LiveCalendarIcon<Fallback: View>: View {
                     .lineLimit(1)
                     .frame(height: dateArea)
                     .frame(maxWidth: .infinity)
-                pill(label, palette: palette, font: pillFont, height: pillHeight, maxWidth: length - 3)
-                    .frame(height: pillHeight)
+                if let label {
+                    pill(label, palette: palette, font: pillFont, height: pillHeight, maxWidth: length - 3)
+                        .frame(height: pillHeight)
+                }
                 Spacer(minLength: 0)
             }
             // 玻璃的一抹高光，浅色深色都只是很淡的一层。

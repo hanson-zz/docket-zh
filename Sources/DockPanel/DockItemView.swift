@@ -81,7 +81,7 @@ struct DockItemView: View {
 
     /// Chrome、Safari 悬停轻转、Chrome 加载细弧（只给这两个格子挂，别的格子不多一层）；
     /// 访达的图标整张换成小熊猫访达（缺图时照常画系统图标）；日历的图标在今天有日程要倒数时
-    /// 整张换成码头画的日历（液位、倒计时、换场转一圈），没权限或没日程时照常画系统图标。
+    /// 整张换成码头画的日历（液位、倒计时、换场转一圈），没权限或没日程时只画星期和日期。
     @ViewBuilder
     private var liveIcon: some View {
         if liveOn(.finder), LiveFinderPandaArt.available {
