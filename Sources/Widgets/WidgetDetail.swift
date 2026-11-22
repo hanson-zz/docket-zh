@@ -41,10 +41,12 @@ final class WidgetDetailWindow {
     /// can be redrawn without reopening it.
     private var shown: (context: WidgetContext, edge: DockPosition,
                         arrowOffset: CGFloat)?
-    /// 开着的面板：小组件、它的尾巴指向的点、内容的自然高度（含尾巴）、
-    /// 当前给滚动区域的高度。内容变高变矮时按这些重新摆窗口。
-    private var fit: (instance: WidgetInstance, anchor: CGPoint, natural: CGSize,
-                      viewport: CGFloat, overflows: Bool)?
+    /// 开着的面板：小组件、它的尾巴指向的点、面板宽、滚动区里内容的自然
+    /// 高度、底部“外观”栏的自然高度（都不含尾巴），和当前分给滚动区、外观栏
+    /// 的高度。内容或外观栏变高变矮时按这些重新摆窗口。
+    private var fit: (instance: WidgetInstance, anchor: CGPoint, width: CGFloat,
+                      content: CGFloat, footer: CGFloat,
+                      viewports: DetailPanelFit.Viewports, overflows: Bool)?
     private var screenObserver: NSObjectProtocol?
     /// 收起时的淡出领号，淡出途中又打开就作废，见 `PopupToggle.Fade`。
     private var fade = PopupToggle.Fade()
@@ -74,7 +76,9 @@ final class WidgetDetailWindow {
     func openFloating(_ instance: WidgetInstance, now: Date) {
         guard openWidgetID != instance.id || !isOpen else { return }
         guard let screen = NSScreen.screens.first else { return }
-        let visible = screen.visibleFrame
+        // 按让出菜单栏后的区域挂：菜单栏自动隐藏时 visibleFrame 伸到屏幕顶边，
+        // 尾巴会指到菜单栏底下。
+        let visible = Self.usableFrame(of: screen, isMain: true)
         let anchor = CGPoint(x: visible.midX, y: visible.maxY - 6)
         show(instance, context: WidgetContext(position: .top, now: now), anchor: anchor, edge: .top,
              host: .zero, floating: true)
@@ -132,13 +136,13 @@ final class WidgetDetailWindow {
     ///
     /// Deliberately keeps `session`, so the entrance does not replay. 宽度
     /// 每种固定；改设置让内容变高或变矮时，滚动区域里的内容报告新高度，
-    /// `contentHeightChanged` 再重新摆窗口，不用关了重开。
+    /// `partChanged` 再重新摆窗口，不用关了重开。
     func refresh(_ instance: WidgetInstance) {
         guard openWidgetID == instance.id, let shown, var current = fit else { return }
         current.instance = instance
         fit = current
         hosting?.rootView = chrome(instance, context: shown.context, edge: shown.edge,
-                                   arrowOffset: shown.arrowOffset, viewport: current.viewport,
+                                   arrowOffset: shown.arrowOffset, viewports: current.viewports,
                                    overflows: current.overflows)
     }
 
@@ -151,16 +155,19 @@ final class WidgetDetailWindow {
 
     /// 面板的根视图，每次都从这里造，免得哪一处漏了滚动区域的高度或回调。
     private func chrome(_ instance: WidgetInstance, context: WidgetContext, edge: DockPosition,
-                        arrowOffset: CGFloat, viewport: CGFloat?,
+                        arrowOffset: CGFloat, viewports: DetailPanelFit.Viewports?,
                         overflows: Bool) -> WidgetDetailChrome {
         let opened = session
         return WidgetDetailChrome(
             instance: instance, context: context, edge: edge, session: opened,
-            arrowOffset: arrowOffset, viewport: viewport, overflows: overflows,
+            arrowOffset: arrowOffset, viewports: viewports, overflows: overflows,
             // 放到下一轮再摆窗口：回调来自 SwiftUI 的布局，在布局中途换根视图
             // 和改窗口大小会让 AppKit 重入布局。
             onContentHeight: { [weak self] height in
-                Task { @MainActor in self?.contentHeightChanged(height, session: opened) }
+                Task { @MainActor in self?.partChanged(content: height, session: opened) }
+            },
+            onFooterHeight: { [weak self] height in
+                Task { @MainActor in self?.partChanged(footer: height, session: opened) }
             })
     }
 
@@ -174,43 +181,77 @@ final class WidgetDetailWindow {
         return probe.fittingSize
     }
 
+    /// 单独量底部“外观”栏的自然高度，好把它从整块内容里分出来钉在底部。
+    /// 这张卡片没有外观入口时是 0。
+    private func measureFooter(_ instance: WidgetInstance, context: WidgetContext,
+                               edge: DockPosition) -> CGFloat {
+        guard WidgetDetailChrome.offersAppearance(instance, context) else { return 0 }
+        let probe = NSHostingView(rootView: WidgetDetailChrome(
+            instance: instance, context: context, edge: edge, session: session,
+            measuring: true, measuringFooter: true))
+        // 量的是整个外框，横排扩展栏时含尾巴，扣掉。
+        return max(0, probe.fittingSize.height - tailHeight(edge))
+    }
+
+    /// 一块屏幕上面板能用的区域：visibleFrame，顶上再确保让出菜单栏（菜单栏
+    /// 自动隐藏时 visibleFrame 不扣它）。“每个显示器有单独的空间”打开时
+    /// 每块屏幕都有菜单栏，关掉时只有主屏有。
+    static func usableFrame(of screen: NSScreen, isMain: Bool) -> CGRect {
+        let hasMenuBar = NSScreen.screensHaveSeparateSpaces || isMain
+        let menuBar = hasMenuBar ? max(screen.safeAreaInsets.top, NSStatusBar.system.thickness) : 0
+        return DetailPanelFit.usableArea(visible: screen.visibleFrame, screen: screen.frame,
+                                         menuBar: menuBar)
+    }
+
     /// 面板所在屏幕的可用区域：按小组件那个点找屏幕，不按面板原点找。
     private func visibleFrame(for anchor: CGPoint) -> CGRect? {
         let screens = NSScreen.screens
         if let index = DetailPanelFit.screenIndex(for: anchor, screens: screens.map(\.frame)) {
-            return screens[index].visibleFrame
+            return Self.usableFrame(of: screens[index], isMain: index == 0)
         }
-        return NSScreen.main?.visibleFrame
+        return NSScreen.main.map { Self.usableFrame(of: $0, isMain: $0 == screens.first) }
     }
 
-    /// 滚动区域里的内容报告了新高度：日程、提醒、行情这类打开后才读到的
-    /// 数据，或者面板里展开了一段。重新算尺寸和位置，窗口跟着变。
-    private func contentHeightChanged(_ inner: CGFloat, session opened: UUID) {
-        guard opened == session, isOpen, let shown, let current = fit else { return }
-        let natural = CGSize(width: current.natural.width,
-                             height: inner + (shown.edge.isHorizontal ? PanelShape.arrowDepth : 0))
-        guard DetailPanelFit.needsRefit(old: current.natural.height, new: natural.height) else { return }
+    /// 尾巴在上下方向占的高度（只有横排扩展栏的尾巴占）。
+    private func tailHeight(_ edge: DockPosition) -> CGFloat {
+        edge.isHorizontal ? PanelShape.arrowDepth : 0
+    }
+
+    /// 滚动区里的内容或底部外观栏报告了新高度：日程、提醒、行情这类打开后
+    /// 才读到的数据，面板里展开了一段，或者外观展开、收起。重新算尺寸和
+    /// 位置，窗口跟着变，高度仍不超过上限。
+    private func partChanged(content: CGFloat? = nil, footer: CGFloat? = nil, session opened: UUID) {
+        guard opened == session, isOpen, let shown, var current = fit else { return }
+        let old = current.content + current.footer
+        if let content { current.content = content }
+        if let footer { current.footer = footer }
+        guard DetailPanelFit.needsRefit(old: old, new: current.content + current.footer) else { return }
+        fit = current
         place(current.instance, context: shown.context, edge: shown.edge,
-              anchor: current.anchor, natural: natural)
+              anchor: current.anchor, width: current.width,
+              content: current.content, footer: current.footer)
     }
 
-    /// 显示器插拔、分辨率或系统程序坞变了：按新的可用区域重摆。
+    /// 显示器插拔、分辨率、菜单栏或系统程序坞变了：按新的可用区域重摆。
     private func screensChanged() {
         guard isOpen, let shown, let current = fit else { return }
         place(current.instance, context: shown.context, edge: shown.edge,
-              anchor: current.anchor, natural: current.natural)
+              anchor: current.anchor, width: current.width,
+              content: current.content, footer: current.footer)
     }
 
-    /// 按自然尺寸算出 frame，换上对应滚动高度的根视图，摆好窗口。
+    /// 按自然尺寸算出 frame，换上对应滚动高度的根视图，摆好窗口。`content`
+    /// 和 `footer` 是滚动区内容和外观栏的自然高度，都不含尾巴。
     private func place(_ instance: WidgetInstance, context: WidgetContext, edge: DockPosition,
-                       anchor: CGPoint, natural: CGSize) {
+                       anchor: CGPoint, width: CGFloat, content: CGFloat, footer: CGFloat) {
         guard let panel, let visible = visibleFrame(for: anchor) else { return }
+        let natural = CGSize(width: width, height: content + footer + tailHeight(edge))
         let placement = DetailPanelFit.place(edge: edge, anchor: anchor, natural: natural,
                                              visible: visible,
                                              capped: !DetailPanelFit.isCapExempt(instance.kind))
         let frame = placement.frame
-        let viewport = DetailPanelFit.viewportHeight(panelHeight: frame.height, edge: edge,
-                                                     tailDepth: PanelShape.arrowDepth)
+        let viewports = DetailPanelFit.viewports(panelHeight: frame.height, edge: edge,
+                                                 tailDepth: PanelShape.arrowDepth, footer: footer)
         // Only now is the tail's offset knowable: clamping against the end of
         // the screen moves the panel but not the tile, and a tail still
         // pointing at the panel's own middle would point at nothing.
@@ -219,9 +260,9 @@ final class WidgetDetailWindow {
         let offset = Geometry.popupTailOffset(edge: edge, anchor: anchor,
                                               placed: frame.origin, size: frame.size)
         shown = (context, edge, offset)
-        fit = (instance, anchor, natural, viewport, placement.overflows)
+        fit = (instance, anchor, width, content, footer, viewports, placement.overflows)
         hosting?.rootView = chrome(instance, context: context, edge: edge,
-                                   arrowOffset: offset, viewport: viewport,
+                                   arrowOffset: offset, viewports: viewports,
                                    overflows: placement.overflows)
         if panel.frame != frame {
             panel.setFrame(frame, display: panel.isVisible)
@@ -335,7 +376,10 @@ final class WidgetDetailWindow {
         // shelf, above it on a bottom one. 高度不超过统一上限（约 560pt、
         // 屏幕的六成）和所在屏幕的可用区域，超出的部分在面板里滚动；见
         // DetailPanelFit。
-        place(instance, context: context, edge: edge, anchor: anchor, natural: size)
+        let footer = min(measureFooter(instance, context: context, edge: edge),
+                         max(0, size.height - tailHeight(edge)))
+        place(instance, context: context, edge: edge, anchor: anchor, width: size.width,
+              content: max(0, size.height - tailHeight(edge) - footer), footer: footer)
 
         // 上一次收起的淡出可能还在走：作废它的号，并用一段零时长动画顶掉它，
         // 不然面板摆好、排到最前，最后却停在透明度 0。
@@ -418,18 +462,29 @@ struct WidgetDetailChrome: View {
     /// until the panel is clamped against the end of the screen, after which
     /// the tail has to reach back toward the tile.
     var arrowOffset: CGFloat = 0
-    /// 滚动区域的高度，由窗口按所在屏幕算好给进来；内容比它高就能滚。
-    /// nil 时还没算过，先按内容的自然高度画。
-    var viewport: CGFloat? = nil
-    /// 内容比滚动区域高：底边淡出，提示下面还有。
+    /// 滚动区域和底部钉住的“外观”栏各多高，由窗口按所在屏幕算好给进来；
+    /// 内容比滚动区域高就能滚。nil 时还没算过，先按内容的自然高度画。
+    var viewports: DetailPanelFit.Viewports? = nil
+    /// 内容比面板高：外观栏顶上画一道细线，和滚动的内容分开。
     var overflows = false
     /// 只用来量自然尺寸：不套滚动区域，也不报告高度。
     var measuring = false
+    /// 和 `measuring` 一起用：只量底部外观栏。
+    var measuringFooter = false
     /// 滚动区域里内容的自然高度变了（不含尾巴）。
     var onContentHeight: @MainActor (CGFloat) -> Void = { _ in }
+    /// 底部外观栏的自然高度变了（展开、收起）。
+    var onFooterHeight: @MainActor (CGFloat) -> Void = { _ in }
 
     @Environment(\.colorScheme) private var scheme
     @State private var appeared = false
+    /// 外层滚动区的位置。窗口和根视图在两次打开之间是复用的，SwiftUI 会把
+    /// 上一次滚到的位置留下来，再打开时顶上一截看着像被截掉；每次打开都
+    /// 回到顶上。
+    @State private var scrollPosition = ScrollPosition(edge: .top)
+    /// 滚动区两头的淡出，见 `DetailPanelFit.fades`。
+    @State private var fadeTop = false
+    @State private var fadeBottom = false
 
     /// 这张卡片在颜色面板里选的强调色，没选过是 nil（各面板照旧）。
     private var panelTint: PanelTint? {
@@ -453,73 +508,130 @@ struct WidgetDetailChrome: View {
             .onAppear { enter() }
             .onChange(of: session) { _, _ in
                 appeared = false
+                scrollPosition.scrollTo(edge: .top)
                 Task { @MainActor in enter() }
             }
     }
 
-    /// 小组件的内容，外面总是同一个竖向滚动区域，高度由窗口给。
+    /// 小组件的内容，外面总是同一个竖向滚动区域，高度由窗口给；有“外观”
+    /// 入口的卡片，外观栏钉在滚动区下面，不随内容滚走。
     ///
     /// 始终套着而不是放不下才套：换结构会让 SwiftUI 把里面的小组件当成新的
     /// 视图，正在输入的文字、展开的编辑行都会丢。滚动区域给内容的竖向尺寸
     /// 提议是 nil，和原来外层 fixedSize 给的一样，所以各小组件排版不变。
     /// 内容不超出时 basedOnSize 让它不弹不滚，看起来和原来一样。
+    ///
+    /// 内边距和原来一整块 `VStack(spacing: 20) { 内容; 外观 }.padding(16)`
+    /// 一样：内容块上、左右 16，外观栏顶上 20（多数面板的深色卡片往外多画
+    /// 10pt，留够了才和外观分得开）、左右和底下 16，不超出时两块拼起来和
+    /// 原来一模一样。
     @ViewBuilder private var scrolling: some View {
-        // 间距 20：多数面板的深色卡片（DetailCard）往外多画 10pt，留够了
-        // 才和下面的“外观”分得开。
-        let content = VStack(spacing: 20) {
-            WidgetDetailBody(instance: instance, context: context)
-            if showsAppearance {
-                WidgetAppearanceSection(instance: instance, context: context,
-                                        width: contentWidth)
-                    // 每次打开都从收起开始。
-                    .id(session)
-                    // 封面这类自己有深色底的面板，入口的字跟着用浅色。
-                    .environment(\.colorScheme,
-                                 WidgetDetailBody.ground(instance, context) != nil ? .dark : scheme)
+        let pad = DetailPanelWidth.padding
+        let main = WidgetDetailBody(instance: instance, context: context)
+            // 内容区左右边距对称的前提是没有哪一块比内容区宽：外框靠左对齐，
+            // 撑宽的部分全落到右边被裁掉。量到超出就记一条，不改排版。
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.width
+            } action: { width in
+                let extra = DetailPanelWidth.overflow(content: width, available: contentWidth)
+                guard extra > 0, !measuring else { return }
+                let kind = instance.kind.rawValue
+                detailWidthLog.error("detail content wider than panel by \(Double(extra), privacy: .public)pt: \(kind, privacy: .public)")
             }
-        }
-        // 内容区左右边距对称的前提是没有哪一块比内容区宽：外框靠左对齐，
-        // 撑宽的部分全落到右边被裁掉。量到超出就记一条，不改排版。
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.width
-        } action: { width in
-            let extra = DetailPanelWidth.overflow(content: width, available: contentWidth)
-            guard extra > 0, !measuring else { return }
-            let kind = instance.kind.rawValue
-            detailWidthLog.error("detail content wider than panel by \(Double(extra), privacy: .public)pt: \(kind, privacy: .public)")
-        }
-        .padding(DetailPanelWidth.padding)
+            .padding([.top, .horizontal], pad)
+            .padding(.bottom, showsAppearance ? 0 : pad)
         if measuring {
-            content
-        } else {
-            ScrollView(.vertical) {
-                content
-                    // 下面两项只给外层这个滚动区域用；各面板里自己的滚动列表
-                    // 照旧按它们自己的设置来。
-                    .scrollIndicators(.automatic)
-                    .scrollBounceBehavior(.automatic)
-                    .onGeometryChange(for: CGFloat.self) { proxy in
-                        proxy.size.height
-                    } action: { height in
-                        onContentHeight(height)
-                    }
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            // 和各深色面板一样不画滚动条：系统设成“始终显示滚动条”时，
-            // 右边会压一根浅色竖条，还会把内容挤窄、换行、变高。
-            .scrollIndicators(.never)
-            .frame(height: viewport)
-            .mask {
+            if measuringFooter {
+                footer
+            } else {
                 VStack(spacing: 0) {
-                    Rectangle()
-                    if overflows {
-                        LinearGradient(colors: [.black, .black.opacity(0)],
-                                       startPoint: .top, endPoint: .bottom)
-                            .frame(height: 18)
+                    main
+                    if showsAppearance { footer }
+                }
+            }
+        } else {
+            VStack(spacing: 0) {
+                ScrollView(.vertical) {
+                    main
+                        // 下面两项只给外层这个滚动区域用；各面板里自己的滚动列表
+                        // 照旧按它们自己的设置来。
+                        .scrollIndicators(.automatic)
+                        .scrollBounceBehavior(.automatic)
+                        .onGeometryChange(for: CGFloat.self) { proxy in
+                            proxy.size.height
+                        } action: { height in
+                            onContentHeight(height)
+                        }
+                }
+                .scrollPosition($scrollPosition)
+                // 滚动区变矮（屏幕变了、外观栏展开）时保持顶边不动，不往中间跑。
+                .defaultScrollAnchor(.top)
+                .scrollBounceBehavior(.basedOnSize)
+                // 和各深色面板一样不画滚动条：系统设成“始终显示滚动条”时，
+                // 右边会压一根浅色竖条，还会把内容挤窄、换行、变高。还能滚
+                // 由两头的淡出提示。
+                .scrollIndicators(.never)
+                .onScrollGeometryChange(for: [CGFloat].self) { geometry in
+                    [geometry.contentOffset.y + geometry.contentInsets.top,
+                     geometry.containerSize.height, geometry.contentSize.height]
+                } action: { _, values in
+                    let fades = DetailPanelFit.fades(offset: values[0], container: values[1],
+                                                     content: values[2])
+                    fadeTop = fades.top
+                    fadeBottom = fades.bottom
+                }
+                .frame(height: viewports?.scroll)
+                .mask {
+                    VStack(spacing: 0) {
+                        if fadeTop {
+                            LinearGradient(colors: [.black.opacity(0), .black],
+                                           startPoint: .top, endPoint: .bottom)
+                                .frame(height: 18)
+                        }
+                        Rectangle()
+                        if fadeBottom {
+                            LinearGradient(colors: [.black, .black.opacity(0)],
+                                           startPoint: .top, endPoint: .bottom)
+                                .frame(height: 18)
+                        }
+                    }
+                }
+                if showsAppearance {
+                    ScrollView(.vertical) {
+                        footer
+                            .onGeometryChange(for: CGFloat.self) { proxy in
+                                proxy.size.height
+                            } action: { height in
+                                onFooterHeight(height)
+                            }
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .scrollIndicators(.never)
+                    // 每次打开从头开始，外观本身也是每次收起。
+                    .id(session)
+                    .frame(height: viewports?.footer)
+                    .overlay(alignment: .top) {
+                        // 内容在上面滚时，外观栏顶上一道细线，不占高度。
+                        if overflows {
+                            Rectangle().fill(.panelSeparator).frame(height: 0.6)
+                                .padding(.horizontal, pad)
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// 底部“外观”栏，带它自己的内边距。
+    private var footer: some View {
+        WidgetAppearanceSection(instance: instance, context: context, width: contentWidth)
+            // 每次打开都从收起开始。
+            .id(session)
+            // 封面这类自己有深色底的面板，入口的字跟着用浅色。
+            .environment(\.colorScheme,
+                         WidgetDetailBody.ground(instance, context) != nil ? .dark : scheme)
+            .padding(.top, 20)
+            .padding([.horizontal, .bottom], DetailPanelWidth.padding)
     }
 
     /// 内容区宽度：面板宽减两侧内边距，尾巴在左右两侧时再让出尾巴。
@@ -530,6 +642,10 @@ struct WidgetDetailChrome: View {
 
     /// 有颜色或背景可选的卡片，面板底部带“外观”入口（见 `WidgetAppearance`）。
     private var showsAppearance: Bool {
+        Self.offersAppearance(instance, context)
+    }
+
+    static func offersAppearance(_ instance: WidgetInstance, _ context: WidgetContext) -> Bool {
         !context.isPreview && WidgetAppearance.offered(instance.kind)
     }
 

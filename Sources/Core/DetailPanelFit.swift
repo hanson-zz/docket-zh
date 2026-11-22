@@ -15,8 +15,12 @@ import Foundation
 ///
 /// 坐标是 AppKit 的屏幕坐标，y 向上。不依赖 AppKit，方便测试。
 public enum DetailPanelFit {
-    /// 面板离屏幕边缘至少留这么多。
-    public static let margin: CGFloat = 8
+    /// 面板离屏幕可用区域边缘至少留这么多（上面是菜单栏，下面是程序坞或
+    /// 扩展栏）。原来是 8，贴着菜单栏太近，面板顶边看着像被菜单栏压住。
+    public static let margin: CGFloat = 12
+    /// 底部钉住的“外观”栏放不下时，上面的滚动区域至少留这么高（面板矮于
+    /// 两倍时取一半），外观栏自己再滚。
+    public static let minimumScroll: CGFloat = 120
     /// 尾巴尖和小组件之间的空隙，和原来一样。
     public static let gap: CGFloat = 2
     /// 扩展栏开口那一侧剩下的空间比这还小时（小组件贴着屏幕另一头），
@@ -129,6 +133,53 @@ public enum DetailPanelFit {
             y: clamp(origin.y, low: visible.minY + margin, high: visible.maxY - margin - size.height))
         return Placement(frame: CGRect(origin: placed, size: size),
                          overflows: natural.height > size.height + 0.5)
+    }
+
+    /// 面板能用的屏幕区域：系统给的 visibleFrame，顶上再确保让出菜单栏。
+    ///
+    /// 菜单栏设成自动隐藏时，visibleFrame 会一直伸到屏幕顶边；面板的窗口层级
+    /// 在菜单栏下面，菜单栏一滑出来就把面板顶上一截盖住。`menuBar` 传菜单栏
+    /// 高度（有刘海的屏幕取刘海那一条的高度），这块屏幕没有菜单栏时传 0。
+    public static func usableArea(visible: CGRect, screen: CGRect, menuBar: CGFloat) -> CGRect {
+        guard menuBar > 0 else { return visible }
+        let top = min(visible.maxY, screen.maxY - menuBar)
+        guard top > visible.minY else { return visible }
+        return CGRect(x: visible.minX, y: visible.minY, width: visible.width, height: top - visible.minY)
+    }
+
+    /// 滚动区域和底部钉住的“外观”栏各分多高。
+    public struct Viewports: Equatable, Sendable {
+        /// 上面能滚的内容区。
+        public var scroll: CGFloat
+        /// 底部钉住的外观栏；比它的自然高度小时，外观栏自己滚。
+        public var footer: CGFloat
+
+        public init(scroll: CGFloat, footer: CGFloat) {
+            self.scroll = scroll
+            self.footer = footer
+        }
+    }
+
+    /// 面板（含尾巴）高 `panelHeight` 时，滚动区和外观栏各给多少。
+    ///
+    /// 外观栏优先按自然高度给全，不随内容滚走；只有面板矮到连滚动区的最低
+    /// 高度（`minimumScroll`，面板矮于两倍时取一半）都留不下时才压它。
+    /// 没有外观栏的面板传 0，滚动区就是去掉尾巴后的整块。
+    public static func viewports(panelHeight: CGFloat, edge: DockPosition, tailDepth: CGFloat,
+                                 footer: CGFloat) -> Viewports {
+        let body = viewportHeight(panelHeight: panelHeight, edge: edge, tailDepth: tailDepth)
+        let footer = max(0, footer)
+        let keep = min(minimumScroll, body / 2)
+        let pinned = min(footer, max(0, body - keep))
+        return Viewports(scroll: max(0, body - pinned), footer: pinned)
+    }
+
+    /// 滚动区两头要不要淡出：上面有被滚上去的内容时顶边淡出，下面还有时
+    /// 底边淡出。滚动条不画，靠这两道淡出提示还能滚。
+    public static func fades(offset: CGFloat, container: CGFloat,
+                             content: CGFloat) -> (top: Bool, bottom: Bool) {
+        guard content > container + 0.5 else { return (false, false) }
+        return (offset > 0.5, offset + container < content - 0.5)
     }
 
     /// 滚动区域的高度：面板高度减去尾巴占的那一截（只有横排扩展栏的尾巴

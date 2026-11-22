@@ -48,7 +48,7 @@ final class DetailPanelFitTests: XCTestCase {
                                      natural: CGSize(width: 340, height: 1200),
                                      visible: mainVisible, capped: false)
         XCTAssertEqual(p.frame.minY, 82)
-        XCTAssertEqual(p.frame.height, 945 - 8 - 82)
+        XCTAssertEqual(p.frame.height, 945 - 12 - 82)
         XCTAssertTrue(p.overflows)
     }
 
@@ -83,10 +83,10 @@ final class DetailPanelFitTests: XCTestCase {
     }
 
     func testTinyScreenNeverGoesPastTheScreenItself() {
-        // 可见高度 150：统一上限不低于 160，但屏幕减边距只有 134，取屏幕的。
+        // 可见高度 150：统一上限不低于 160，但屏幕减边距只有 126，取屏幕的。
         let visible = CGRect(x: 0, y: 0, width: 800, height: 150)
         XCTAssertEqual(DetailPanelFit.heightLimit(edge: .left, anchor: CGPoint(x: 10, y: 75),
-                                                  visible: visible), 134)
+                                                  visible: visible), 126)
     }
 
     func testOnlyThePlannerAndTheAssistantAreExempt() {
@@ -101,7 +101,7 @@ final class DetailPanelFitTests: XCTestCase {
     func testNoRoomAboveTheTileFallsBackToTheWholeScreen() {
         let anchor = CGPoint(x: 700, y: 850)
         XCTAssertEqual(DetailPanelFit.heightLimit(edge: .bottom, anchor: anchor, visible: mainVisible,
-                                                  capped: false), 945 - 16)
+                                                  capped: false), 945 - 24)
         XCTAssertEqual(DetailPanelFit.heightLimit(edge: .bottom, anchor: anchor, visible: mainVisible), 560)
         let p = DetailPanelFit.place(edge: .bottom, anchor: anchor,
                                      natural: CGSize(width: 300, height: 500),
@@ -114,7 +114,7 @@ final class DetailPanelFitTests: XCTestCase {
         let p = DetailPanelFit.place(edge: .bottom, anchor: CGPoint(x: 1500, y: 80),
                                      natural: CGSize(width: 340, height: 300),
                                      visible: mainVisible)
-        XCTAssertEqual(p.frame.minX, 1512 - 8 - 340)
+        XCTAssertEqual(p.frame.minX, 1512 - 12 - 340)
         assertInside(p.frame, mainVisible)
     }
 
@@ -136,7 +136,7 @@ final class DetailPanelFitTests: XCTestCase {
                                      natural: CGSize(width: 300, height: 500),
                                      visible: mainVisible)
         XCTAssertEqual(p.frame.minX, 62)
-        XCTAssertEqual(p.frame.minY, 8)
+        XCTAssertEqual(p.frame.minY, 12)
         XCTAssertFalse(p.overflows)
     }
 
@@ -191,5 +191,65 @@ final class DetailPanelFitTests: XCTestCase {
     func testTinyHeightJitterDoesNotRefit() {
         XCTAssertFalse(DetailPanelFit.needsRefit(old: 400, new: 400.3))
         XCTAssertTrue(DetailPanelFit.needsRefit(old: 400, new: 412))
+    }
+
+    // MARK: 菜单栏
+
+    func testAutoHiddenMenuBarIsStillLeftClear() {
+        // 菜单栏自动隐藏：visibleFrame 伸到屏幕顶边，面板仍让出 24pt。
+        let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let visible = CGRect(x: 0, y: 70, width: 1440, height: 830)
+        let usable = DetailPanelFit.usableArea(visible: visible, screen: screen, menuBar: 24)
+        XCTAssertEqual(usable, CGRect(x: 0, y: 70, width: 1440, height: 806))
+        let p = DetailPanelFit.place(edge: .bottom, anchor: CGPoint(x: 700, y: 150),
+                                     natural: CGSize(width: 320, height: 1400),
+                                     visible: usable, capped: false)
+        XCTAssertLessThanOrEqual(p.frame.maxY, 900 - 24 - DetailPanelFit.margin)
+        assertInside(p.frame, usable)
+    }
+
+    func testVisibleMenuBarIsNotCountedTwice() {
+        let usable = DetailPanelFit.usableArea(visible: mainVisible, screen: main, menuBar: 37)
+        XCTAssertEqual(usable, mainVisible)
+        XCTAssertEqual(DetailPanelFit.usableArea(visible: mainVisible, screen: main, menuBar: 0), mainVisible)
+    }
+
+    func testScreenTallerPanelUsesTheWholeUsableHeightWhenExempt() {
+        // 最大高度 = 可用高度减上下边距（尾巴含在里面）。
+        let p = DetailPanelFit.place(edge: .left, anchor: CGPoint(x: 60, y: 470),
+                                     natural: CGSize(width: 300, height: 3000),
+                                     visible: mainVisible, capped: false)
+        XCTAssertEqual(p.frame.height, 945 - 2 * DetailPanelFit.margin)
+        assertInside(p.frame, mainVisible)
+    }
+
+    // MARK: 钉住的外观栏
+
+    func testFooterKeepsItsHeightAndTheRestScrolls() {
+        let v = DetailPanelFit.viewports(panelHeight: 560, edge: .bottom, tailDepth: 10, footer: 38)
+        XCTAssertEqual(v, DetailPanelFit.Viewports(scroll: 512, footer: 38))
+        let side = DetailPanelFit.viewports(panelHeight: 560, edge: .right, tailDepth: 10, footer: 38)
+        XCTAssertEqual(side, DetailPanelFit.Viewports(scroll: 522, footer: 38))
+    }
+
+    func testTallFooterIsSqueezedButLeavesRoomToScroll() {
+        // 外观展开后 500 高：滚动区仍留 120。
+        let v = DetailPanelFit.viewports(panelHeight: 410, edge: .bottom, tailDepth: 10, footer: 500)
+        XCTAssertEqual(v, DetailPanelFit.Viewports(scroll: 120, footer: 280))
+        // 面板很矮：各一半。
+        let low = DetailPanelFit.viewports(panelHeight: 170, edge: .bottom, tailDepth: 10, footer: 500)
+        XCTAssertEqual(low, DetailPanelFit.Viewports(scroll: 80, footer: 80))
+    }
+
+    func testNoFooterGivesTheWholeBodyToTheScroll() {
+        let v = DetailPanelFit.viewports(panelHeight: 400, edge: .top, tailDepth: 10, footer: 0)
+        XCTAssertEqual(v, DetailPanelFit.Viewports(scroll: 390, footer: 0))
+    }
+
+    func testFadesFollowTheScrollOffset() {
+        XCTAssertTrue(DetailPanelFit.fades(offset: 0, container: 500, content: 400) == (false, false))
+        XCTAssertTrue(DetailPanelFit.fades(offset: 0, container: 500, content: 900) == (false, true))
+        XCTAssertTrue(DetailPanelFit.fades(offset: 200, container: 500, content: 900) == (true, true))
+        XCTAssertTrue(DetailPanelFit.fades(offset: 400, container: 500, content: 900) == (true, false))
     }
 }
