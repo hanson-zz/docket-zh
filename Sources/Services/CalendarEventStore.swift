@@ -51,7 +51,7 @@ enum CalendarEventStore {
         return shared.events(matching: predicate).compactMap { event -> LiveCalendarEvent? in
             guard let start = event.startDate else { return nil }
             let title = (event.title ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let mine = event.participants?.first(where: \.isCurrentUser)?.participantStatus
+            let mine = event.attendees?.first(where: { $0.isCurrentUser })?.participantStatus
             return LiveCalendarEvent(
                 id: "\(event.eventIdentifier ?? event.calendarItemIdentifier)-\(start.timeIntervalSinceReferenceDate)",
                 title: title.isEmpty ? tr("新日程") : title,
