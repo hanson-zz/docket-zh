@@ -290,7 +290,16 @@ enum PandaArt {
     private static var cache: [String: NSImage] = [:]
     private static var missing: Set<String> = []
 
+    /// 老的 pet-panda-* 站着、欢呼、歇着、化了、饿了、病了先换成六状态正式素材
+    /// （`PandaStateResolver.migratedName`），吃东西、喝水、骷髅等扩展动作照旧。
     static func image(_ name: String) -> NSImage? {
+        let migrated = PandaStateResolver.migratedName(name, exists: { PandaStateArt.exists($0) })
+        if migrated != name { return PandaStateArt.image(migrated) }
+        return original(name)
+    }
+
+    /// 原图，不换成六状态：收音机皮肤、磁带上的小熊猫贴纸这类装饰用。
+    static func original(_ name: String) -> NSImage? {
         if let image = cache[name] { return image }
         guard !missing.contains(name),
               let url = Bundle.main.url(forResource: name, withExtension: "png"),

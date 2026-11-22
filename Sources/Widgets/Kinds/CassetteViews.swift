@@ -82,7 +82,7 @@ struct PandaMark: View {
 
     var body: some View {
         Group {
-            if let image = PandaArt.image("pet-panda-idle") {
+            if let image = PandaArt.original("pet-panda-idle") {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
             } else {
                 Color.clear

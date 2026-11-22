@@ -293,7 +293,7 @@ private struct PorcelainDial: View {
     /// 右下角的小熊猫贴纸：奶白描边圆角底，向右歪 10°。
     @ViewBuilder
     private var sticker: some View {
-        if let image = PandaArt.image("pet-panda-idle") {
+        if let image = PandaArt.original("pet-panda-idle") {
             let h: CGFloat = 28
             let w = h * 191 / 256
             Image(nsImage: image)

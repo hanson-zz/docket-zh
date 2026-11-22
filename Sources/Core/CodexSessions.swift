@@ -606,4 +606,14 @@ public enum CodexCard {
         case .idle: "pet-panda-rest"
         }
     }
+
+    /// 六状态：干活中思考，等你回复提醒，做完完成，没在跑休息。
+    public static func pandaState(_ activity: CodexActivity) -> PandaState {
+        switch activity {
+        case .working: .thinking
+        case .waiting: .alert
+        case .done: .done
+        case .idle: .rest
+        }
+    }
 }

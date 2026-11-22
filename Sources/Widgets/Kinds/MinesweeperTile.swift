@@ -462,7 +462,10 @@ struct MinePanda: View {
         }
     }
 
+    /// 赢了、等开始走六状态正式素材（完成、待机），踩雷的骷髅照旧。
     @MainActor private static func image(_ name: String) -> NSImage? {
+        let migrated = PandaStateResolver.migratedName(name, exists: { PandaStateArt.exists($0) })
+        if migrated != name { return PandaStateArt.image(migrated) }
         if let cached = cache[name] { return cached }
         guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
               let image = NSImage(contentsOf: url) else { return nil }

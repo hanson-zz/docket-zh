@@ -324,10 +324,9 @@ enum AIPandaArt {
     /// 站着、欢呼这两张先找六状态的正式素材（待机、完成），全局同一套外观；缺图用原来的。
     static func image(_ pose: String) -> NSImage? {
         if let known = cached[pose] { return known }
-        let state: PandaState? = pose == name ? .idle : (pose == cheer ? .done : nil)
-        let preferred = state.flatMap { PandaStateArt.image(PandaStateResolver.preferredName($0)) }
-        let loaded = preferred
-            ?? Bundle.main.url(forResource: pose, withExtension: "png").flatMap { NSImage(contentsOf: $0) }
+        let migrated = PandaStateResolver.migratedName(pose, exists: { PandaStateArt.exists($0) })
+        let loaded = migrated != pose ? PandaStateArt.image(migrated)
+            : Bundle.main.url(forResource: pose, withExtension: "png").flatMap { NSImage(contentsOf: $0) }
         cached[pose] = loaded
         return loaded
     }

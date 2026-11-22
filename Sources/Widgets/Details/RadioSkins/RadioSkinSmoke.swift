@@ -176,7 +176,7 @@ private struct RadioSkinSmokeHero: View {
 
     /// 玻璃右上角的小熊猫贴纸。
     @ViewBuilder private var sticker: some View {
-        if let image = PandaArt.image("pet-panda-idle") {
+        if let image = PandaArt.original("pet-panda-idle") {
             Image(nsImage: image)
                 .resizable()
                 .interpolation(.high)

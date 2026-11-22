@@ -234,6 +234,29 @@ public enum PandaStateResolver {
         return .state(pulse.state)
     }
 
+    // MARK: 老图名迁移
+
+    /// 面板里原来直接写的小熊猫静态图对应哪种状态：站着待机、欢呼完成、歇着休息，
+    /// 化了、饿了、病了（提醒、状态差）算提醒。喝水、吃东西、骷髅这些场景扩展动作，
+    /// 电子宠物、桌面伙伴、专注、刘海的专属素材都不在这里，照旧用原图。
+    public static func legacyState(_ name: String) -> PandaState? {
+        switch name {
+        case "pet-panda-idle": .idle
+        case "pet-panda-cheer": .done
+        case "pet-panda-rest": .rest
+        case "pet-panda-melt", "pet-panda-hungry", "pet-panda-sick": .alert
+        default: nil
+        }
+    }
+
+    /// 面板拿老图名来要图时实际画哪张：能对应到六状态、而且正式素材在，就换成正式素材；
+    /// 否则原样返回（老图照旧，缺图回退）。
+    public static func migratedName(_ name: String, exists: (String) -> Bool) -> String {
+        guard let state = legacyState(name) else { return name }
+        let preferred = preferredName(state)
+        return exists(preferred) ? preferred : name
+    }
+
     // MARK: 各面板：事件 → 状态
 
     /// 天气：没有提醒或平常天 idle；下雨下雪、风大、空气差这类重要天气 alert；

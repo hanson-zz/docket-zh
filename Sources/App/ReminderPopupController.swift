@@ -827,14 +827,18 @@ struct ReminderPopupCardView: View {
 
     /// 提醒事项是站着等你的小熊猫；喝水是选的角色在喝水（小熊猫没有喝水图，用
     /// 站着的），加了一杯举杯、达标欢呼；待办平时站着，点完成换欢呼。
+    /// 到点提醒的那张：六状态的提醒，缺图时按解析器的回退，都没有时站着。
+    private static var alertAvatar: String {
+        PandaStateResolver.imageName(.alert, exists: { PopupArt.image($0) != nil }) ?? "pet-panda-idle"
+    }
+
     private var avatarName: String {
         switch card.kind {
-        case .reminders:
-            return finishing ? "pet-panda-cheer" : "pet-panda-idle"
+        case .reminders, .countdown, .alarm:
+            // 到点提醒：小熊猫举爪提醒（缺正式素材时站着），点完成换欢呼。
+            return finishing ? "pet-panda-cheer" : Self.alertAvatar
         case .todo:
             return finishing ? "pet-panda-cheer" : "pet-panda-idle"
-        case .countdown, .alarm:
-            return "pet-panda-idle"
         case .water:
             let character = WaterCharacter(rawValue: primary.water?.character ?? "") ?? .redPanda
             let met = primary.water.map { WaterIntake.isMet(total: $0.total, goal: $0.goal) } ?? false
@@ -937,7 +941,10 @@ private struct PopupButton: View {
 private enum PopupArt {
     private static var cache: [String: NSImage] = [:]
 
+    /// 小熊猫的站着、欢呼走六状态正式素材，其他角色的图照旧。
     static func image(_ name: String) -> NSImage? {
+        let migrated = PandaStateResolver.migratedName(name, exists: { PandaStateArt.exists($0) })
+        if migrated.hasPrefix("panda-state-") { return PandaStateArt.image(migrated) }
         if let image = cache[name] { return image }
         guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
               let image = NSImage(contentsOf: url) else { return nil }

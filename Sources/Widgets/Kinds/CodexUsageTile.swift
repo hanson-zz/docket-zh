@@ -403,7 +403,9 @@ struct CodexPanda: View {
 
     var body: some View {
         Group {
-            if let image = PandaArt.image(CodexCard.pandaImage(activity)) {
+            // 六状态正式素材优先，缺图时用原来的那张。
+            if let image = PandaStateArt.image(PandaStateResolver.preferredName(CodexCard.pandaState(activity)))
+                ?? PandaArt.image(CodexCard.pandaImage(activity)) {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)

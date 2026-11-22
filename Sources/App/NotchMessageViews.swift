@@ -418,13 +418,13 @@ private struct NotchAvatar: View {
     }
 }
 
-/// 底下一行的小熊猫（Resources/Pet/pet-panda-idle.png）。
+/// 底下一行的小熊猫：六状态的待机图。
 private struct NotchPanda: View {
     var size: CGFloat
 
+    /// 六状态的待机（`PandaStateResolver`，缺图回退原来的站姿）。
     @MainActor private static let image: NSImage? = {
-        guard let url = Bundle.main.url(forResource: "pet-panda-idle", withExtension: "png") else { return nil }
-        return NSImage(contentsOf: url)
+        PandaStateResolver.imageName(.idle, exists: { PandaStateArt.exists($0) }).flatMap(PandaStateArt.image)
     }()
 
     var body: some View {

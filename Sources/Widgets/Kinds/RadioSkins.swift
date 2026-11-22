@@ -217,7 +217,7 @@ struct RadioPandaSticker: View {
                 .overlay(RoundedRectangle(cornerRadius: (width + 6) / 2.4, style: .continuous)
                     .strokeBorder(.black.opacity(0.25), lineWidth: 0.6))
                 .frame(width: width + 6, height: height + 5)
-            if let image = PandaArt.image("pet-panda-idle") {
+            if let image = PandaArt.original("pet-panda-idle") {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)

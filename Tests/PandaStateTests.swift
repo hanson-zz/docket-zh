@@ -198,4 +198,34 @@ final class PandaStateTests: XCTestCase {
         XCTAssertEqual(PandaStateResolver.focus(.`break`), .rest)
         XCTAssertEqual(PandaStateResolver.focus(.done), .done)
     }
+
+    // MARK: 老图名迁移
+
+    func testLegacyNamesMapToStates() {
+        XCTAssertEqual(PandaStateResolver.legacyState("pet-panda-idle"), .idle)
+        XCTAssertEqual(PandaStateResolver.legacyState("pet-panda-cheer"), .done)
+        XCTAssertEqual(PandaStateResolver.legacyState("pet-panda-rest"), .rest)
+        for name in ["pet-panda-melt", "pet-panda-hungry", "pet-panda-sick"] {
+            XCTAssertEqual(PandaStateResolver.legacyState(name), .alert, name)
+        }
+        // 场景扩展动作和专属素材不换。
+        for name in ["pet-panda-drink", "pet-panda-sip", "pet-panda-eat", "pet-panda-skeleton", "pet-panda-dusty",
+                     "pet-cat-hungry", "pet-sprite-blink-1", "notch-panda-peek", "focus-mascot-panda-idle"] {
+            XCTAssertNil(PandaStateResolver.legacyState(name), name)
+        }
+    }
+
+    func testMigratedNameNeedsArt() {
+        XCTAssertEqual(PandaStateResolver.migratedName("pet-panda-cheer", exists: { _ in true }), "panda-state-done")
+        XCTAssertEqual(PandaStateResolver.migratedName("pet-panda-cheer", exists: { _ in false }), "pet-panda-cheer")
+        XCTAssertEqual(PandaStateResolver.migratedName("pet-panda-eat", exists: { _ in true }), "pet-panda-eat")
+        XCTAssertEqual(PandaStateResolver.migratedName("pet-panda-melt", exists: { _ in true }), "panda-state-alert")
+    }
+
+    func testCodexStates() {
+        XCTAssertEqual(CodexCard.pandaState(.working), .thinking)
+        XCTAssertEqual(CodexCard.pandaState(.waiting), .alert)
+        XCTAssertEqual(CodexCard.pandaState(.done), .done)
+        XCTAssertEqual(CodexCard.pandaState(.idle), .rest)
+    }
 }
