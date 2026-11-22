@@ -105,6 +105,18 @@ public enum LiveCalendar {
     public static let inProgressHold: TimeInterval = 60
     /// 悬停列表最多几条。
     public static let agendaLimit = 4
+
+    /// 倒计时胶囊的底色（上面是 13pt 白字）：冷色、暖橙，浅色和深色外观各一种。
+    /// 白字对比度都不低于 4.5（原来浅色暖橙 #D8642C 只有 3.6，浅色冷色 4.4）。
+    public static func pillHex(dark: Bool, warm: Bool) -> String {
+        switch (dark, warm) {
+        case (false, false): return "#5672A6"
+        case (true, false): return "#4A6699"
+        case (false, true): return "#BD5622"
+        case (true, true): return "#C05722"
+        }
+    }
+
     /// 整圈旋转的时长和换内容的时刻（转到 180° 倒立时）。
     public static let turnDuration: TimeInterval = 0.9
     public static let emphasisDuration: TimeInterval = 0.14

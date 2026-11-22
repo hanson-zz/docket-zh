@@ -138,4 +138,14 @@ final class LiveCalendarTests: XCTestCase {
         XCTAssertEqual(LiveCalendar.leadKey, "liveIcons.calendarLead")
         XCTAssertEqual(LiveCalendar.bundleID, "com.apple.iCal")
     }
+
+    func testPillTextIsReadableInEveryAppearance() {
+        for dark in [false, true] {
+            for warm in [false, true] {
+                let hex = LiveCalendar.pillHex(dark: dark, warm: warm)
+                XCTAssertGreaterThanOrEqual(PaperInk.contrast(paper: hex, ink: "#FFFFFF"), PaperInk.minimumContrast,
+                                            "胶囊白字对比度 dark=\(dark) warm=\(warm)")
+            }
+        }
+    }
 }

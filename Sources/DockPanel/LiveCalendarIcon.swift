@@ -244,16 +244,16 @@ struct LiveCalendarPalette {
         switch (dark, warm) {
         case (false, false):
             liquid = [Color(hex: "#B7CCEB").opacity(0.55), Color(hex: "#88A7D8").opacity(0.65)]
-            pill = Color(hex: "#5B78AE")
+            pill = Color(hex: LiveCalendar.pillHex(dark: false, warm: false))
         case (true, false):
             liquid = [Color(hex: "#6B87B8").opacity(0.5), Color(hex: "#4A6699").opacity(0.6)]
-            pill = Color(hex: "#4A6699")
+            pill = Color(hex: LiveCalendar.pillHex(dark: true, warm: false))
         case (false, true):
             liquid = [Color(hex: "#FFC796").opacity(0.7), Color(hex: "#F28B4E").opacity(0.8)]
-            pill = Color(hex: "#D8642C")
+            pill = Color(hex: LiveCalendar.pillHex(dark: false, warm: true))
         case (true, true):
             liquid = [Color(hex: "#E68D52").opacity(0.62), Color(hex: "#BF5F28").opacity(0.72)]
-            pill = Color(hex: "#C95A24")
+            pill = Color(hex: LiveCalendar.pillHex(dark: true, warm: true))
         }
     }
 }
