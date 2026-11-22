@@ -432,15 +432,15 @@ final class NotchIslandTests: XCTestCase {
     /// 真机上专注计时右边宽到 70 点、加外弯快 80 点，盖掉菜单栏右边的状态图标。两侧只留刚好放下内容的宽度。
     func testWingsAreNarrow() {
         XCTAssertGreaterThanOrEqual(NotchIslandLayout.compactFontSize, 13, "最小字号 13 点")
-        // 专注计时：左边吉祥物 37（原来 44），右边「24:11」走着 48、暂停 59（原来一律 70）。
-        XCTAssertEqual(NotchIslandLayout.focusMascotWing, 37)
-        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 1500, paused: false), 48)
-        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 1500, paused: true), 59)
+        // 专注计时：左边吉祥物 30（原来 37），右边「24:11」走着暂停都是 45（原来 48 / 59），暂停时不变长。
+        XCTAssertEqual(NotchIslandLayout.focusMascotWing, 30)
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 1500, paused: false), 45)
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 1500, paused: true), 45)
         // 一小时起可能出现「1:02:03」，宽一些，但仍不超过上限。
-        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 5400, paused: false), 60)
-        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 5400, paused: true), 70)
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 5400, paused: false), 57)
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 5400, paused: true), 57)
         let paused = NotchIslandActivity.timer(deadline: nil, pausedLeft: 1451, total: 1500, focus: true)
-        XCTAssertEqual(NotchIslandLayout.wings(paused).right, 59)
+        XCTAssertEqual(NotchIslandLayout.wings(paused).right, 45)
         // 其它小岛同样收窄：图标一侧 28（原来 40），插电 47（62）、下载 61（76）、会议 55（56）、电台 30（44）。
         XCTAssertEqual(NotchIslandLayout.iconWing, 28)
         XCTAssertEqual(NotchIslandLayout.chargingWing, 47)

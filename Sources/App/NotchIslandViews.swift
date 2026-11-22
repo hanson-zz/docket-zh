@@ -258,24 +258,16 @@ private struct NotchIslandBody: View {
                 }
             }
         case .timer(let deadline, let pausedLeft, _, _, .focus, _):
-            // 专注计时：右边是剩余时间，暂停时前面一个暂停号、字淡一点。
+            // 专注计时：右边只有剩余时间；暂停时不加暂停号（省宽度），数字调暗表示停着。
             TimelineView(.periodic(from: .now, by: 1)) { tick in
-                HStack(spacing: 3) {
-                    if pausedLeft != nil {
-                        Image(systemName: "pause.fill")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(NotchIslandPalette.onBlack)
-                            .accessibilityHidden(true)
-                    }
-                    Text(verbatim: NotchIslandText.clock(
-                        NotchIslandTimer.remaining(deadline: deadline, pausedLeft: pausedLeft, now: tick.date)))
-                        .font(.system(size: NotchIslandLayout.compactFontSize, weight: .semibold,
-                                      design: .rounded).monospacedDigit())
-                        .foregroundStyle(pausedLeft == nil ? NotchIslandPalette.onBlack : .white.opacity(0.7))
-                        .contentTransition(.numericText(countsDown: true))
-                        .lineLimit(1)
-                }
-                .fixedSize()
+                Text(verbatim: NotchIslandText.clock(
+                    NotchIslandTimer.remaining(deadline: deadline, pausedLeft: pausedLeft, now: tick.date)))
+                    .font(.system(size: NotchIslandLayout.compactFontSize, weight: .semibold,
+                                  design: .rounded).monospacedDigit())
+                    .foregroundStyle(pausedLeft == nil ? NotchIslandPalette.onBlack : .white.opacity(0.5))
+                    .contentTransition(.numericText(countsDown: true))
+                    .lineLimit(1)
+                    .fixedSize()
             }
         case .timer:
             EmptyView()

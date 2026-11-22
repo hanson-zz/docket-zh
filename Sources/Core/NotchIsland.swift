@@ -648,10 +648,12 @@ public enum NotchIslandLayout {
     /// 左边只放一个图标（插电、下载、会议、电台）时耳朵多宽：图标约 16 点。
     public static let iconWing: CGFloat = 28
     /// 专注计时左边那颗吉祥物小头的高度，和它最宽的宽高比（水獭那张 106×80）。
-    public static let focusMascotHeight: CGFloat = 20
+    public static let focusMascotHeight: CGFloat = 17
     public static let focusMascotMaxAspect: CGFloat = 1.33
-    /// 专注计时左边吉祥物那侧多宽：4 + 26.6 + 6，向上取整 37（原来 44）。
-    public static let focusMascotWing: CGFloat = wing(focusMascotHeight * focusMascotMaxAspect)
+    /// 专注计时两侧外沿只留 3 点（别的小岛 6 点）：真机上专注小岛仍嫌长，外沿那几点最不影响观感。
+    public static let focusOuterInset: CGFloat = 3
+    /// 专注计时左边吉祥物那侧多宽：4 + 22.6 + 3，向上取整 30（原来 37，更早 44）。
+    public static let focusMascotWing: CGFloat = min(maxWing, ceil(wingNotchGap + focusMascotHeight * focusMascotMaxAspect + focusOuterInset))
 
     /// 一段字在 `size` 字号下大约多宽：数字（等宽）、冒号、百分号、空格、其它 ASCII、中日韩字分开估。
     public static func textWidth(_ text: String, size: CGFloat = compactFontSize) -> CGFloat {
@@ -673,12 +675,12 @@ public enum NotchIslandLayout {
         min(maxWing, ceil(wingNotchGap + content + wingOuterInset))
     }
 
-    /// 专注计时右边剩余时间那侧多宽：按这一轮可能出现的最长写法（不到一小时「24:11」，一小时起「1:02:03」）
-    /// 和有没有暂停号算。「24:11」走着 4 + 37.4 + 6 取整 48，暂停 59；「1:02:03」走着 60，暂停 70。
+    /// 专注计时右边剩余时间那侧多宽：按这一轮可能出现的最长写法（不到一小时「24:11」，一小时起「1:02:03」）算。
+    /// 暂停不再加暂停号（只把数字调暗），走着和暂停一样宽，暂停时小岛不会变长。
+    /// 「24:11」4 + 37.4 + 3 取整 45（原来走着 48、暂停 59）；「1:02:03」57（原来 60 / 70）。
     public static func focusClockWing(total: TimeInterval, paused: Bool) -> CGFloat {
         let widest = total >= 3600 ? "0:00:00" : "00:00"
-        let pause = paused ? pauseGlyphWidth + pauseSpacing : 0
-        return wing(pause + textWidth(widest))
+        return min(maxWing, ceil(wingNotchGap + textWidth(widest) + focusOuterInset))
     }
 
     /// 插电右边「100%」那侧：约 47（原来 62）。

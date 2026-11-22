@@ -316,9 +316,11 @@ private struct AIAskView: View {
     /// 设置页里勾选的几个胶囊，后面是「常用」提示词菜单。文字先取输入框，空着时
     /// 取剪贴板，套好的提示词照平时提问交给选中的服务。
     private var chipRow: some View {
-        HStack(spacing: 6) {
+        // 四个胶囊加「常用」在 420 宽的面板里要一排放下（真机上「润色」被「常用」盖掉一半）：
+        // 胶囊左右留白 7、图标和字间距 4、胶囊间距 4。放不下时仍可横滑。
+        HStack(spacing: 4) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     ForEach(chips, id: \.self) { chip in
                         chipButton(chip)
                     }
@@ -337,7 +339,7 @@ private struct AIAskView: View {
         return Button {
             run(chip)
         } label: {
-            HStack(spacing: 5) {
+            HStack(spacing: 4) {
                 Image(systemName: chip.symbol)
                     .font(.system(size: 12, weight: .semibold))
                 Text(chip.title)
@@ -345,7 +347,7 @@ private struct AIAskView: View {
                     .lineLimit(1)
                     .fixedSize()
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 7)
             .frame(height: 28)
         }
         .buttonStyle(PanelChipButtonStyle())
