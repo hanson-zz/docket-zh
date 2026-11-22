@@ -50,22 +50,43 @@ struct BatteryTile: View {
 
     /// Dedicated four-ring card. Absent devices show a dash, never a guessed
     /// percentage. The same battery sampler powers tiles and detail panels.
+    /// 图标画得更实（中号字重、圆里一层淡底），悬停写设备名、连接状态和更新时间。
     private var multiDeviceRings: some View {
         HStack(spacing: 8) {
             ForEach(multiSlots) { slot in
                 let reading = reading(slot)
                 VStack(spacing: 7) {
-                    iconRing(slot, reading, diameter: 52)
+                    iconRing(slot, reading, diameter: 52, emphasized: true)
                     iconReading(reading, size: 17, available: 68)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(slot.name)
-                .accessibilityValue("\(percentText(reading)) \(caption(reading))")
-                .help("\(slot.name) · \(percentText(reading)) · \(caption(reading))")
+                .accessibilityLabel(displayName(slot))
+                .accessibilityValue("\(percentText(reading)) \(powerLine(reading))")
+                .help(hoverText(slot, reading))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 迷你卡片和悬停里的设备名：Mac 写 MacBook，其余照设备自己的名字。
+    private func displayName(_ slot: Slot) -> String {
+        slot.isMac ? BatteryWords.macName : slot.name
+    }
+
+    /// 「接通电源 · 未充电」这类电源说明（`BatteryWords.powerLine`）。
+    private func powerLine(_ reading: Reading) -> String {
+        BatteryWords.powerLine(level: reading.level, charging: reading.charging, onPower: reading.onPower,
+                               present: reading.present,
+                               charged: reading.onPower && !context.isPreview && BatteryMetrics.shared.power.charged)
+    }
+
+    /// 悬停说明：设备名；已连接 · 80% · 接通电源 · 未充电（或未连接）；更新于 15:32。
+    /// 预览里没有真实采样，不写更新时间。
+    private func hoverText(_ slot: Slot, _ reading: Reading) -> String {
+        BatteryWords.hover(name: displayName(slot), level: reading.level, charging: reading.charging,
+                           onPower: reading.onPower, present: reading.present,
+                           updated: context.isPreview ? nil : BatteryMetrics.shared.sampledAt, now: .now)
     }
 
     /// The first three slots never change position. The fourth prefers a mouse,
@@ -124,18 +145,18 @@ struct BatteryTile: View {
                 if BatteryStatusCell.drawsCell(look: shown.rawValue) {
                     // 经典和液态：画一块横向电池，百分比写在电池里。
                     statusCell(slot, reading, liquid: shown == .liquid)
+                    // 「MacBook · 80%」，下面「接通电源 · 未充电」：设备、电量、电源一眼看清。
                     VStack(alignment: .leading, spacing: CGFloat(DockMetrics.lineSpacing)) {
-                        Text(caption(reading))
+                        Text(BatteryWords.title(name: displayName(slot), level: reading.level,
+                                                present: reading.present))
                             .font(.system(size: 13, weight: .semibold))
+                            .monospacedDigit()
                             .foregroundStyle(statusCaptionColor(reading))
-                        HStack(spacing: 3) {
-                            Image(systemName: slot.symbol)
-                                .font(.system(size: 10, weight: .regular))
-                            Text(slot.name)
-                                .font(WidgetStyle.note)
-                        }
-                        .foregroundStyle(WidgetStyle.secondary)
+                        Text(powerLine(reading))
+                            .font(.system(size: 13))
+                            .foregroundStyle(WidgetStyle.secondary)
                     }
+                    .help(hoverText(slot, reading))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .modifier(BatteryPlugBounce(trigger: gaugeState(slot).pluggedAt))
@@ -143,8 +164,11 @@ struct BatteryTile: View {
                     BatteryGauge(look: shown, state: gaugeState(slot), diameter: 40,
                                  center: shown == .panda ? .none : .symbol(slot.symbol),
                                  isPreview: context.isPreview, theme: theme)
-                    TileReading(value: percentText(reading), caption: caption(reading))
+                    TileReading(value: BatteryWords.title(name: displayName(slot), level: reading.level,
+                                                          present: reading.present),
+                                caption: powerLine(reading), valueSize: 15)
                         .modifier(BatteryPlugBounce(trigger: gaugeState(slot).pluggedAt))
+                        .help(hoverText(slot, reading))
                 }
                 Spacer(minLength: 0)
             }
@@ -427,19 +451,28 @@ struct BatteryTile: View {
     }
 
     /// 设备图标 + 外圈电量环：默认电池绿，选了颜色是主题色，报警是红（`accent`）。
-    private func iconRing(_ slot: Slot, _ reading: Reading, diameter: CGFloat) -> some View {
+    /// `emphasized`（多设备卡片）：轨道深一点，圆里铺一层淡底，图标用中号字重，
+    /// 浅色深色桌面上都看得清。
+    private func iconRing(_ slot: Slot, _ reading: Reading, diameter: CGFloat,
+                          emphasized: Bool = false) -> some View {
         let tint = reading.present ? accent(reading) : WidgetStyle.secondary
         let line = max(2, diameter * 0.08)
         return ZStack {
+            if emphasized {
+                Circle()
+                    .fill(WidgetStyle.primary.opacity(reading.present ? 0.10 : 0.05))
+                    .padding(line)
+            }
             Circle()
-                .stroke(WidgetStyle.primary.opacity(0.13), lineWidth: line)
+                .stroke(WidgetStyle.primary.opacity(emphasized ? 0.2 : 0.13), lineWidth: line)
             Circle()
                 .trim(from: 0, to: CGFloat(ShapeMeters.cellFill(level: reading.level, present: reading.present)))
                 .stroke(tint, style: StrokeStyle(lineWidth: line, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Image(systemName: slot.symbol)
-                .font(.system(size: diameter * 0.42, weight: .regular))
-                .foregroundStyle(reading.present ? WidgetStyle.primary : WidgetStyle.secondary)
+                .font(.system(size: diameter * (emphasized ? 0.4 : 0.42), weight: emphasized ? .medium : .regular))
+                .foregroundStyle(reading.present ? WidgetStyle.primary
+                                 : (emphasized ? WidgetStyle.primary.opacity(0.55) : WidgetStyle.secondary))
         }
         .padding(line / 2)
         .frame(width: diameter, height: diameter)
@@ -492,7 +525,7 @@ struct BatteryTile: View {
                     let shown = look(for: slot)
                     if layout == "icon" || layout == "multi" {
                         // 仅图标：电量环里是设备图标，下面是百分比。
-                        iconRing(slot, reading, diameter: single ? 38 : 32)
+                        iconRing(slot, reading, diameter: single ? 38 : 32, emphasized: layout == "multi")
                         iconReading(reading, size: single ? 16 : 14, available: 56)
                     } else if layout == ProFeatures.batteryGaugeLayout,
                               BatteryHourglass.drawsHourglass(look: shown.rawValue) {
@@ -524,7 +557,7 @@ struct BatteryTile: View {
                     }
                 }
                 .frame(minHeight: 62, maxHeight: .infinity)
-                .help("\(slot.name) \(percentText(reading))")
+                .help(layout == "multi" ? hoverText(slot, reading) : "\(slot.name) \(percentText(reading))")
             }
         }
         .lineLimit(1)

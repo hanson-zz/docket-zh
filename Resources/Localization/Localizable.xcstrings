@@ -1992,6 +1992,17 @@
         }
       }
     },
+    "%@ 秒前" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ s ago"
+          }
+        }
+      }
+    },
     "%@ 项已过期" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2267,6 +2278,17 @@
         }
       }
     },
+    "不支持" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not supported"
+          }
+        }
+      }
+    },
     "专注结束" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2366,6 +2388,50 @@
         }
       }
     },
+    "充电上限 · %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charge Limit · %@%%"
+          }
+        }
+      }
+    },
+    "充电上限需要 Apple 芯片 Mac 并安装充电助手，部分机型或系统版本无法控制充电，以面板里显示的状态为准。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charge Limit needs a Mac with Apple silicon and the charge helper installed. Some models or macOS versions cannot control charging; the status in the battery panel is what counts."
+          }
+        }
+      }
+    },
+    "充电助手需要更新，更新前设置的上限不生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The charge helper needs an update. The limit has no effect until it is updated."
+          }
+        }
+      }
+    },
+    "充电时段" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Charging"
+          }
+        }
+      }
+    },
     "八爪鱼" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2373,6 +2439,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Octopus"
+          }
+        }
+      }
+    },
+    "兼容性与诊断" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compatibility and diagnostics"
           }
         }
       }
@@ -2406,6 +2483,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "When you drag a file or folder to the Trash, the red panda runs over within 10 seconds, carries it back and puts it back where it was. Emptying the Trash is never affected."
+          }
+        }
+      }
+    },
+    "助手正在启动，设置的上限尚未生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The helper is starting. The limit is not in effect yet."
           }
         }
       }
@@ -2608,6 +2696,17 @@
         }
       }
     },
+    "已连接 · %@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected · %@ · %@"
+          }
+        }
+      }
+    },
     "废纸篓救回" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2630,6 +2729,17 @@
         }
       }
     },
+    "开启充电上限" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Charge Limit"
+          }
+        }
+      }
+    },
     "开始专注时自动播放" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2637,6 +2747,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plays when focus starts"
+          }
+        }
+      }
+    },
+    "当前设备无法控制充电，充电上限在这台 Mac 上用不了。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac cannot control charging, so Charge Limit is not available here."
+          }
+        }
+      }
+    },
+    "当前设备无法控制充电，设置的上限尚未生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Mac cannot control charging. The limit you set is not in effect."
           }
         }
       }
@@ -2714,6 +2846,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Focus done"
+          }
+        }
+      }
+    },
+    "接通电源 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plugged in · %@"
+          }
+        }
+      }
+    },
+    "控制接口：%@ · 助手更新于 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control key: %@ · Helper updated %@"
           }
         }
       }
@@ -2806,6 +2960,39 @@
         }
       }
     },
+    "未充电" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not charging"
+          }
+        }
+      }
+    },
+    "未生效" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not in effect"
+          }
+        }
+      }
+    },
+    "查看兼容性与诊断" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compatibility and diagnostics"
+          }
+        }
+      }
+    },
     "正在下载，%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2868,6 +3055,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bottle"
+          }
+        }
+      }
+    },
+    "生效中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In effect"
+          }
+        }
+      }
+    },
+    "生效情况：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effect: %@"
+          }
+        }
+      }
+    },
+    "码头 Pro 未解锁，设置的上限尚未生效，电池照常充满。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling Pro is not unlocked. The limit is not in effect and the battery charges fully."
           }
         }
       }
@@ -3132,6 +3352,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skip back to focus"
+          }
+        }
+      }
+    },
+    "还没有安装充电助手，设置的上限尚未生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The charge helper is not installed yet. The limit is not in effect."
           }
         }
       }
@@ -3473,6 +3704,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Peek by Pointer"
+          }
+        }
+      }
+    },
+    "需安装助手" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Helper needed"
+          }
+        }
+      }
+    },
+    "需更新助手" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update helper"
           }
         }
       }

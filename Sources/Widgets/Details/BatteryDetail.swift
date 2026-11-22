@@ -25,7 +25,7 @@ struct BatteryDetail: View {
         DetailCard {
             MeshBackdrop(color: sand ? BatterySand.color(scheme) : ground(lead), fixed: true)
         } content: {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: sand ? 14 : 10) {
                 if let lead { if sand { hourglassHero(lead) } else { hero(lead) } }
                 if let lead, lead.isMac, lead.present {
                     if sand { hourglassSections } else { macSections }
@@ -76,8 +76,9 @@ struct BatteryDetail: View {
         return state
     }
 
-    /// Today's curve, then 最大容量, 循环次数 and 温度. Each figure the Mac
-    /// does not publish is left out rather than shown as a dash.
+    /// 今天的曲线（带图例和现在的标记），下面「最大容量」「循环次数」两列，再下面
+    /// 默认折叠的充电上限。Mac 没给的数不画，不写横线占位。温度留在沙漏面板的小格里，
+    /// 这里为了压高度不再单列。
     @ViewBuilder
     private var macSections: some View {
         if !context.isPreview {
@@ -91,20 +92,19 @@ struct BatteryDetail: View {
                     Text("每 5 分钟记录一次电量，稍后这里会画出今天的曲线")
                         .font(WidgetStyle.caption(13))
                         .foregroundStyle(.panelSecondary)
-                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                        .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
                 } else {
-                    BatteryDayChart(history: metrics.history, day: context.now, now: context.now)
+                    BatteryDayChart(history: metrics.history, day: context.now, now: context.now, legend: true)
                 }
             }
             .padding(10)
             .glassPane(cornerRadius: 10)
 
             let health = metrics.health
-            if !health.isEmpty {
+            if health.capacityPercent != nil || health.cycles != nil {
                 HStack(spacing: 6) {
                     if let percent = health.capacityPercent { stat(tr("最大容量"), "\(percent)%") }
                     if let cycles = health.cycles { stat(tr("循环次数"), "\(cycles)") }
-                    if let celsius = health.celsius { stat(tr("温度"), BatteryHealth.celsiusText(celsius)) }
                 }
             }
 
@@ -131,58 +131,105 @@ struct BatteryDetail: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// 头部一行：大号「80%」，旁边「MacBook · 已接电源」和小字「未充电」（用电池时是
+    /// 剩余时间），右边带数字的圆环（经典外观）或这张卡片选的外观。
     private func hero(_ device: Item) -> some View {
-        HStack(alignment: .bottom, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Label(device.name, systemImage: device.symbol)
-                    .font(WidgetStyle.label(14))
-                    .foregroundStyle(WidgetStyle.primary)
+        let value = Int((min(max(device.level, 0), 1) * 100).rounded())
+        return HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
                 if device.present {
-                    let value = Int((min(max(device.level, 0), 1) * 100).rounded())
                     HStack(alignment: .firstTextBaseline, spacing: 0) {
                         Text("\(value)")
-                            .font(.system(size: 60, weight: .light))
+                            .font(.system(size: 46, weight: .light))
                             .monospacedDigit()
                             .foregroundStyle(WidgetStyle.primary)
                             .rollingValue(value)
                         Text("%")
-                            .font(.system(size: 30, weight: .light))
+                            .font(.system(size: 24, weight: .light))
                             .foregroundStyle(.panelSecondary)
                     }
                     .modifier(BatteryPlugBounce(trigger: gaugeState(device).pluggedAt))
+                    .fixedSize()
                 } else {
                     // A dash, never a zero: a device that is not here has no
                     // level.
                     Text("-")
-                        .font(.system(size: 60, weight: .light))
+                        .font(.system(size: 46, weight: .light))
                         .foregroundStyle(.panelSecondary)
                 }
-                Text(heroCaption(device))
-                    .font(WidgetStyle.label(13))
-                    .foregroundStyle(.panelSecondary)
-                    .minimumScaleFactor(0.8)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(heroTitle(device))
+                        .font(WidgetStyle.label(14))
+                        .foregroundStyle(WidgetStyle.primary)
+                    if let detail = heroDetail(device) {
+                        Text(detail)
+                            .font(WidgetStyle.caption(13))
+                            .foregroundStyle(.panelSecondary)
+                    }
+                }
+                .minimumScaleFactor(0.8)
             }
             Spacer(minLength: 0)
             if look != .classic {
-                // The look, large: the panel is looked at, so it animates
-                // whether or not the battery is charging.
+                // The look, smaller than before so the panel is shorter; it
+                // still animates, since the panel is looked at.
                 BatteryGauge(look: device.isMac ? look : (look == .panda ? .liquid : look),
-                             state: gaugeState(device), diameter: 104,
-                             center: .none, inPanel: true, isPreview: context.isPreview,
+                             state: gaugeState(device), diameter: 72,
+                             center: look == .panda ? .none : .percent(15), inPanel: true,
+                             isPreview: context.isPreview,
                              // 面板卡片总是深色，主题色按深色调可读性；默认 nil 照旧。
                              theme: BatteryTheme.color(WidgetTint.shownChoice(instance.config,
                                                                               unlocked: ProAccess.isUnlocked),
                                                        systemAccent: ColorCode.systemAccent, dark: true))
-                    .padding(.bottom, 2)
-            } else if device.charging {
-                Image(systemName: "bolt.fill")
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-                    .padding(.bottom, 6)
+            } else {
+                MetricProgressRing(progress: device.present ? device.level : 0,
+                                   tint: tint(device),
+                                   track: .panelTrack,
+                                   diameter: 60,
+                                   lineWidth: 6) {
+                    VStack(spacing: 0) {
+                        if device.charging {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(tint(device).panelReadable)
+                        }
+                        Text(device.present ? "\(value)" : "-")
+                            .font(.system(size: 17, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(WidgetStyle.primary)
+                    }
+                }
+                .accessibilityHidden(true)
             }
         }
         .lineLimit(1)
         .accessibilityElement(children: .combine)
+    }
+
+    /// 「MacBook · 已接电源」；配件是「AirPods Pro · 正在充电」这类。
+    private func heroTitle(_ device: Item) -> String {
+        guard device.isMac else { return "\(device.name) · \(caption(device))" }
+        guard device.present else { return "\(BatteryWords.macName) · \(tr("未连接"))" }
+        return "\(BatteryWords.macName) · \(BatteryWords.source(onPower: device.onPower, charging: device.charging))"
+    }
+
+    /// 头部小字：接着电源写「未充电」「正在充电 · 约 40 分钟充满」「已充满」，用电池写
+    /// 「还能用约 3 小时」；系统还没估出来时只写状态词，配件不写。
+    private func heroDetail(_ device: Item) -> String? {
+        guard device.isMac, device.present else { return nil }
+        if context.isPreview { return tr("预览") }
+        let power = BatteryMetrics.shared.power
+        let remaining = DesktopSystemCards.batteryRemaining(charging: device.charging, onPower: device.onPower,
+                                                            minutesToFull: power.minutesToFull,
+                                                            minutesToEmpty: power.minutesToEmpty)
+        let word = BatteryWords.chargeWord(level: device.level, charging: device.charging,
+                                           onPower: device.onPower, charged: power.charged)
+        switch (word, remaining) {
+        case let (word?, remaining?) where device.charging: return "\(word) · \(remaining)"
+        case let (word?, _): return word
+        case let (nil, remaining?): return remaining
+        default: return nil
+        }
     }
 
     private func row(_ device: Item) -> some View {
@@ -353,6 +400,8 @@ struct BatteryDetail: View {
         var level: Double
         var charging: Bool
         var present: Bool
+        /// The Mac only: on the adapter, charging or not.
+        var onPower = false
         /// AirPods: "左 80% · 右 78% · 盒 45%".
         var parts: String?
 
@@ -399,7 +448,7 @@ struct BatteryDetail: View {
     private func item(_ device: BatteryDevice) -> Item {
         Item(id: "fixed.\(device.kind.rawValue)", name: device.kind.name,
              symbol: BatterySymbol.resolve(device.kind.symbol), level: device.level,
-             charging: device.charging, present: device.present)
+             charging: device.charging, present: device.present, onPower: device.onPower)
     }
 
     private func item(_ device: BluetoothBattery) -> Item {

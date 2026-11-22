@@ -89,6 +89,9 @@ final class BatteryMetrics {
     private static let order: [BatteryDeviceKind] = [.mac, .pods, .podsCase, .keyboard]
 
     @ObservationIgnored private var timer: Timer?
+    /// 最近一次采样的时刻。不进观察（每秒都变，进了会每秒唤醒所有电池卡片），
+    /// 多设备圆环悬停时读它写「更新于」。
+    @ObservationIgnored private(set) var sampledAt: Date?
     @ObservationIgnored private var profiler: [BluetoothBattery] = []
     @ObservationIgnored private var profiledAt = Date.distantPast
     @ObservationIgnored private var profiling = false
@@ -120,8 +123,14 @@ final class BatteryMetrics {
                                       minutesToFull: power.minutesToFull, minutesToEmpty: power.minutesToEmpty)
     }
 
+    /// 每张电池卡片、电池面板出现时都调用。卡片、面板读的都是这一个采样器的
+    /// `devices`，同一刻显示同一个电量；已经在跑但上一次采样超过 2 秒（比如刚从
+    /// 睡眠醒来、计时器还没赶上），先补采一次，新出现的那张不会先画旧数。
     func start() {
-        guard timer == nil else { return }
+        if timer != nil {
+            if let sampledAt, Date.now.timeIntervalSince(sampledAt) > 2 { sample() }
+            return
+        }
         loadHistory()
         sample()
         let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
@@ -138,6 +147,7 @@ final class BatteryMetrics {
     }
 
     private func sample() {
+        sampledAt = .now
         let registry = Self.registryAccessories()
         refreshProfilerIfDue()
         let profiled = Date.now.timeIntervalSince(profiledAt) < Self.profilerStale ? profiler : []

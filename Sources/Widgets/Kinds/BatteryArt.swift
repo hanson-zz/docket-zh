@@ -630,6 +630,11 @@ struct BatteryDayChart: View {
     var history: BatteryHistory
     var day: Date
     var now: Date
+    /// 曲线上面一行图例（「电量」「充电时段」）和现在那根线顶上的「现在」。
+    var legend = false
+
+    /// 充电时段的底色。
+    static let chargingFill = Color(red: 0.35, green: 0.9, blue: 0.5)
 
     var body: some View {
         let start = Calendar.current.startOfDay(for: day)
@@ -637,6 +642,7 @@ struct BatteryDayChart: View {
         let segments = history.segments(from: start, to: end)
         let spans = history.chargingSpans(from: start, to: end)
         VStack(alignment: .leading, spacing: 4) {
+            if legend { legendRow }
             GeometryReader { proxy in
                 let size = proxy.size
                 let span = end.timeIntervalSince(start)
@@ -654,7 +660,7 @@ struct BatteryDayChart: View {
                     }
                     ForEach(Array(spans.enumerated()), id: \.offset) { _, interval in
                         Rectangle()
-                            .fill(Color(red: 0.35, green: 0.9, blue: 0.5).opacity(0.18))
+                            .fill(Self.chargingFill.opacity(0.18))
                             .frame(width: max(1, x(interval.end) - x(interval.start)), height: size.height)
                             .offset(x: x(interval.start))
                     }
@@ -669,12 +675,18 @@ struct BatteryDayChart: View {
                                         style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
                         }
                     }
-                    // Now.
+                    // Now. 有图例时线更清楚，最后一个点画成实心圆点。
                     if now >= start, now < end {
                         Rectangle()
-                            .fill(Color.panelTertiary)
-                            .frame(width: 1, height: size.height)
-                            .offset(x: x(now))
+                            .fill(legend ? Color.panelSecondary : Color.panelTertiary)
+                            .frame(width: legend ? 1.5 : 1, height: size.height)
+                            .offset(x: x(now) - (legend ? 0.75 : 0))
+                        if legend, let last = segments.last?.last {
+                            Circle()
+                                .fill(Color.panelPrimary)
+                                .frame(width: 6, height: 6)
+                                .offset(x: x(last.date) - 3, y: y(last.percent) - 3)
+                        }
                     }
                 }
             }
@@ -690,5 +702,28 @@ struct BatteryDayChart: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("今天的电量曲线")
+    }
+
+    /// 图例：一截线是电量，一块淡绿是充电时段，右边写现在的时刻。
+    private var legendRow: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 4) {
+                Capsule().fill(Color.panelPrimary.opacity(0.9)).frame(width: 12, height: 2)
+                Text("电量")
+            }
+            HStack(spacing: 4) {
+                RoundedRectangle(cornerRadius: 2).fill(Self.chargingFill.opacity(0.35)).frame(width: 10, height: 10)
+                Text("充电时段")
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: 4) {
+                Rectangle().fill(Color.panelSecondary).frame(width: 1.5, height: 10)
+                Text(tr("现在 \(now.formatted(date: .omitted, time: .shortened))"))
+            }
+        }
+        .font(.system(size: 13))
+        .foregroundStyle(.panelSecondary)
+        .lineLimit(1)
+        .accessibilityHidden(true)
     }
 }

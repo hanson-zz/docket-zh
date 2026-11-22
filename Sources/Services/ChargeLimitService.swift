@@ -59,22 +59,17 @@ final class ChargeLimitService {
 
     // MARK: 状态
 
-    enum State: Equatable {
-        case notInstalled
-        case starting
-        case unsupported
-        case needsUpdate
-        case running
-    }
+    /// 助手的状况，判定在 Core（`ChargeHelperState.resolve`），可以测。
+    typealias State = ChargeHelperState
 
     func state(now: Date = .now) -> State {
-        // 助手在按时写状态就说明它在跑，哪怕码头这边看不到安装的文件。
-        let fresh = status.map { $0.isFresh(now: now) } ?? false
-        guard installed || fresh else { return .notInstalled }
-        guard let status, fresh else { return .starting }
-        if !status.supported { return .unsupported }
-        if status.version != ChargeHelperFiles.helperVersion { return .needsUpdate }
-        return .running
+        ChargeHelperState.resolve(installed: installed, status: status, now: now)
+    }
+
+    /// 充电上限实际生效没有：开关只是意图，面板的状态胶囊看这个
+    /// （判定在 Core，见 `ChargeLimitEffect.resolve`）。
+    func effect(unlocked: Bool, now: Date = .now) -> ChargeLimitEffect {
+        ChargeLimitEffect.resolve(config: config, unlocked: unlocked, helper: state(now: now))
     }
 
     /// 重新看一眼文件。面板打开时每几秒调用一次。
@@ -164,6 +159,7 @@ final class ChargeLimitService {
         var lines = [
             tr("码头充电上限诊断 \(now.formatted(.iso8601))"),
             tr("状态：\(state(now: now))"),
+            tr("生效情况：\(effect(unlocked: unlocked, now: now))"),
             line(ChargeHelperFiles.installedPath),
             line(ChargeHelperFiles.plistPath),
             line(ChargeHelperFiles.configPath),
