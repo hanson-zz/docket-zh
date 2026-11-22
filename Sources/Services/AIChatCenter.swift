@@ -118,6 +118,30 @@ final class AIChatCenter {
         return AIOpenModes.label(current, model: current == .api ? self.endpoint(for: service)?.model : nil)
     }
 
+    /// 这个服务的 API、网页、App 哪几种能选（小组件的模式胶囊、对话卡片的分段控件）。
+    func modeOptions(for service: AIService) -> [AIModeOption] {
+        AIModeChoice.options(hasAPI: hasKey(service.id) && endpoint(for: service) != nil,
+                             hasWeb: service.homeURL != nil)
+    }
+
+    /// 换这个服务的打开方式，和设置 ▸ AI 里改的是同一个键。不能选的不换。
+    func setMode(_ mode: AIOpenMode, for service: AIService) {
+        guard modeOptions(for: service).contains(where: { $0.mode == mode && $0.available }),
+              self.mode(for: service) != mode else { return }
+        jumpHint = nil
+        notice = nil
+        updateSettings { $0.modes[service.id] = mode }
+    }
+
+    /// 模式胶囊点一下：换到下一种能选的。
+    func cycleMode(for service: AIService) {
+        let options = modeOptions(for: service)
+        let next = AIModeChoice.next(after: mode(for: service),
+                                     hasAPI: options.first { $0.mode == .api }?.available ?? false,
+                                     hasWeb: options.first { $0.mode == .web }?.available ?? false)
+        setMode(next, for: service)
+    }
+
     func select(_ id: String) {
         guard services.contains(where: { $0.id == id }) else { return }
         selectedID = id

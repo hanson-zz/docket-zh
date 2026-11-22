@@ -749,8 +749,8 @@ enum WidgetDetail {
         case .perfectDay: 380
         // A large copy of the card and the settings rows under it.
         case .slacker: 400
-        // The question box, the target picker and a row of buttons.
-        case .aiAssistant: 380
+        // 输入框、四个快捷胶囊，底栏一排三个服务、模式胶囊和发送。
+        case .aiAssistant: 420
         // Two text panes and a row of history, each wide enough for a sentence.
         case .translate: 340
         // 表情符号：一行 8 个 36 的格子，和第二批面板一样 320。

@@ -57,12 +57,32 @@ final class AINotchLayoutTests: XCTestCase {
         }
         let bar = AINotchLayout.menuBar(of: screen)
         XCTAssertEqual(strip.maxY, bar.minY, "和刘海下沿连成一体")
-        XCTAssertLessThanOrEqual(strip.maxY, bar.minY, "在菜单栏下方")
-        XCTAssertFalse(strip.intersects(bar))
-        XCTAssertEqual(strip.height, AINotchLayout.stripHeight)
-        XCTAssertEqual(strip.minX, notch.minX)
-        XCTAssertEqual(strip.width, notch.width, "和刘海同宽")
+        XCTAssertFalse(strip.intersects(bar), "在菜单栏下方")
+        XCTAssertEqual(strip.height, 38)
+        XCTAssertEqual(strip.midX, notch.midX, "以刘海中线对称")
+        XCTAssertEqual(strip.width, notch.width + 140, "窗口按每侧最多 70 留好")
         XCTAssertEqual(strip.maxY, frame.minY)
+    }
+
+    /// 胶囊宽度和刘海小岛同一套规则：13pt 字、放得进刘海就和刘海一样宽，放不下每侧最多加 70。
+    func testStripCapsuleIsNotMuchWiderThanTheNotch() {
+        XCTAssertEqual(AINotchLayout.stripWidth(.hint, service: nil, notchWidth: 185), 185, "「● AI 助手」和刘海同宽")
+        XCTAssertEqual(AINotchLayout.stripWidth(.thinking, service: "ChatGPT", notchWidth: 185), 185,
+                       "「ChatGPT 正在思考」加三个点也放得进刘海")
+        XCTAssertEqual(AINotchLayout.stripWidth(.thinking, service: "DeepSeek", notchWidth: 185), 185)
+        // 「ChatGPT 正在思考」：(7 × 0.62 + 0.28 + 4) × 13 = 112.06，加 6 + 13.2 的三个点。
+        XCTAssertEqual(AINotchLayout.stripContentWidth(.thinking, service: "ChatGPT"), 131.26, accuracy: 0.01)
+        // 「● AI 助手」：6 + 6 + (2 × 0.62 + 0.28 + 2) × 13 = 57.76。
+        XCTAssertEqual(AINotchLayout.stripContentWidth(.hint, service: nil), 57.76, accuracy: 0.01)
+        // 窄刘海（150）放不下：每侧多出 (131.26 + 24 − 150) / 2 取整 3。
+        XCTAssertEqual(AINotchLayout.stripSideExtra(contentWidth: 131.26, notchWidth: 150), 3)
+        XCTAssertEqual(AINotchLayout.stripWidth(.thinking, service: "ChatGPT", notchWidth: 150), 156)
+        // 很长的自定义服务名：每侧最多 70，字截断。
+        let long = AINotchLayout.stripWidth(.thinking, service: "My Very Long Custom Model Service", notchWidth: 185)
+        XCTAssertEqual(long, 185 + 140)
+        XCTAssertEqual(AINotchLayout.stripSideExtra(contentWidth: 1000, notchWidth: 185), NotchIslandLayout.maxWing)
+        XCTAssertEqual(NotchIslandLayout.maxWing, 70)
+        XCTAssertEqual(AINotchLayout.stripSideExtra(contentWidth: 10, notchWidth: 185), 0)
     }
 
     func testStripContent() {
@@ -148,19 +168,25 @@ final class AINotchLayoutTests: XCTestCase {
         XCTAssertFalse(AINotchLayout.isVisible(enabled: false, islandShowing: false))
     }
 
-    func testPanelGrowsDownFromTheNotch() {
-        let entry = AINotchLayout.entry(for: laptopScreen(), shiduoRunning: false)!.frame
-        let panel = AINotchLayout.panelFrame(below: entry, screen: laptop)
-        XCTAssertEqual(panel.size, CGSize(width: 420, height: 520))
-        XCTAssertEqual(panel.maxY, notch.minY, "接在刘海下面")
-        XCTAssertEqual(panel.midX, notch.midX)
+    func testPanelSitsBelowTheMenuBarLikeTheFocusCard() {
+        for menuBar: CGFloat in [32, 37] {
+            let screen = laptopScreen(menuBar: menuBar)
+            let entry = AINotchLayout.entry(for: screen, shiduoRunning: false)!.frame
+            let panel = AINotchLayout.panelFrame(below: entry, screen: laptop)
+            let bar = AINotchLayout.menuBar(of: screen)
+            XCTAssertEqual(panel.size, CGSize(width: 400, height: 520))
+            XCTAssertEqual(panel.maxY, bar.minY - 6, "菜单栏下面空 6，和专注卡片一样")
+            XCTAssertEqual(AINotchLayout.cardGap, NotchIslandLayout.cardGap)
+            XCTAssertFalse(panel.intersects(bar), "不盖住菜单栏图标")
+            XCTAssertEqual(panel.midX, notch.midX)
+        }
     }
 
-    func testPanelStillGrowsFromTheNotchWhileShiduoRuns() {
+    func testPanelStillSitsUnderTheNotchWhileShiduoRuns() {
         let anchor = AINotchLayout.anchor(for: laptopScreen(), shiduoRunning: true)
         XCTAssertEqual(anchor.midX, notch.midX)
         let panel = AINotchLayout.panelFrame(below: anchor, screen: laptop)
-        XCTAssertEqual(panel.maxY, notch.minY)
+        XCTAssertEqual(panel.maxY, notch.minY - 6)
     }
 
     func testPanelHangsBelowTheExternalCapsule() {
@@ -213,44 +239,10 @@ final class AINotchLayoutTests: XCTestCase {
         XCTAssertFalse(AINotchLayout.hangsFromNotch(CGRect(x: external.midX, y: 1416, width: 0, height: 24)))
     }
 
-    func testNotchBlendSitsUnderTheNotchOnly() {
-        let screen = laptopScreen()
-        let entry = AINotchLayout.entry(for: screen, shiduoRunning: false)!.frame
-        let panel = AINotchLayout.panelFrame(below: entry, screen: screen.frame)
-        guard let blend = AINotchLayout.notchBlend(entry: entry, panel: panel) else {
-            return XCTFail("刘海下面应有黑色过渡")
-        }
-        // 和刘海同宽、正对刘海，从面板顶边往下。
-        XCTAssertEqual(blend.width, entry.width, accuracy: 0.001)
-        XCTAssertEqual(blend.minX, entry.minX - panel.minX, accuracy: 0.001)
-        XCTAssertEqual(blend.midX, panel.width / 2, accuracy: 0.001)
-        XCTAssertEqual(blend.minY, 0)
-        XCTAssertEqual(blend.height, AINotchLayout.notchBlendHeight)
-        XCTAssertTrue((8 ... 12).contains(AINotchLayout.notchBlendHeight))
-        // 面板被推开时跟着刘海走，超出面板的部分裁掉。
-        // 刘海 185 宽：面板左边推到刘海里 100 处，只剩右边 85 在面板里。
-        XCTAssertEqual(entry.width, 185, accuracy: 0.001)
-        let shifted = CGRect(x: entry.minX + 100, y: panel.minY, width: panel.width, height: panel.height)
-        let clipped = AINotchLayout.notchBlend(entry: entry, panel: shifted)
-        XCTAssertEqual(clipped?.minX, 0)
-        XCTAssertEqual(clipped?.width ?? 0, entry.width - 100, accuracy: 0.001)
-        let away = CGRect(x: entry.maxX + 10, y: panel.minY, width: panel.width, height: panel.height)
-        XCTAssertNil(AINotchLayout.notchBlend(entry: entry, panel: away))
-        // 外接屏胶囊下面没有黑色过渡。
-        let capsule = AINotchLayout.entry(for: externalScreen(), shiduoRunning: false)!.frame
-        let capsulePanel = AINotchLayout.panelFrame(below: capsule, screen: external)
-        XCTAssertNil(AINotchLayout.notchBlend(entry: capsule, panel: capsulePanel))
-    }
-
-    func testHeaderClearsTheNotchBlend() {
-        XCTAssertEqual(AINotchLayout.headerTopPadding(hangsFromNotch: true), AINotchLayout.notchBlendHeight)
-        XCTAssertEqual(AINotchLayout.headerTopPadding(hangsFromNotch: false), 10)
-    }
-
-    func testPanelHeaderMergesServiceNameAndWebControls() {
-        XCTAssertFalse(AINotchPanelHeader.showsServiceChips(serviceCount: 0))
-        XCTAssertFalse(AINotchPanelHeader.showsServiceChips(serviceCount: 1))
-        XCTAssertTrue(AINotchPanelHeader.showsServiceChips(serviceCount: 2))
+    func testPanelHeader() {
+        XCTAssertFalse(AINotchPanelHeader.canSwitchService(serviceCount: 0))
+        XCTAssertFalse(AINotchPanelHeader.canSwitchService(serviceCount: 1))
+        XCTAssertTrue(AINotchPanelHeader.canSwitchService(serviceCount: 2))
         XCTAssertTrue(AINotchPanelHeader.showsWebControls(.web))
         XCTAssertFalse(AINotchPanelHeader.showsWebControls(.api))
         XCTAssertFalse(AINotchPanelHeader.showsWebControls(.jump))

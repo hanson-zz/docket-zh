@@ -7,7 +7,9 @@ final class AIAssistantFlowTests: XCTestCase {
     // MARK: 快捷操作胶囊
 
     func testDockChipsDefaultToTheFourCommonOnes() {
-        XCTAssertEqual(AIDockChips.resolved(nil), [.screenshot, .clipboard, .translate, .summarize])
+        XCTAssertEqual(AIDockChips.resolved(nil), [.screenshot, .clipboardSummary, .translate, .polish],
+                       "同效果图：截图提问、剪贴板总结、翻译、润色")
+        XCTAssertEqual(AIDockChips.resolved(nil).map(\.title), ["截图提问", "剪贴板总结", "翻译", "润色"])
         XCTAssertEqual(AIDockChips.resolved([]), [], "存了空列表就是一个都不显示")
     }
 
@@ -18,18 +20,22 @@ final class AIAssistantFlowTests: XCTestCase {
     }
 
     func testDockChipsToggle() {
-        let removed = AIDockChips.toggled(.clipboard, in: nil)
-        XCTAssertEqual(removed, ["screenshot", "translate", "summarize"])
+        let removed = AIDockChips.toggled(.clipboardSummary, in: nil)
+        XCTAssertEqual(removed, ["screenshot", "translate", "polish"])
         let added = AIDockChips.toggled(.explain, in: removed)
-        XCTAssertEqual(added, ["screenshot", "translate", "summarize", "explain"])
-        XCTAssertFalse(AIDockChips.canToggle(.polish, in: added), "满了勾不上")
-        XCTAssertEqual(AIDockChips.toggled(.polish, in: added), added)
+        XCTAssertEqual(added, ["screenshot", "translate", "polish", "explain"])
+        XCTAssertFalse(AIDockChips.canToggle(.summarize, in: added), "满了勾不上")
+        XCTAssertEqual(AIDockChips.toggled(.summarize, in: added), added)
         XCTAssertTrue(AIDockChips.canToggle(.explain, in: added), "勾上的总能取消")
     }
 
     func testOnlyPromptChipsCarryAQuickAction() {
         XCTAssertNil(AIDockChip.screenshot.quickAction)
         XCTAssertNil(AIDockChip.clipboard.quickAction)
+        XCTAssertEqual(AIDockChip.clipboardSummary.quickAction, .summarize, "剪贴板总结套总结的提示词")
+        XCTAssertTrue(AIDockChip.clipboardSummary.usesClipboardOnly)
+        XCTAssertTrue(AIDockChip.clipboard.usesClipboardOnly)
+        XCTAssertFalse(AIDockChip.summarize.usesClipboardOnly)
         XCTAssertEqual(AIDockChip.translate.quickAction, .translate)
         XCTAssertEqual(AIDockChip.summarize.quickAction, .summarize)
     }
@@ -82,7 +88,7 @@ final class AIAssistantFlowTests: XCTestCase {
     // MARK: 刘海对话
 
     func testNotchTexts() {
-        XCTAssertEqual(AINotchChatText.entryTitle, "✦ AI 助手")
+        XCTAssertEqual(AINotchChatText.entryTitle, "AI 助手", "圆点是画的，不在字里")
         XCTAssertEqual(AINotchChatText.thinking("DeepSeek"), "DeepSeek 正在思考")
         XCTAssertEqual(AINotchChatText.thinking(nil), "AI 正在思考")
         XCTAssertEqual(AINotchChatText.thinking("  "), "AI 正在思考")
@@ -92,10 +98,10 @@ final class AIAssistantFlowTests: XCTestCase {
 
     func testAnswerActions() {
         XCTAssertEqual(AINotchChatText.answerActions(mode: .api, isLast: true, generating: false,
-                                                     streaming: false, hasText: true), [.copy, .regenerate])
+                                                     streaming: false, hasText: true), [.copy, .followUp, .regenerate])
         XCTAssertEqual(AINotchChatText.answerActions(mode: .api, isLast: false, generating: false,
                                                      streaming: false, hasText: true), [.copy],
-                       "重新生成只给最后一条")
+                       "继续追问、重新生成只给最后一条")
         XCTAssertEqual(AINotchChatText.answerActions(mode: .api, isLast: true, generating: true,
                                                      streaming: true, hasText: true), [], "还在流的不放按钮")
         XCTAssertEqual(AINotchChatText.answerActions(mode: .api, isLast: true, generating: false,
@@ -105,5 +111,48 @@ final class AIAssistantFlowTests: XCTestCase {
                                                      streaming: false, hasText: true), [])
         XCTAssertEqual(AINotchChatText.answerActions(mode: .jump, isLast: true, generating: false,
                                                      streaming: false, hasText: true), [])
+    }
+
+    // MARK: 小组件底栏
+
+    func testServiceSegmentsShowTheFirstThree() {
+        let ids = ["chatgpt", "claude", "gemini", "deepseek", "kimi"]
+        let split = AIServiceSegments.split(ids)
+        XCTAssertEqual(split.shown, ["chatgpt", "claude", "gemini"])
+        XCTAssertEqual(split.overflow, ["deepseek", "kimi"])
+        XCTAssertEqual(AIServiceSegments.split(ids, limit: 2).shown, ["chatgpt", "claude"])
+        XCTAssertEqual(AIServiceSegments.split(["a"]).shown, ["a"])
+        XCTAssertEqual(AIServiceSegments.split(["a"]).overflow, [])
+        XCTAssertEqual(AIServiceSegments.split([String]()).shown, [])
+        XCTAssertEqual(AIServiceSegments.split(ids, limit: 0).overflow.count, 5)
+        XCTAssertEqual(AIServiceSegments.fallbackLimits, [3, 2, 1])
+        XCTAssertTrue(AIServiceSegments.overflowSelected("kimi", overflow: split.overflow))
+        XCTAssertFalse(AIServiceSegments.overflowSelected("claude", overflow: split.overflow))
+        XCTAssertFalse(AIServiceSegments.overflowSelected(nil as String?, overflow: split.overflow))
+    }
+
+    func testModeOptionsFollowWhatTheServiceHas() {
+        XCTAssertEqual(AIModeChoice.options(hasAPI: true, hasWeb: true).map(\.mode), [.api, .web, .jump])
+        XCTAssertEqual(AIModeChoice.options(hasAPI: false, hasWeb: true).map(\.available), [false, true, true])
+        XCTAssertEqual(AIModeChoice.options(hasAPI: false, hasWeb: false).map(\.available), [false, false, true],
+                       "App 总能选")
+    }
+
+    func testModeCapsuleCyclesThroughUsableModes() {
+        XCTAssertEqual(AIModeChoice.next(after: .api, hasAPI: true, hasWeb: true), .web)
+        XCTAssertEqual(AIModeChoice.next(after: .web, hasAPI: true, hasWeb: true), .jump)
+        XCTAssertEqual(AIModeChoice.next(after: .jump, hasAPI: true, hasWeb: true), .api)
+        XCTAssertEqual(AIModeChoice.next(after: .web, hasAPI: false, hasWeb: true), .jump, "没密钥跳过 API")
+        XCTAssertEqual(AIModeChoice.next(after: .jump, hasAPI: false, hasWeb: true), .web)
+        XCTAssertEqual(AIModeChoice.next(after: .jump, hasAPI: false, hasWeb: false), .jump, "只有一种时不变")
+        XCTAssertEqual(AIModeChoice.next(after: .api, hasAPI: false, hasWeb: true), .web, "当前不能用时回到第一种能用的")
+    }
+
+    func testModeCapsuleTitles() {
+        XCTAssertEqual(AIModeChoice.capsuleTitle(.api), "API 模式")
+        XCTAssertEqual(AIModeChoice.capsuleTitle(.web), "网页模式")
+        XCTAssertEqual(AIModeChoice.capsuleTitle(.jump), "App 模式")
+        XCTAssertNotNil(AIModeChoice.unavailableReason(.api))
+        XCTAssertNil(AIModeChoice.unavailableReason(.jump))
     }
 }

@@ -10314,6 +10314,182 @@
         }
       }
     },
+    "API 模式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API mode"
+          }
+        }
+      }
+    },
+    "App 模式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App mode"
+          }
+        }
+      }
+    },
+    "网页模式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web mode"
+          }
+        }
+      }
+    },
+    "先在设置 ▸ AI 里填好这个服务的 API 密钥" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add this service's API key in Settings ▸ AI first"
+          }
+        }
+      }
+    },
+    "这个服务没有网页版" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This service has no web version"
+          }
+        }
+      }
+    },
+    "刘海对话、助手设置" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notch chat and assistant settings"
+          }
+        }
+      }
+    },
+    "剪贴板总结" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize clipboard"
+          }
+        }
+      }
+    },
+    "回答会一个字一个字流出来，每条回答下面可以复制、继续追问。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Answers stream in as they are written. Under each answer you can copy it or ask a follow-up."
+          }
+        }
+      }
+    },
+    "当前服务 %@，点按换一个" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current service %@, click to switch"
+          }
+        }
+      }
+    },
+    "总结剪贴板里的文字：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summarize the clipboard text: %@"
+          }
+        }
+      }
+    },
+    "打开方式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open with"
+          }
+        }
+      }
+    },
+    "换一个服务" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch service"
+          }
+        }
+      }
+    },
+    "更多服务" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More services"
+          }
+        }
+      }
+    },
+    "点一下换打开方式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click to switch how it opens"
+          }
+        }
+      }
+    },
+    "码头 · 快捷工作台" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling · Quick workbench"
+          }
+        }
+      }
+    },
+    "继续追问" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follow up"
+          }
+        }
+      }
+    },
     "AI 助手的对话也能挂在刘海下面，码头 Pro 功能：点一下看看解锁" : {
       "extractionState" : "manual",
       "localizations" : {

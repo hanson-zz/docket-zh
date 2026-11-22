@@ -6,9 +6,11 @@ import SwiftUI
 ///
 /// 入口：有刘海的屏幕上入口就是刘海本身，不向两侧多出黑块，不占菜单栏的
 /// 水平空间。点一下刘海或按用户自设的快捷键才展开。指针移到刘海上时，刘海
-/// 下沿往下长出一条和刘海同宽的黑色小条，里面是小熊猫，离开约 0.3 秒后收
-/// 回；回答生成中这条小条里是三个跳动的小点。小条只盖在菜单栏下方，不响应
-/// 鼠标。没有刘海的屏幕（外接屏）在菜单栏下沿正下方放一个小胶囊。
+/// 下沿往下长出收起态胶囊「● AI 助手」，小熊猫从下沿探头，离开约 0.3 秒后收
+/// 回；回答生成中胶囊里是「ChatGPT 正在思考」和三个跳动的小点。胶囊只在菜单栏
+/// 下方、宽度按刘海小岛的规则（`AINotchLayout.stripWidth`），不响应鼠标。展开的
+/// 对话卡片放在菜单栏下面（`AINotchLayout.panelFrame`）。没有刘海的屏幕（外接屏）
+/// 在菜单栏下沿正下方放一个小胶囊。
 ///
 /// 和拾掇共处：拾掇的悬浮暂存架在指针碰到刘海、或者拖文件到刘海时弹出。
 /// 拾掇在运行时码头不在刘海上放任何入口窗口，刘海的点击和悬停都让给拾掇，
@@ -240,11 +242,7 @@ final class AINotchController {
         let panel = existingOrNewPanel()
         // 专注计时和系统活动优先：小岛正显示着时，面板挪到它下面，不压住它。
         let placement = AINotchLayout.placement(below: entry, screen: screen, avoiding: blockers)
-        let frame = placement.frame
-        panel.setFrame(frame, display: false)
-        let hangs = !placement.clearedBlockers && AINotchLayout.hangsFromNotch(entry)
-        panelModel.hangsFromNotch = hangs
-        panelModel.notchBlend = hangs ? AINotchLayout.notchBlend(entry: entry, panel: frame) : nil
+        panel.setFrame(placement.frame, display: false)
         panelModel.isOpen = true
         panelModel.session = UUID()
         // 收起的淡出可能还在走（刚收起又点开）：顶掉它，不然停在透明度 0。
@@ -336,12 +334,6 @@ final class AINotchController {
 final class AINotchPanelModel {
     var isOpen = false
     var session = UUID()
-    /// 挂在刘海下面还是外接屏胶囊下面。面板都是液态玻璃、跟随浅色 / 深色；挂在
-    /// 刘海下面时顶栏让出黑色过渡那一条。见 `AINotchLayout.hangsFromNotch`。
-    var hangsFromNotch = true
-    /// 刘海下面板顶上那条黑色过渡（面板坐标），不在刘海下时为 nil。见
-    /// `AINotchLayout.notchBlend`。
-    var notchBlend: CGRect?
 }
 
 // MARK: - 入口窗口
