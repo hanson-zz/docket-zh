@@ -424,7 +424,7 @@ private struct NotchPanda: View {
 
     /// 六状态的待机（`PandaStateResolver`，缺图回退原来的站姿）。
     @MainActor private static let image: NSImage? = {
-        PandaStateResolver.imageName(.idle, exists: { PandaStateArt.exists($0) }).flatMap(PandaStateArt.image)
+        PandaStateResolver.imageName(.idle, exists: { PandaStateArt.exists($0) }).flatMap { PandaStateArt.image($0) }
     }()
 
     var body: some View {
