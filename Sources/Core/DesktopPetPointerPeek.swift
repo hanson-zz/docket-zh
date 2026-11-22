@@ -2,9 +2,12 @@ import Foundation
 
 // MARK: - 指针旁探头
 //
-// 桌面伙伴的第一步：鼠标停着不动约 20 秒，所选吉祥物在指针左下方探出头（图里它朝右上看，正好看着指针）；鼠标一动、
+// 桌面伙伴的第一步：鼠标停着不动约 20 秒，所选吉祥物以完整的小坐姿出现在指针左下方（图里朝右，正好看着指针）；鼠标一动、
 // 按键、点按就收起。正在打字、麦克风在用（通话、开会讲解）时不出来；人走开约 3 分钟也收起。
 // 静止时只是一张图，不开显示刷新。这里只有纯逻辑，窗口在 App 的 `DesktopPetPointerPeekController`。
+//
+// 早先用的是「趴着探头」那套图（desk-<吉祥物>-peek，身体在爪子下面截平），贴在边上才像探头；
+// 浮在指针旁、底下没有东西挡着时，真机看像被切掉一块。所以指针旁一律用完整的坐姿，尺寸也收小。
 
 public enum DesktopPetPointerPeek {
     /// 鼠标停多久出来。
@@ -15,10 +18,19 @@ public enum DesktopPetPointerPeek {
     public static let typingQuiet: TimeInterval = 5
     /// 指针挪动超过这么多点才算动了（手碰一下桌子的抖动不算）。
     public static let moveSlop: Double = 4
-    /// 探头图的高度（点），再乘桌宠的大小。
-    public static let baseHeight: Double = 64
+    /// 图的高度（点），再乘桌宠的大小。中号 40 点高，柴犬约 31 点宽，约是 Finder 大图标的一半以下。
+    public static let baseHeight: Double = 40
     /// 图离指针的距离（点）。
-    public static let gap: Double = 14
+    public static let gap: Double = 10
+    /// 出现时从下面冒上来的距离（点）；减弱动态效果时为 0，只淡入。
+    public static func rise(reduceMotion: Bool) -> Double { reduceMotion ? 0 : 6 }
+
+    /// 按图的原始宽高比和桌宠大小算出显示尺寸。
+    public static func size(imageSize: CGSize, scale: Double) -> CGSize {
+        let height = baseHeight * scale
+        let aspect = imageSize.height > 0 ? Double(imageSize.width / imageSize.height) : 1
+        return CGSize(width: height * aspect, height: height)
+    }
 
     /// 现在该不该露出来。
     /// - Parameters:
@@ -52,10 +64,13 @@ public enum DesktopPetPointerPeek {
         return CGRect(x: x, y: y, width: size.width, height: size.height)
     }
 
-    /// 探头图的名字（不带扩展名），按顺序试：先是桌面伙伴专用的 `desk-<吉祥物>-peek`，
-    /// 还没有时用专注面板那套站姿图（专注中用 focus，否则 idle），六只都有。
+    /// 图的名字（不带扩展名），按顺序试，都是从头到脚完整的一只：
+    /// 平时用桌宠的坐姿 `pet-sprite-<吉祥物>-sit`（小熊猫是正面坐 `pet-sprite-front-sit-1`），
+    /// 专注中用专注面板闭眼打坐的 `focus-mascot-<吉祥物>-focus`；缺图时退到专注面板的站姿 idle。
     public static func imageCandidates(_ mascot: FocusMascot, focusing: Bool) -> [String] {
-        let still = focusing ? "focus" : "idle"
-        return ["desk-\(mascot.rawValue)-peek", "focus-mascot-\(mascot.rawValue)-\(still)"]
+        let sit = mascot == .panda ? "pet-sprite-front-sit-1" : "pet-sprite-\(mascot.rawValue)-sit"
+        let idle = "focus-mascot-\(mascot.rawValue)-idle"
+        if focusing { return ["focus-mascot-\(mascot.rawValue)-focus", sit, idle] }
+        return [sit, idle]
     }
 }

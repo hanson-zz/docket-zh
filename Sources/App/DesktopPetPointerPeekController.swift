@@ -2,7 +2,7 @@ import AppKit
 import CoreAudio
 import Foundation
 
-/// 指针旁探头的窗口：鼠标停着约 20 秒，所选吉祥物在指针旁探出头，一动就收起。
+/// 指针旁探头的窗口：鼠标停着约 20 秒，所选吉祥物以完整的小坐姿出现在指针旁，一动就收起。
 ///
 /// 规则在 Core 的 `DesktopPetPointerPeek`。平时每秒读一次系统的空闲秒数（不要辅助功能权限）；
 /// 露着时挂一个鼠标事件的全局监听，一动立刻收起，收起后就摘掉。静止时只是一张图，不开显示刷新。
@@ -74,9 +74,7 @@ final class DesktopPetPointerPeekController {
     private func show(at pointer: CGPoint) {
         guard let image = currentImage(),
               let screen = NSScreen.screens.first(where: { NSMouseInRect(pointer, $0.frame, false) }) else { return }
-        let height = DesktopPetPointerPeek.baseHeight * settings.size.scale
-        let aspect = image.size.height > 0 ? image.size.width / image.size.height : 1
-        let size = CGSize(width: CGFloat(height) * aspect, height: CGFloat(height))
+        let size = DesktopPetPointerPeek.size(imageSize: image.size, scale: settings.size.scale)
         let frame = DesktopPetPointerPeek.frame(pointer: pointer, size: size, bounds: screen.visibleFrame)
         let panel = self.panel ?? makePanel()
         self.panel = panel
@@ -86,7 +84,7 @@ final class DesktopPetPointerPeekController {
 
         let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         // 从下面轻轻冒出来一点；减弱动态效果时只淡入。
-        let rise: CGFloat = reduce ? 0 : 8
+        let rise = CGFloat(DesktopPetPointerPeek.rise(reduceMotion: reduce))
         panel.setFrame(frame.offsetBy(dx: 0, dy: -rise), display: false)
         panel.alphaValue = 0
         panel.orderFrontRegardless()

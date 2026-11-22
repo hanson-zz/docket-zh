@@ -112,7 +112,7 @@ targets:
         optional: true
         excludes:
           - ".gitkeep"
-      # 桌面伙伴的图（desk-<吉祥物>-<动作>.png，可带 @2x）。指针旁探头用 peek；桌宠本体换吉祥物的图在 Resources/Pet/sprites（pet-sprite-<吉祥物>-<动作>.png），
+      # 桌面伙伴的图（desk-<吉祥物>-<动作>.png，可带 @2x）。指针旁探头现在用 Resources/Pet/sprites 的完整坐姿，不再用这里的 peek；桌宠本体换吉祥物的图在 Resources/Pet/sprites（pet-sprite-<吉祥物>-<动作>.png），
       # 缺图时回退专注面板的站姿图。
       - path: Resources/DeskCompanion
         buildPhase: resources

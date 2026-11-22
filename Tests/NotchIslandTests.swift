@@ -424,9 +424,54 @@ final class NotchIslandTests: XCTestCase {
                        "专注计时左边吉祥物、右边剩余时间，不要下面那一条")
         let wings = NotchIslandLayout.wings(timer)
         XCTAssertEqual(wings.left, NotchIslandLayout.focusMascotWing)
-        XCTAssertEqual(wings.right, NotchIslandLayout.focusClockWing)
+        XCTAssertEqual(wings.right, NotchIslandLayout.focusClockWing(total: 1500, paused: false))
         XCTAssertEqual(wings.chin, 0)
         XCTAssertEqual(NotchIslandLayout.body(geometry, radio).height, 32)
+    }
+
+    /// 真机上专注计时右边宽到 70 点、加外弯快 80 点，盖掉菜单栏右边的状态图标。两侧只留刚好放下内容的宽度。
+    func testWingsAreNarrow() {
+        XCTAssertGreaterThanOrEqual(NotchIslandLayout.compactFontSize, 13, "最小字号 13 点")
+        // 专注计时：左边吉祥物 37（原来 44），右边「24:11」走着 48、暂停 59（原来一律 70）。
+        XCTAssertEqual(NotchIslandLayout.focusMascotWing, 37)
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 1500, paused: false), 48)
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 1500, paused: true), 59)
+        // 一小时起可能出现「1:02:03」，宽一些，但仍不超过上限。
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 5400, paused: false), 60)
+        XCTAssertEqual(NotchIslandLayout.focusClockWing(total: 5400, paused: true), 70)
+        let paused = NotchIslandActivity.timer(deadline: nil, pausedLeft: 1451, total: 1500, focus: true)
+        XCTAssertEqual(NotchIslandLayout.wings(paused).right, 59)
+        // 其它小岛同样收窄：图标一侧 28（原来 40），插电 47（62）、下载 61（76）、会议 55（56）、电台 30（44）。
+        XCTAssertEqual(NotchIslandLayout.iconWing, 28)
+        XCTAssertEqual(NotchIslandLayout.chargingWing, 47)
+        XCTAssertEqual(NotchIslandLayout.downloadWing, 61)
+        XCTAssertEqual(NotchIslandLayout.meetingWing, 55)
+        XCTAssertEqual(NotchIslandLayout.radioWing, 30)
+        let all: [NotchIslandActivity] = [radio, download, charging, timer, paused,
+                                          .download(fraction: nil, done: true),
+                                          .timer(deadline: nil, pausedLeft: 4000, total: 5400, focus: true),
+                                          .meeting(title: "周会", start: now.addingTimeInterval(240))]
+        for activity in all {
+            let wings = NotchIslandLayout.wings(activity)
+            XCTAssertLessThanOrEqual(wings.left, NotchIslandLayout.maxWing, "\(activity)")
+            XCTAssertLessThanOrEqual(wings.right, NotchIslandLayout.maxWing, "\(activity)")
+        }
+        // 估的字宽偏宽一点放得下：「24:11」13 点等宽数字约 37.4 点。
+        XCTAssertEqual(NotchIslandLayout.textWidth("24:11"), 37.44, accuracy: 0.01)
+        XCTAssertGreaterThan(NotchIslandLayout.textWidth("现在"), NotchIslandLayout.textWidth("12"))
+    }
+
+    /// 展开时卡片（或倒挂那一套）整个在菜单栏下面，菜单栏那一条里只占刘海本身。
+    func testExpandedKeepsMenuBarClear() {
+        let geometry = NotchIslandLayout.geometry(screen: notched)
+        let notch = NotchIslandLayout.notch(geometry)
+        let focus = NotchIslandActivity.timer(deadline: Date(), pausedLeft: nil, total: 1500, focus: true)
+        for form in [NotchIslandForm.expanded(radio, secondary: nil), .expanded(focus, secondary: nil),
+                     .expanded(download, secondary: timer)] {
+            for piece in NotchIslandLayout.pieces(geometry, form: form) where piece != notch {
+                XCTAssertGreaterThanOrEqual(piece.minY, geometry.notchHeight, "\(form) 不伸进菜单栏")
+            }
+        }
     }
 
     func testBubbleSitsRightOfTheBody() {
@@ -444,11 +489,16 @@ final class NotchIslandTests: XCTestCase {
         XCTAssertEqual(NotchIslandLayout.pieces(geometry, form: .compact(radio)).count, 1)
         XCTAssertEqual(NotchIslandLayout.pieces(geometry, form: .compact(charging)).count, 2, "插电带小熊猫")
         XCTAssertEqual(NotchIslandLayout.pieces(geometry, form: .split(timer, radio)).count, 2)
-        let card = NotchIslandLayout.pieces(geometry, form: .expanded(radio, secondary: timer))
-        XCTAssertEqual(card.count, 1)
-        XCTAssertEqual(card[0].minY, 0)
+        let expanded = NotchIslandLayout.pieces(geometry, form: .expanded(radio, secondary: timer))
+        XCTAssertEqual(expanded.count, 2, "刘海那段加卡片")
+        XCTAssertEqual(expanded[0], NotchIslandLayout.notch(geometry))
+        let card = Array(expanded.dropFirst())
+        XCTAssertEqual(card[0].minY, geometry.notchHeight + NotchIslandLayout.cardGap, "卡片在菜单栏下面")
         XCTAssertEqual(card[0].midX, 0, accuracy: 0.001, "卡片以刘海中线对称")
         XCTAssertGreaterThan(card[0].width, geometry.notchWidth)
+        let zone = NotchIslandLayout.hotZone(geometry, form: .expanded(radio, secondary: timer))
+        XCTAssertTrue(zone.contains(CGPoint(x: 0, y: geometry.notchHeight + NotchIslandLayout.cardGap / 2)),
+                      "刘海和卡片之间那道缝也算停在小岛上")
         XCTAssertEqual(NotchIslandLayout.card(geometry, kind: .radio, hasSecondary: true).height
                        - NotchIslandLayout.card(geometry, kind: .radio, hasSecondary: false).height,
                        NotchIslandLayout.secondaryRowHeight)
@@ -540,15 +590,16 @@ final class NotchIslandTests: XCTestCase {
         let geometry = NotchIslandLayout.geometry(screen: notched)
         let focus = NotchIslandActivity.timer(deadline: Date(), pausedLeft: nil, total: 1500, focus: true)
         let pieces = NotchIslandLayout.pieces(geometry, form: .expanded(focus, secondary: nil))
-        XCTAssertEqual(pieces, [NotchIslandLayout.hanging(geometry, hasSecondary: false)])
-        XCTAssertEqual(pieces[0].minY, 0)
-        XCTAssertEqual(pieces[0].midX, 0, accuracy: 0.001, "以刘海中线对称")
+        XCTAssertEqual(pieces, [NotchIslandLayout.notch(geometry), NotchIslandLayout.hanging(geometry, hasSecondary: false)])
+        let hanging = pieces[1]
+        XCTAssertEqual(hanging.minY, geometry.notchHeight, "从刘海底边往下，不伸进菜单栏")
+        XCTAssertEqual(hanging.midX, 0, accuracy: 0.001, "以刘海中线对称")
         XCTAssertGreaterThan(NotchIslandLayout.hangCardTop(geometry), geometry.notchHeight + NotchIslandLayout.hangPanda / 2,
                              "计时牌在小熊猫下面")
-        XCTAssertEqual(pieces[0].maxY, NotchIslandLayout.hangCardTop(geometry) + NotchIslandLayout.hangCardHeight)
-        XCTAssertEqual(NotchIslandLayout.hanging(geometry, hasSecondary: true).height - pieces[0].height,
+        XCTAssertEqual(hanging.maxY, NotchIslandLayout.hangCardTop(geometry) + NotchIslandLayout.hangCardHeight)
+        XCTAssertEqual(NotchIslandLayout.hanging(geometry, hasSecondary: true).height - hanging.height,
                        NotchIslandLayout.secondaryRowHeight)
         let zone = NotchIslandLayout.hotZone(geometry, form: .expanded(focus, secondary: nil))
-        XCTAssertTrue(zone.contains(pieces[0]))
+        XCTAssertTrue(zone.contains(hanging))
     }
 }

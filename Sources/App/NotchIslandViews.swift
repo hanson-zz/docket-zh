@@ -158,11 +158,15 @@ private struct NotchIslandBody: View {
             NotchIslandShape(flare: NotchIslandLayout.topFlare, bottomRadius: NotchIslandLayout.bottomRadius)
                 .fill(.black)
             HStack(spacing: 0) {
+                // 两侧耳朵只留刚好放下内容的宽度（Core 的 `NotchIslandLayout.wings`）；内容贴着刘海那侧摆，
+                // 万一字比估的宽，多出来的往外侧长，不会钻到刘海底下看不见。
                 left
-                    .frame(width: wings.left, height: geometry.notchHeight)
+                    .padding(.trailing, NotchIslandLayout.wingNotchGap)
+                    .frame(width: wings.left, height: geometry.notchHeight, alignment: .trailing)
                 Spacer(minLength: geometry.notchWidth)
                 right
-                    .frame(width: wings.right, height: geometry.notchHeight)
+                    .padding(.leading, NotchIslandLayout.wingNotchGap)
+                    .frame(width: wings.right, height: geometry.notchHeight, alignment: .leading)
             }
             if wings.chin > 0 {
                 chin
@@ -204,12 +208,12 @@ private struct NotchIslandBody: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
-                        .frame(height: max(16, geometry.notchHeight - 10))
+                        .frame(height: min(NotchIslandLayout.focusMascotHeight, max(16, geometry.notchHeight - 10)))
                         .frame(maxHeight: .infinity, alignment: .bottom)
                         .accessibilityHidden(true)
                 } else {
                     FocusMascotImage(mascot: mascot, state: FocusMascotState.of(state, now: tick.date),
-                                     height: max(18, geometry.notchHeight - 6))
+                                     height: min(NotchIslandLayout.focusMascotHeight, max(16, geometry.notchHeight - 6)))
                 }
             }
         case .timer:
@@ -229,7 +233,7 @@ private struct NotchIslandBody: View {
         switch activity {
         case .charging(let percent):
             Text(verbatim: NotchIslandText.battery(percent))
-                .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                .font(.system(size: NotchIslandLayout.compactFontSize, weight: .semibold).monospacedDigit())
                 .foregroundStyle(.white)
                 .contentTransition(.numericText())
                 .fixedSize()
@@ -265,11 +269,11 @@ private struct NotchIslandBody: View {
                     }
                     Text(verbatim: NotchIslandText.clock(
                         NotchIslandTimer.remaining(deadline: deadline, pausedLeft: pausedLeft, now: tick.date)))
-                        .font(.system(size: 14, weight: .semibold, design: .rounded).monospacedDigit())
+                        .font(.system(size: NotchIslandLayout.compactFontSize, weight: .semibold,
+                                      design: .rounded).monospacedDigit())
                         .foregroundStyle(pausedLeft == nil ? NotchIslandPalette.onBlack : .white.opacity(0.7))
                         .contentTransition(.numericText(countsDown: true))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                 }
                 .fixedSize()
             }
@@ -475,8 +479,9 @@ private struct NotchIslandCard: View {
     @Environment(\.colorScheme) private var scheme
 
     private var shape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(topLeadingRadius: 10, bottomLeadingRadius: 26,
-                               bottomTrailingRadius: 26, topTrailingRadius: 10, style: .continuous)
+        // 卡片整个在菜单栏下面（不再从屏幕顶边往两侧铺开盖住菜单栏图标），四角都圆。
+        UnevenRoundedRectangle(topLeadingRadius: 22, bottomLeadingRadius: 26,
+                               bottomTrailingRadius: 26, topTrailingRadius: 22, style: .continuous)
     }
 
     var body: some View {
@@ -488,7 +493,7 @@ private struct NotchIslandCard: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.top, model.geometry.notchHeight + 12)
+        .padding(.top, 12)
         .padding(.horizontal, 20)
         .padding(.bottom, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -499,11 +504,7 @@ private struct NotchIslandCard: View {
     }
 
     private var surface: some View {
-        ZStack(alignment: .top) {
-            NotchMessageGlass(shape: shape)
-            NotchMessageBlend()
-                .frame(width: model.geometry.notchWidth + 24, height: model.geometry.notchHeight + 10)
-        }
+        NotchMessageGlass(shape: shape)
         .clipShape(shape)
         .overlay { shape.stroke(Color.panelStroke, lineWidth: 0.6) }
         .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.16), radius: 18, y: 8)
@@ -949,7 +950,8 @@ private struct NotchIslandHangingFocus: View {
 
     var body: some View {
         let geometry = model.geometry
-        let cardTop = NotchIslandLayout.hangCardTop(geometry)
+        // 这一套的范围从刘海底边开始（不伸进菜单栏那一条），里面的偏移都从刘海底边量。
+        let cardTop = NotchIslandLayout.hangCardTop(geometry) - geometry.notchHeight
         let panda = NotchIslandLayout.hangPanda
         TimelineView(.animation(minimumInterval: reduceMotion ? 1 : 1.0 / 30, paused: false)) { tick in
             let state = TimerStateProvider.shared.state
@@ -991,7 +993,6 @@ private struct NotchIslandHangingFocus: View {
                     }
                 }
                 .rotationEffect(.degrees(swing), anchor: .top)
-                .offset(y: geometry.notchHeight)
                 .accessibilityHidden(true)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

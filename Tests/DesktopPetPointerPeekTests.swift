@@ -24,20 +24,42 @@ final class DesktopPetPointerPeekTests: XCTestCase {
         let bounds = CGRect(x: 0, y: 0, width: 1000, height: 800)
         let size = CGSize(width: 54, height: 64)
         let normal = DesktopPetPointerPeek.frame(pointer: CGPoint(x: 500, y: 400), size: size, bounds: bounds)
-        XCTAssertEqual(normal.maxX, 486)
-        XCTAssertEqual(normal.maxY, 386)
+        XCTAssertEqual(normal.maxX, 490)
+        XCTAssertEqual(normal.maxY, 390)
         // 左下角放不下：翻到右边和上面。
         let corner = DesktopPetPointerPeek.frame(pointer: CGPoint(x: 10, y: 20), size: size, bounds: bounds)
-        XCTAssertEqual(corner.minX, 24)
-        XCTAssertEqual(corner.minY, 34)
+        XCTAssertEqual(corner.minX, 20)
+        XCTAssertEqual(corner.minY, 30)
         XCTAssertTrue(bounds.contains(corner))
     }
 
     func testImageCandidates() {
+        // 指针旁一律用完整的一只，不再用身体截平的趴姿探头图。
         XCTAssertEqual(DesktopPetPointerPeek.imageCandidates(.shiba, focusing: false),
-                       ["desk-shiba-peek", "focus-mascot-shiba-idle"])
+                       ["pet-sprite-shiba-sit", "focus-mascot-shiba-idle"])
+        XCTAssertEqual(DesktopPetPointerPeek.imageCandidates(.panda, focusing: false),
+                       ["pet-sprite-front-sit-1", "focus-mascot-panda-idle"])
         XCTAssertEqual(DesktopPetPointerPeek.imageCandidates(.panda, focusing: true),
-                       ["desk-panda-peek", "focus-mascot-panda-focus"])
+                       ["focus-mascot-panda-focus", "pet-sprite-front-sit-1", "focus-mascot-panda-idle"])
+        for mascot in FocusMascot.allCases {
+            for focusing in [false, true] {
+                XCTAssertFalse(DesktopPetPointerPeek.imageCandidates(mascot, focusing: focusing)
+                    .contains { $0.hasSuffix("-peek") }, "\(mascot)")
+            }
+        }
+    }
+
+    func testSizeIsSmall() {
+        XCTAssertEqual(DesktopPetPointerPeek.baseHeight, 40)
+        // 柴犬坐姿 100×130：中号 40 点高、约 31 点宽，比原来趴姿 55×64 小一圈。
+        let shiba = DesktopPetPointerPeek.size(imageSize: CGSize(width: 100, height: 130), scale: 1)
+        XCTAssertEqual(shiba.height, 40)
+        XCTAssertEqual(shiba.width, 30.77, accuracy: 0.01)
+        let large = DesktopPetPointerPeek.size(imageSize: CGSize(width: 130, height: 130), scale: 1.25)
+        XCTAssertEqual(large.height, 50)
+        XCTAssertLessThanOrEqual(large.width, 50)
+        XCTAssertEqual(DesktopPetPointerPeek.rise(reduceMotion: true), 0)
+        XCTAssertGreaterThan(DesktopPetPointerPeek.rise(reduceMotion: false), 0)
     }
 
     func testSettingsDefaultsAndLegacy() throws {

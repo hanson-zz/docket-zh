@@ -627,21 +627,81 @@ public enum NotchIslandLayout {
         screen.notch?.midX ?? screen.frame.midX
     }
 
-    /// 专注计时在小岛上：左边吉祥物多宽，右边剩余时间多宽（放得下「1:02:03」）。
-    public static let focusMascotWing: CGFloat = 44
-    public static let focusClockWing: CGFloat = 70
+    // MARK: 两侧耳朵的宽度
+    //
+    // 两侧的「耳朵」盖在菜单栏上，多宽一点就多挡一点右边的状态栏图标（真机上专注计时右边曾宽到 70 点，
+    // 加顶边外弯快 80 点，把豆包、ChatGPT 等图标盖掉）。所以每侧只留刚好放下内容的宽度：
+    // 贴刘海那侧留 `wingNotchGap`，外侧留 `wingOuterInset`，中间是内容本身；字一律 13 点、数字等宽。
+    // 字宽按 SF 的等宽数字估（数字约 0.64 个字号宽，偏宽一点免得被裁），每侧不超过 `maxWing`。
+
+    /// 小岛上的字号（不小于 13 点）。
+    public static let compactFontSize: CGFloat = 13
+    /// 内容离刘海边多远。
+    public static let wingNotchGap: CGFloat = 4
+    /// 内容离耳朵外侧边多远。
+    public static let wingOuterInset: CGFloat = 6
+    /// 每侧耳朵最宽多少（不含顶边外弯的 `topFlare`）。
+    public static let maxWing: CGFloat = 70
+    /// 暂停号（10 点粗体 pause.fill）的宽度加它后面的间距。
+    public static let pauseGlyphWidth: CGFloat = 8
+    public static let pauseSpacing: CGFloat = 3
+    /// 左边只放一个图标（插电、下载、会议、电台）时耳朵多宽：图标约 16 点。
+    public static let iconWing: CGFloat = 28
+    /// 专注计时左边那颗吉祥物小头的高度，和它最宽的宽高比（水獭那张 106×80）。
+    public static let focusMascotHeight: CGFloat = 20
+    public static let focusMascotMaxAspect: CGFloat = 1.33
+    /// 专注计时左边吉祥物那侧多宽：4 + 26.6 + 6，向上取整 37（原来 44）。
+    public static let focusMascotWing: CGFloat = wing(focusMascotHeight * focusMascotMaxAspect)
+
+    /// 一段字在 `size` 字号下大约多宽：数字（等宽）、冒号、百分号、空格、其它 ASCII、中日韩字分开估。
+    public static func textWidth(_ text: String, size: CGFloat = compactFontSize) -> CGFloat {
+        var em: CGFloat = 0
+        for scalar in text.unicodeScalars {
+            switch scalar {
+            case "0"..."9": em += 0.64
+            case ":": em += 0.32
+            case "%": em += 0.92
+            case " ": em += 0.28
+            default: em += scalar.isASCII ? 0.62 : 1.0
+            }
+        }
+        return em * size
+    }
+
+    /// 内容宽 `content` 时这一侧耳朵多宽：加上两边留白、向上取整，最多 `maxWing`。
+    public static func wing(_ content: CGFloat) -> CGFloat {
+        min(maxWing, ceil(wingNotchGap + content + wingOuterInset))
+    }
+
+    /// 专注计时右边剩余时间那侧多宽：按这一轮可能出现的最长写法（不到一小时「24:11」，一小时起「1:02:03」）
+    /// 和有没有暂停号算。「24:11」走着 4 + 37.4 + 6 取整 48，暂停 59；「1:02:03」走着 60，暂停 70。
+    public static func focusClockWing(total: TimeInterval, paused: Bool) -> CGFloat {
+        let widest = total >= 3600 ? "0:00:00" : "00:00"
+        let pause = paused ? pauseGlyphWidth + pauseSpacing : 0
+        return wing(pause + textWidth(widest))
+    }
+
+    /// 插电右边「100%」那侧：约 47（原来 62）。
+    public static let chargingWing: CGFloat = wing(textWidth("100%"))
+    /// 下载中右边「99%」加 6 点间距和 16 点进度环：约 61（原来 76）；下完只有一个对勾，和图标一样宽。
+    public static let downloadWing: CGFloat = wing(textWidth("99%") + 6 + 16)
+    /// 会议右边「5 分」「12 分」「现在」，英文是「12 min」：按最长的英文写法，约 54（原来 56）。
+    public static let meetingWing: CGFloat = wing(textWidth("12 min"))
+    /// 电台右边 20 点宽的声波：30（原来 44）。
+    public static let radioWing: CGFloat = wing(20)
 
     /// 一个活动在 compact 形态下左右两侧各多宽，以及刘海下面要不要一条显示剩余时间。
     /// 专注计时左边放吉祥物、右边放剩余时间，不要下面那一条；倒计时卡片的计时器照旧
     /// 在刘海下方一条。
     public static func wings(_ activity: NotchIslandActivity) -> (left: CGFloat, right: CGFloat, chin: CGFloat) {
         switch activity {
-        case .charging: return (left: 40, right: 62, chin: 0)
-        case .download(_, let done): return (left: 40, right: done ? 40 : 76, chin: 0)
-        case .timer(_, _, _, _, .focus, _): return (left: focusMascotWing, right: focusClockWing, chin: 0)
+        case .charging: return (left: iconWing, right: chargingWing, chin: 0)
+        case .download(_, let done): return (left: iconWing, right: done ? iconWing : downloadWing, chin: 0)
+        case .timer(_, let pausedLeft, let total, _, .focus, _):
+            return (left: focusMascotWing, right: focusClockWing(total: total, paused: pausedLeft != nil), chin: 0)
         case .timer: return (left: 14, right: 14, chin: chinHeight)
-        case .meeting: return (left: 40, right: 56, chin: 0)
-        case .radio: return (left: 40, right: 44, chin: 0)
+        case .meeting: return (left: iconWing, right: meetingWing, chin: 0)
+        case .radio: return (left: iconWing, right: radioWing, chin: 0)
         }
     }
 
@@ -675,7 +735,10 @@ public enum NotchIslandLayout {
         CGRect(x: body.maxX - 4, y: body.maxY - pandaSize.height + 4, width: pandaSize.width, height: pandaSize.height)
     }
 
-    /// 展开卡片的高度（含刘海那一段）。
+    /// 展开卡片离刘海底边多远。卡片整个在菜单栏下面，不往两侧盖住菜单栏上的图标。
+    public static let cardGap: CGFloat = 6
+
+    /// 展开卡片的高度（不含刘海那一段，卡片从刘海底下 `cardGap` 处开始）。
     public static func cardHeight(_ geometry: NotchIslandGeometry, kind: NotchIslandKind, hasSecondary: Bool) -> CGFloat {
         let content: CGFloat
         switch kind {
@@ -685,13 +748,14 @@ public enum NotchIslandLayout {
         case .meeting: content = 100
         case .charging: content = 92
         }
-        return geometry.notchHeight + content + (hasSecondary ? secondaryRowHeight : 0)
+        return content + (hasSecondary ? secondaryRowHeight : 0)
     }
 
-    /// 展开卡片的范围：顶边贴住屏幕顶边，宽度至少比刘海宽出两边。
+    /// 展开卡片的范围：顶边在刘海（菜单栏）底下 `cardGap`，宽度至少比刘海宽出两边。
+    /// 菜单栏那一条里只留刘海本身那段黑色，两侧不再多出一截。
     public static func card(_ geometry: NotchIslandGeometry, kind: NotchIslandKind, hasSecondary: Bool) -> CGRect {
         let width = max(cardWidth, geometry.notchWidth + 120)
-        return CGRect(x: -width / 2, y: 0, width: width,
+        return CGRect(x: -width / 2, y: geometry.notchHeight + cardGap, width: width,
                       height: cardHeight(geometry, kind: kind, hasSecondary: hasSecondary))
     }
 
@@ -708,10 +772,11 @@ public enum NotchIslandLayout {
             if case .charging = primary { result.append(panda(geometry, body: main)) }
             return result
         case .expanded(let primary, let secondary):
+            // 刘海那段黑色加上它下面的卡片（或倒挂那一套），菜单栏那一条里只占刘海本身。
             if NotchHangingPanda.hangs(primary) {
-                return [hanging(geometry, hasSecondary: secondary != nil)]
+                return [notch(geometry), hanging(geometry, hasSecondary: secondary != nil)]
             }
-            return [card(geometry, kind: primary.kind, hasSecondary: secondary != nil)]
+            return [notch(geometry), card(geometry, kind: primary.kind, hasSecondary: secondary != nil)]
         }
     }
 
@@ -733,11 +798,13 @@ public enum NotchIslandLayout {
         geometry.notchHeight + hangRope + hangPanda - hangPawOverlap
     }
 
-    /// 倒挂那一套整体的范围：顶边贴屏幕顶，以刘海中线对称，含绳子、小熊猫、计时牌。
+    /// 倒挂那一套整体的范围：从刘海底边往下，以刘海中线对称，含绳子、小熊猫、计时牌。
+    /// 不往上伸进菜单栏那一条，免得两侧盖住（或挡住点按）菜单栏上的图标。
     public static func hanging(_ geometry: NotchIslandGeometry, hasSecondary: Bool) -> CGRect {
         let width = max(hangWidth, geometry.notchWidth + 40)
-        let height = hangCardTop(geometry) + hangCardHeight + (hasSecondary ? secondaryRowHeight : 0)
-        return CGRect(x: -width / 2, y: 0, width: width, height: height)
+        let height = hangCardTop(geometry) - geometry.notchHeight + hangCardHeight
+            + (hasSecondary ? secondaryRowHeight : 0)
+        return CGRect(x: -width / 2, y: geometry.notchHeight, width: width, height: height)
     }
 
     /// 指针在这些范围里算「停在小岛上」（原点坐标，往外放宽 `slack`）。
