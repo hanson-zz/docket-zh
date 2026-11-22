@@ -166,7 +166,7 @@ final class PandaStateTests: XCTestCase {
     // MARK: 场景图
 
     func testSceneNamesAndCandidates() {
-        XCTAssertEqual(PandaScene.allCases.count, 7)
+        XCTAssertEqual(PandaScene.allCases.count, 9)
         for scene in PandaScene.allCases {
             XCTAssertEqual(scene.imageName, "panda-scene-\(scene.rawValue)")
             XCTAssertEqual(PandaStateResolver.candidates(.scene(scene)),
@@ -234,6 +234,14 @@ final class PandaStateTests: XCTestCase {
         XCTAssertEqual(PandaStateResolver.aiBase(nil), .idle)
         XCTAssertEqual(PandaStateResolver.aiBase(.answering), .thinking)
         XCTAssertEqual(PandaStateResolver.aiBase(.done), .idle)
+        XCTAssertEqual(PandaStateResolver.aiPose(nil, typing: false), .state(.idle))
+        XCTAssertEqual(PandaStateResolver.aiPose(nil, typing: true), .scene(.aiInput))
+        XCTAssertEqual(PandaStateResolver.aiPose(.thinking, typing: true), .scene(.aiGenerating), "提交后不管输入框")
+        XCTAssertEqual(PandaStateResolver.aiPose(.answering, typing: false), .scene(.aiGenerating))
+        XCTAssertEqual(PandaStateResolver.aiPose(.done, typing: false), .state(.idle))
+        XCTAssertEqual(PandaStateResolver.aiPose(.failed("x"), typing: true), .scene(.aiInput))
+        XCTAssertEqual(PandaScene.aiInput.imageName, "panda-scene-ai-input")
+        XCTAssertEqual(PandaScene.aiGenerating.imageName, "panda-scene-ai-generating")
     }
 
     func testAIPulseOnlyOnFinish() {

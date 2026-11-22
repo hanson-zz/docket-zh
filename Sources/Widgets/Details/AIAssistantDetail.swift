@@ -248,8 +248,9 @@ private struct AIAskView: View {
     private var header: some View {
         let phase = context.isPreview ? nil : center.pandaPhase(target)
         return HStack(spacing: 10) {
-            // 输入时待机，提交后、生成中思考，答完短暂完成，失败短暂提醒；网页、App 方式一直待机。
-            PandaStateView(PandaStateResolver.aiBase(phase), pulse: pandaPulse, size: PandaStage.small.side,
+            // 输入框有字时对着笔记本打字，提交后到答完抬头等回答，答完短暂完成，失败短暂提醒，其余待机。
+            PandaStateView(pose: PandaStateResolver.aiPose(phase, typing: !state.draft(instance.id).isEmpty),
+                           pulse: pandaPulse, size: PandaStage.small.side,
                            fallbackSymbol: "bubble.left.and.text.bubble.right.fill")
                 .onChange(of: phase) { old, new in
                     if let pulse = PandaStateResolver.aiPulse(from: old, to: new, at: .now) { pandaPulse = pulse }

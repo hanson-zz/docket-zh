@@ -63,8 +63,8 @@ public enum PandaExtra: String, CaseIterable, Sendable {
     }
 }
 
-/// 场景图：和六状态同一母版、同画布、同底部锚点的七张（Resources/PandaStates/panda-scene-<名>.png）。
-/// 天气（晴、雨雪、冷、热）、喝水、待办记下、录音、收音机在听用；缺图时回退待机。
+/// 场景图：和六状态同一母版、同画布、同底部锚点的九张（Resources/PandaStates/panda-scene-<名>.png）。
+/// 天气（晴、雨雪、冷、热）、喝水、待办记下、录音、收音机在听、AI 助手输入与生成中用；缺图时回退待机。
 public enum PandaScene: String, CaseIterable, Sendable {
     /// 晴天。
     case sunny
@@ -80,6 +80,10 @@ public enum PandaScene: String, CaseIterable, Sendable {
     case write
     /// 戴着耳机对着麦克风（正在录音；收音机正在出声时也用它，当「在听电台」）。
     case record
+    /// 对着笔记本打字（AI 助手输入框里有字、还没提交）。
+    case aiInput = "ai-input"
+    /// 抬头等回答，头顶三个点的气泡（AI 助手提交后到答完之前）。
+    case aiGenerating = "ai-generating"
 
     public var imageName: String { "panda-scene-\(rawValue)" }
 }
@@ -342,6 +346,13 @@ public enum PandaStateResolver {
     public static func aiBase(_ phase: AIQuickResultPhase?) -> PandaState {
         guard let phase, !phase.isFinished else { return .idle }
         return .thinking
+    }
+
+    /// AI 面板顶上那只的常态：提交后到答完用「生成中」场景图，输入框里有字用「输入」场景图，其余待机。
+    /// 网页、App 方式没有阶段，只看有没有在输入。缺图时场景图回退待机。
+    public static func aiPose(_ phase: AIQuickResultPhase?, typing: Bool) -> PandaPose {
+        if let phase, !phase.isFinished { return .scene(.aiGenerating) }
+        return typing ? .scene(.aiInput) : .state(.idle)
     }
 
     /// AI 一次回答收尾时该不该冒一个短暂表态（面板顶上那只，答完 done、失败 alert）。
