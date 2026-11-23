@@ -319,11 +319,12 @@ final class ShibaMatchTests: XCTestCase {
             t += 1
         }
         var outcome = ShibaMatch.Outcome(result: .ignored, newRecord: false)
+        // 配对均匀摊到 start + seconds，两次翻牌间隔不超过 idleCap，用时就正好是 seconds。
+        let from = t
         for (index, pair) in pairs.enumerated() {
-            let time = index == pairs.count - 1 ? start + seconds : t
+            let time = from + (start + seconds - from) * Double(index) / Double(pairs.count - 1)
             ShibaMatch.apply(flip: pair.0, to: &config, now: time)
             outcome = ShibaMatch.apply(flip: pair.1, to: &config, now: time)
-            t += 0.01
         }
         return outcome
     }
@@ -436,11 +437,11 @@ final class ShibaMatchTests: XCTestCase {
         XCTAssertEqual(ShibaMatch.entryShortTitle(game), "继续")
         game.flip(4, now: 6); game.flip(6, now: 7)
         game.flip(5, now: 8); game.flip(8, now: 9)
-        game.flip(7, now: 10); game.flip(11, now: 42)
+        game.flip(7, now: 10); game.flip(11, now: 38)
         XCTAssertEqual(ShibaMatch.statusLine(game), "完成 · 6 步")
         XCTAssertEqual(ShibaMatch.statusWord(game), "完成")
         XCTAssertEqual(ShibaMatch.entryTitle(game), "再来一盘")
-        XCTAssertEqual(ShibaMatch.resultDetail(game), "6 步 · 用时 00:42")
+        XCTAssertEqual(ShibaMatch.resultDetail(game), "6 步 · 用时 00:38")
     }
 
     func testClockAndReadouts() throws {
