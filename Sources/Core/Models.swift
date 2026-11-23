@@ -310,12 +310,14 @@ public enum WidgetCategory: String, Codable, Sendable, CaseIterable {
     case system = "System"
     case weather = "Weather"
     case stocks = "Stocks"
+    /// 休闲游戏（扫雷、拔牙）。
+    case games = "Games"
 
     /// Library sidebar order. 应用和文件夹 has a row of its own above the
     /// rest, drawn with the app and folder shortcuts, but is listed here so
     /// every category stays reachable.
     public static let ordered: [WidgetCategory] = [
-        .appsAndFolders, .time, .todo, .health, .ai, .tools, .media, .files, .system, .weather, .stocks,
+        .appsAndFolders, .time, .todo, .health, .ai, .tools, .games, .media, .files, .system, .weather, .stocks,
     ]
 
     /// 旧版本的原始值（Clocks、Reminders、Calendar、Sticky Notes、Business）
@@ -1482,6 +1484,7 @@ public extension WidgetCategory {
         case .system: tr("系统")
         case .weather: tr("天气")
         case .stocks: tr("行情")
+        case .games: tr("休闲游戏")
         }
     }
 
@@ -1499,6 +1502,7 @@ public extension WidgetCategory {
         case .system: "cpu"
         case .weather: "cloud.sun"
         case .stocks: "chart.line.uptrend.xyaxis"
+        case .games: "gamecontroller"
         }
     }
 }

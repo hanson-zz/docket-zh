@@ -416,12 +416,12 @@ public enum WidgetCatalog {
 
         // 扫雷（免费）：进行中的局、选的难度和最佳成绩都由卡片和面板写进配置
         // （Minesweeper 的 level、game.*、best.*），不放进默认值，设置页不列。
-        Entry(kind: .minesweeper, name: tr("扫雷"), category: .tools, defaults: c([:]),
+        Entry(kind: .minesweeper, name: tr("扫雷"), category: .games, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 拔牙（免费）：进行中的局、最高连拔、胜场和音效开关都由卡片和面板写进配置
         // （PullTooth 的 game、best、bestAt、wins、sound），不放进默认值，设置页不列。
-        Entry(kind: .pullTooth, name: tr("拔牙"), category: .tools, defaults: c([:]),
+        Entry(kind: .pullTooth, name: tr("拔牙"), category: .games, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
         // 卜卦（免费）：今天的签、起卦记录、解忧书翻过的页、停在哪页和音效开关都由卡片和面板

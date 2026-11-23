@@ -43,6 +43,8 @@ final class WidgetLibraryGroupsTests: XCTestCase {
     func testAssignments() {
         func category(_ kind: WidgetKind) -> WidgetCategory? { WidgetCatalog.entry(kind)?.category }
         XCTAssertEqual(category(.appSwitcher), .appsAndFolders)
+        XCTAssertEqual(category(.minesweeper), .games)
+        XCTAssertEqual(category(.pullTooth), .games)
         XCTAssertEqual(category(.shortcut), .appsAndFolders)
         XCTAssertEqual(category(.slacker), .time)
         XCTAssertEqual(category(.lunar), .time)

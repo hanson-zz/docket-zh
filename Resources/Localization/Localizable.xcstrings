@@ -55469,6 +55469,17 @@
         }
       }
     },
+    "休闲游戏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casual Games"
+          }
+        }
+      }
+    },
     "行首打 [ ] 变成可勾的清单" : {
       "extractionState" : "manual",
       "localizations" : {
