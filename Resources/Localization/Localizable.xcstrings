@@ -71024,6 +71024,211 @@
         }
       }
     },
+    "大师 (mines)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Master"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大師"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大师"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "大師"
+          }
+        }
+      }
+    },
+    "剩余 %@ 雷" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ mines left"
+          }
+        }
+      }
+    },
+    "%@ · 暂无" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · None yet"
+          }
+        }
+      }
+    },
+    "%@ · 最佳 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Best %@"
+          }
+        }
+      }
+    },
+    "挑战成功！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You did it!"
+          }
+        }
+      }
+    },
+    "哎呀！踩到地雷了！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oops! You hit a mine!"
+          }
+        }
+      }
+    },
+    "再仔细观察一下，下次会更好！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look a little closer. You'll do better next time!"
+          }
+        }
+      }
+    },
+    "用时 %@ 新纪录！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time %@ · New record!"
+          }
+        }
+      }
+    },
+    "用时 %@ · 第 %@ 名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time %@ · No. %@"
+          }
+        }
+      }
+    },
+    "用时 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time %@"
+          }
+        }
+      }
+    },
+    "找出所有地雷，挑战你的观察力！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find every mine and test your eye for detail!"
+          }
+        }
+      }
+    },
+    "左键揭开 · 右键插旗 · 找出所有安全格子" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left-click to reveal · Right-click to flag · Find every safe square"
+          }
+        }
+      }
+    },
+    "用时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time"
+          }
+        }
+      }
+    },
+    "本机纪录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records on This Mac"
+          }
+        }
+      }
+    },
+    "收起本机纪录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide records on this Mac"
+          }
+        }
+      }
+    },
+    "展开本机纪录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show records on this Mac"
+          }
+        }
+      }
+    },
+    "查看棋盘" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Board"
+          }
+        }
+      }
+    },
     "拔牙" : {
       "extractionState" : "manual",
       "localizations" : {

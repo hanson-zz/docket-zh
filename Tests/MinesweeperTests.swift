@@ -17,6 +17,46 @@ final class MinesweeperTests: XCTestCase {
         XCTAssertEqual(MineLevel.beginner.title, "初级")
         XCTAssertEqual(MineLevel.intermediate.detail, "16×16 · 40 雷")
         XCTAssertEqual(MineBoard(level: .intermediate).level, .intermediate)
+        XCTAssertEqual(MineLevel.master.rows, 32)
+        XCTAssertEqual(MineLevel.master.columns, 32)
+        XCTAssertEqual(MineLevel.master.mines, 200)
+        XCTAssertEqual(MineLevel.master.title, "大师")
+        XCTAssertEqual(MineLevel.master.detail, "32×32 · 200 雷")
+        XCTAssertEqual(MineBoard(level: .master).level, .master)
+        XCTAssertEqual(MineLevel.allCases, [.beginner, .intermediate, .master], "分段条从左到右")
+    }
+
+    // MARK: 大师
+
+    func testMasterBoardFitsTheSaveLimitAndRoundTrips() throws {
+        var board = MineBoard(level: .master)
+        XCTAssertEqual(board.cellCount, 1024, "正好是存档解码上限")
+        var rng = MineRandom(seed: 32)
+        board.reveal(board.index(row: 16, column: 16), now: 10, using: &rng)
+        XCTAssertEqual(board.mines.filter { $0 }.count, 200)
+        XCTAssertNotEqual(board.status, .lost, "首击安全")
+        let decoded = try JSONDecoder().decode(MineBoard.self, from: JSONEncoder().encode(board))
+        XCTAssertEqual(decoded, board)
+        XCTAssertEqual(decoded.level, .master)
+    }
+
+    func testMasterKeepsItsOwnGameAndRecords() {
+        XCTAssertEqual(Minesweeper.gameKey(.master), "game.master")
+        XCTAssertEqual(Minesweeper.topKey(.master), "top.master")
+        var config = WidgetConfig()
+        Minesweeper.select(.master, in: &config)
+        XCTAssertEqual(Minesweeper.level(config), .master)
+        Minesweeper.apply(.flag, at: 40, level: .beginner, to: &config, now: 1)
+        // 雷全在前 200 格（第 0 到 6 行左边）：点右下角一下翻完其余格子。
+        Minesweeper.store(MineBoard.fixed(rows: 32, columns: 32, mines: Set(0..<200), startedAt: 100),
+                          level: .master, in: &config)
+        let outcome = Minesweeper.apply(.reveal, at: 1023, level: .master, to: &config, now: 400)
+        XCTAssertTrue(outcome.justWon)
+        XCTAssertTrue(outcome.newRecord)
+        XCTAssertEqual(Minesweeper.best(config, level: .master), 300)
+        XCTAssertNil(Minesweeper.best(config, level: .beginner), "各难度分开记")
+        XCTAssertTrue(Minesweeper.board(config, level: .beginner).flagged[40], "初级那局还在")
+        XCTAssertEqual(Minesweeper.board(config, level: .master).status, .won)
     }
 
     // MARK: 随机数
@@ -539,22 +579,117 @@ final class MinesweeperTests: XCTestCase {
 
     func testPanelBoardFitsThePanel() {
         for level in MineLevel.allCases {
-            let cell = Minesweeper.cellSize(columns: level.columns, side: Minesweeper.panelBoardWidth)
+            let side = Minesweeper.panelBoardWidth(for: level)
+            let cell = Minesweeper.panelCell(for: level)
             let size = Minesweeper.boardSize(rows: level.rows, columns: level.columns, cell: cell)
-            XCTAssertLessThanOrEqual(size.width, Minesweeper.panelBoardWidth)
-            XCTAssertLessThanOrEqual(size.height, Minesweeper.panelBoardWidth)
+            XCTAssertLessThanOrEqual(size.width, side)
+            XCTAssertLessThanOrEqual(size.height, side)
             XCTAssertGreaterThanOrEqual(cell, 14, "面板里的格子不小于 14pt")
+            // 格子里的数字 13pt 粗体，格子至少比字大一圈。
+            XCTAssertGreaterThanOrEqual(cell, 13)
+            XCTAssertLessThan(side, Minesweeper.panelWidth(for: level))
+            let used = size.width + Minesweeper.panelCardPadding * 2 + Double(DetailPanelWidth.padding) * 2
+                + Minesweeper.panelTailDepth
+            XCTAssertLessThanOrEqual(used, Minesweeper.panelWidth(for: level), "\(level) 连边距一起放进面板")
         }
         XCTAssertLessThan(Minesweeper.panelBoardWidth, Minesweeper.panelWidth)
         // 棋盘宽 = 面板宽 - 内容区两侧 16 - 侧边尾巴 10 - 卡片两侧 16，不会再顶到右边被裁。
         XCTAssertEqual(Minesweeper.panelBoardWidth, 266)
-        for level in MineLevel.allCases {
-            let cell = Minesweeper.cellSize(columns: level.columns, side: Minesweeper.panelBoardWidth)
-            let width = Minesweeper.boardSize(rows: level.rows, columns: level.columns, cell: cell).width
-            let used = width + Minesweeper.panelCardPadding * 2 + Double(DetailPanelWidth.padding) * 2
-                + Minesweeper.panelTailDepth
-            XCTAssertLessThanOrEqual(used, Minesweeper.panelWidth, "\(level) 连边距一起放进面板")
-        }
+    }
+
+    func testPanelWidthFollowsTheLevel() {
+        // 初级、中级一样宽，换难度面板不跳。
+        XCTAssertEqual(Minesweeper.panelWidth(for: .beginner), 340)
+        XCTAssertEqual(Minesweeper.panelWidth(for: .intermediate), 340)
+        XCTAssertEqual(Minesweeper.panelWidth(for: .beginner), Minesweeper.panelWidth)
+        // 大师：32 列 18pt、缝 2，棋盘 638，面板 638 + 32 + 32 + 10。
+        XCTAssertEqual(Minesweeper.gap(cell: 18), 2)
+        XCTAssertEqual(Minesweeper.boardSize(rows: 32, columns: 32, cell: 18).width, 638)
+        XCTAssertEqual(Minesweeper.panelWidth(for: .master), 712)
+        XCTAssertEqual(Minesweeper.panelContentWidth(for: .master), 638)
+        XCTAssertEqual(Minesweeper.panelCell(for: .master), 18)
+        XCTAssertEqual(Minesweeper.panelCell(for: .beginner), 26)
+        XCTAssertEqual(Minesweeper.panelCell(for: .intermediate), 15)
+        // 点击区：大师最后一格的中心点到第 1023 格，最右下角那一点也还在棋盘里。
+        let pitch = 18.0 + 2
+        XCTAssertEqual(Minesweeper.hitIndex(x: 31 * pitch + 9, y: 31 * pitch + 9, rows: 32, columns: 32, cell: 18), 1023)
+        XCTAssertEqual(Minesweeper.hitIndex(x: 637.5, y: 637.5, rows: 32, columns: 32, cell: 18), 1023)
+        XCTAssertNil(Minesweeper.hitIndex(x: 32 * pitch + 1, y: 1, rows: 32, columns: 32, cell: 18))
+        // 只有大师不受面板统一高度上限约束。
+        var config = WidgetConfig()
+        XCTAssertFalse(Minesweeper.panelIsCapExempt(config))
+        Minesweeper.select(.intermediate, in: &config)
+        XCTAssertFalse(Minesweeper.panelIsCapExempt(config))
+        Minesweeper.select(.master, in: &config)
+        XCTAssertTrue(Minesweeper.panelIsCapExempt(config))
+    }
+
+    // MARK: 面板读数、首次提示和结果
+
+    func testClockText() {
+        XCTAssertEqual(Minesweeper.clockText(seconds: 0), "00:00")
+        XCTAssertEqual(Minesweeper.clockText(seconds: 5.9), "00:05")
+        XCTAssertEqual(Minesweeper.clockText(seconds: 754), "12:34")
+        XCTAssertEqual(Minesweeper.clockText(seconds: 1500), "25:00", "大师常超过 999 秒，不封在 999")
+        XCTAssertEqual(Minesweeper.clockText(seconds: 99_999), "99:59")
+        XCTAssertEqual(Minesweeper.clockText(seconds: -3), "00:00")
+        XCTAssertEqual(Minesweeper.clockText(seconds: .nan), "00:00")
+        let board = MineBoard.fixed(rows: 9, columns: 9, mines: [0], startedAt: 100)
+        XCTAssertEqual(Minesweeper.clockText(board, now: 128), "00:28")
+        XCTAssertEqual(Minesweeper.clockText(MineBoard(level: .beginner), now: 128), "00:00")
+    }
+
+    func testMinesLeftPartsSayMines() {
+        let parts = Minesweeper.minesLeftParts()
+        XCTAssertEqual(parts.before, "剩余 ")
+        XCTAssertEqual(parts.after, " 雷")
+    }
+
+    func testHintHidesAfterAFinishedGame() {
+        var config = WidgetConfig()
+        XCTAssertTrue(Minesweeper.showsHint(config), "第一次打开显示")
+        Minesweeper.apply(.flag, at: 40, level: .beginner, to: &config, now: 1)
+        XCTAssertTrue(Minesweeper.showsHint(config), "还没玩完一局")
+        // 输一局。
+        Minesweeper.store(MineBoard.fixed(rows: 9, columns: 9, mines: [0], startedAt: 1), level: .beginner, in: &config)
+        XCTAssertTrue(Minesweeper.apply(.reveal, at: 0, level: .beginner, to: &config, now: 2).justLost)
+        XCTAssertFalse(Minesweeper.showsHint(config))
+        Minesweeper.restart(.beginner, in: &config)
+        XCTAssertFalse(Minesweeper.showsHint(config), "重开不再显示")
+        // 赢一局也算。
+        var won = WidgetConfig()
+        Minesweeper.store(oneClickBoard(startedAt: 0), level: .beginner, in: &won)
+        Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &won, now: 9)
+        XCTAssertFalse(Minesweeper.showsHint(won))
+        // 已经有成绩的老配置直接不显示。
+        XCTAssertFalse(Minesweeper.showsHint(WidgetConfig([Minesweeper.bestKey(.intermediate): .number(95)])))
+    }
+
+    func testResultTextsAndPanda() {
+        XCTAssertEqual(Minesweeper.pandaState(.ready), .idle)
+        XCTAssertEqual(Minesweeper.pandaState(.playing), .idle)
+        XCTAssertEqual(Minesweeper.pandaState(.lost), .alert, "踩雷举爪提醒，不变灰")
+        XCTAssertEqual(Minesweeper.pandaState(.won), .done)
+        XCTAssertNil(Minesweeper.resultTitle(.playing))
+        XCTAssertEqual(Minesweeper.resultTitle(.lost), "哎呀！踩到地雷了！")
+        XCTAssertEqual(Minesweeper.resultTitle(.won), "挑战成功！")
+
+        var config = WidgetConfig()
+        XCTAssertEqual(Minesweeper.recordSummary(config, level: .beginner), "初级 · 暂无")
+        Minesweeper.store(oneClickBoard(startedAt: 100), level: .beginner, in: &config)
+        Minesweeper.apply(.reveal, at: 80, level: .beginner, to: &config, now: 128)
+        let won = Minesweeper.board(config, level: .beginner)
+        let rank = Minesweeper.rank(won, level: .beginner, in: config)
+        XCTAssertEqual(Minesweeper.resultDetail(won, rank: rank, now: 999), "用时 00:28 新纪录！")
+        XCTAssertEqual(Minesweeper.resultDetail(won, rank: 3, now: 999), "用时 00:28 · 第 3 名")
+        XCTAssertEqual(Minesweeper.resultDetail(won, rank: nil, now: 999), "用时 00:28")
+        XCTAssertEqual(Minesweeper.recordSummary(config, level: .beginner), "初级 · 最佳 00:28")
+        XCTAssertEqual(Minesweeper.recordSummary(config, level: .master), "大师 · 暂无")
+
+        var lost = MineBoard.fixed(rows: 9, columns: 9, mines: [0], startedAt: 0)
+        lost.reveal(0, now: 3)
+        XCTAssertEqual(Minesweeper.resultDetail(lost, rank: nil, now: 3), "再仔细观察一下，下次会更好！")
+        XCTAssertNil(Minesweeper.resultDetail(MineBoard(level: .beginner), rank: nil, now: 0))
     }
 
     func testDesktopCardsArePlayable() {
@@ -563,6 +698,12 @@ final class MinesweeperTests: XCTestCase {
         XCTAssertEqual(DesktopCardsGamesPlan.level(for: .small, chosen: .intermediate), .beginner)
         XCTAssertEqual(DesktopCardsGamesPlan.level(for: .medium, chosen: .intermediate), .beginner)
         XCTAssertEqual(DesktopCardsGamesPlan.level(for: .large, chosen: .intermediate), .intermediate)
+        // 大师 32 列塞不进桌面卡片（格子须不小于 13pt）：大号退回中级，小号、中号照旧初级。
+        XCTAssertEqual(DesktopCardsGamesPlan.level(for: .large, chosen: .master), .intermediate)
+        XCTAssertEqual(DesktopCardsGamesPlan.level(for: .medium, chosen: .master), .beginner)
+        XCTAssertEqual(DesktopCardsGamesPlan.level(for: .small, chosen: .master), .beginner)
+        XCTAssertLessThan(Minesweeper.cellSize(columns: 32, side: DesktopCardsGamesPlan.boardSide(.large)), 13,
+                          "不回退的话大师格子太小")
         XCTAssertEqual(DesktopPinSupport.mode(.minesweeper, hasDetail: true, panelWidth: Minesweeper.panelWidth),
                        .dedicated)
         for size in DesktopPinSize.allCases {

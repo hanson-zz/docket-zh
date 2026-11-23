@@ -2,16 +2,21 @@ import SwiftUI
 
 // MARK: - 扫雷 · 面板
 //
-// 液态玻璃面板 340 宽：顶上小熊猫、名字和一句状态，右边重开；下面初级 / 中级两段，
-// 每段写各自的最佳成绩；再下面剩余雷数、难度和计时；然后是棋盘（两个难度一样宽，
-// 换难度面板不跳，宽度按卡片真实内容宽 `Minesweeper.panelBoardWidth` 算，左右边距
-// 和其他面板一样）；棋盘下面一条可展开的排行榜（当前难度前 5 名，刚进榜那行高亮，
-// 默认收起，这一局进榜时自动展开）；最后一行操作提示。
-// 左键揭开，右键、⌥ 点或 ⌃ 点插旗，点数字揭开周围（和弦）。剩余雷数是最大的读数；
-// 读数行右端是音效开关（喇叭，存卡片配置，默认开）。踩雷时小熊猫换成小骷髅并抖一下。
-// 每个难度各存一局，换难度不丢另一局；排行榜存在卡片配置（Minesweeper.topKey，
-// 第一名同时写进 bestKey）。
-// 不铺背景色、不发光，颜色只在旗子、数字和结果上。
+// 液态玻璃面板，按效果图精修（玩法不变）：
+// - 顶上：小熊猫（六状态图：准备、游戏中待机，踩雷举爪提醒，赢了举爪庆祝）、「扫雷」和一行
+//   副标题，右上小熊猫橙「再来一盘」胶囊。
+// - 难度：一条分段条，初级 / 中级 / 大师。放得下时写「9×9 · 10 雷」，窄时只写名字。
+// - 读数：「剩余 N 雷」（数字最大最醒目，橙 / 绿 / 红三档）、计时「00:05」，右边音效圆钮
+//   （扫雷没有别的设置入口，不放齿轮）。
+// - 棋盘：初级、中级在 340 宽的面板里一样宽（换难度不跳），大师面板加宽到 712、格子 18pt
+//   （`Minesweeper.panelWidth(for:)`）。悬停的格子提亮并描一圈橙边，插旗时小旗轻弹一下，
+//   踩到的那格红底。结束后棋盘上盖一张玻璃结果卡（小熊猫、一句话、「查看棋盘」「再来一盘」），
+//   赢了冒一小把彩纸（只在刚赢时，减弱动态效果时不动）。
+// - 本机纪录：默认折叠成一行「本机纪录 初级 · 最佳 00:28」，点开看前五，这一局刚进榜时自动展开。
+// - 首次提示一行，玩完一局（赢或输）后不再显示（`Minesweeper.showsHint`）。
+// 左键揭开，右键、⌥ 点或 ⌃ 点插旗，点数字揭开周围（和弦）。每个难度各存一局和本机纪录。
+// 底是很淡的暖橙到雾紫，棋盘外两只低透明度爪印；棋盘后面不画炸弹、星星，不发光。
+// 高度不自己定，交给通用面板容器（DetailPanelFit），大师放不下时在面板里滚动。
 
 struct MinesweeperDetail: View {
     var instance: WidgetInstance
@@ -23,64 +28,90 @@ struct MinesweeperDetail: View {
         context.isPreview ? MineSamples.board : Minesweeper.board(instance.config, level: level)
     }
 
-    private static let boardSide = CGFloat(Minesweeper.panelBoardWidth)
-
-    /// 排行榜展开着。默认收起，面板不高；这一局刚进榜时自动展开。
-    @State private var showsBoard = false
+    /// 本机纪录展开着。默认收起；这一局刚进榜时自动展开。
+    @State private var showsRecords = false
+    /// 点了「查看棋盘」：结果卡收起，露出整盘。新开一局时复位。
+    @State private var reviewing = false
 
     var body: some View {
         let board = board
         let level = level
+        let side = CGFloat(Minesweeper.panelBoardWidth(for: level))
+        let cell = CGFloat(Minesweeper.panelCell(for: level))
+        let showsResult = board.isOver && !reviewing && !context.isPreview
         return DetailCard {
-            Color.clear
+            MineWarmBackdrop()
         } content: {
             VStack(alignment: .leading, spacing: 12) {
                 header(board, level: level)
                 picker(level)
                 TimelineView(.periodic(from: .now, by: board.status == .playing ? 1 : 60)) { timeline in
-                    counters(board, level: level, now: context.isPreview ? MineSamples.now : timeline.date.timeIntervalSince1970)
+                    counters(board, now: context.isPreview ? MineSamples.now : timeline.date.timeIntervalSince1970)
                 }
-                MineBoardView(board: board,
-                              cell: CGFloat(Minesweeper.cellSize(columns: board.columns,
-                                                                 side: Minesweeper.panelBoardWidth)),
-                              interactive: !context.isPreview) { action, index in
+                MineBoardView(board: board, cell: cell,
+                              interactive: !context.isPreview && !showsResult) { action, index in
                     _ = MinePlay.act(action, at: index, level: level, in: instance)
                 }
-                .frame(width: Self.boardSide, height: Self.boardSide)
+                .help(tr("左键揭开，右键或按住 ⌥ 点插旗，点数字揭开周围"))
+                .frame(width: side, height: side)
+                .overlay {
+                    if showsResult {
+                        resultCard(board, level: level, width: side)
+                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    }
+                }
                 .frame(maxWidth: .infinity)
-                leaderboard(board, level: level)
-                Text(tr("左键揭开，右键或按住 ⌥ 点插旗，点数字揭开周围"))
-                    .font(.system(size: 13))
+                records(board, level: level)
+                if !context.isPreview, Minesweeper.showsHint(instance.config) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 13, weight: .medium))
+                        Text(tr("左键揭开 · 右键插旗 · 找出所有安全格子"))
+                            .font(.system(size: 13))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     .foregroundStyle(Color.panelTertiary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+                }
             }
         }
+        .animation(.snappy(duration: 0.22), value: showsResult)
         .onChange(of: rank(board, level: level)) { _, rank in
-            if rank != nil { withAnimation(.snappy(duration: 0.25)) { showsBoard = true } }
+            if rank != nil { withAnimation(.snappy(duration: 0.25)) { showsRecords = true } }
         }
+        .onChange(of: board.status) { _, status in
+            if status == .ready || status == .playing { reviewing = false }
+        }
+        .onChange(of: level) { _, _ in reviewing = false }
     }
 
     // MARK: 顶上
 
     private func header(_ board: MineBoard, level: MineLevel) -> some View {
-        HStack(spacing: 10) {
-            MinePanda(status: board.status, size: 40)
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .center, spacing: 10) {
+            PandaStateView(Minesweeper.pandaState(board.status), size: 56)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(tr("扫雷"))
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Color.panelPrimary)
-                Text(statusText(board, level: level))
-                    .font(.system(size: 13, weight: board.isOver ? .semibold : .regular))
-                    .foregroundStyle(statusColor(board))
+                Text(tr("找出所有地雷，挑战你的观察力！"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.panelSecondary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .layoutPriority(1)
-            Spacer(minLength: 8)
-            restartButton(over: board.isOver, level: level)
-                .fixedSize()
+            .accessibilityElement(children: .combine)
+            .accessibilityValue(statusText(board, level: level))
+            Spacer(minLength: 6)
+            MineOrangeButton(title: tr("再来一盘")) {
+                guard !context.isPreview else { return }
+                reviewing = false
+                MinePlay.restart(level, in: instance)
+            }
+            .fixedSize()
+            .help(tr("重开一盘"))
         }
     }
 
@@ -90,130 +121,213 @@ struct MinesweeperDetail: View {
         return Minesweeper.wonLine(seconds: board.displaySeconds(now: now), rank: rank(board, level: level))
     }
 
-    /// 刚赢的这局在排行榜上第几名（按赢下的时间认那一局；平了的排在原来那条后面）。
+    /// 刚赢的这局在本机纪录里第几名（按赢下的时间认那一局；平了的排在原来那条后面）。
     private func rank(_ board: MineBoard, level: MineLevel) -> Int? {
         context.isPreview ? nil : Minesweeper.rank(board, level: level, in: instance.config)
     }
 
-    private func statusColor(_ board: MineBoard) -> Color {
-        switch board.status {
-        case .won: MineStyle.winText
-        case .lost: MineStyle.boom.panelReadable
-        case .ready, .playing: Color.panelSecondary
-        }
-    }
-
-    /// 平时是玻璃胶囊「重开」；结束后换成小熊猫橙的实心「再来一盘」。
-    private func restartButton(over: Bool, level: MineLevel) -> some View {
-        Button {
-            guard !context.isPreview else { return }
-            MinePlay.restart(level, in: instance)
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 12, weight: .bold))
-                Text(over ? tr("再来一盘") : tr("重开"))
-                    .font(.system(size: 13, weight: .semibold))
-            }
-            .foregroundStyle(over ? MineStyle.flagInk : Color.panelPrimary)
-            .padding(.horizontal, 12)
-            .frame(height: 30)
-            .background {
-                if over {
-                    Capsule().fill(Color(hex: ShelfColor.redPanda.hex))
-                } else {
-                    Capsule().fill(Color.panelRaised).panelLift()
-                }
-            }
-            .overlay { if !over { Capsule().strokeBorder(Color.panelStroke, lineWidth: 0.5) } }
-            .contentShape(.capsule)
-        }
-        .buttonStyle(.plain)
-        .help(tr("重开一盘"))
-    }
-
-    // MARK: 难度
+    // MARK: 难度分段条
 
     private func picker(_ selected: MineLevel) -> some View {
-        HStack(spacing: 4) {
+        let count = CGFloat(MineLevel.allCases.count)
+        let inner = CGFloat(Minesweeper.panelContentWidth(for: selected)) - 6
+        let segment = max(40, ((inner - 3 * (count - 1)) / count).rounded(.down))
+        return HStack(spacing: 3) {
             ForEach(MineLevel.allCases, id: \.self) { item in
                 let on = item == selected
                 Button {
                     guard !context.isPreview else { return }
                     withAnimation(.snappy(duration: 0.2)) { MinePlay.select(item, in: instance) }
                 } label: {
-                    VStack(spacing: 1) {
-                        Text(item.title)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(on ? Color.panelPrimary : Color.panelSecondary)
-                        Text(tr("最佳 \(Minesweeper.bestText(Minesweeper.best(instance.config, level: item)))"))
-                            .font(.system(size: 13))
-                            .foregroundStyle(Color.panelTertiary)
-                            .monospacedDigit()
+                    ViewThatFits(in: .horizontal) {
+                        segmentLabel(item, on: on, withDetail: true)
+                        segmentLabel(item, on: on, withDetail: false)
                     }
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
+                    .frame(width: segment, height: 30)
                     .background {
                         if on {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .fill(Color.panelRaised).panelLift()
+                            Capsule().fill(Color.clear)
+                                .readableGlass(in: Capsule())
+                                .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
                         }
                     }
-                    .contentShape(.rect)
+                    .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
                 .help(item.detail)
+                .accessibilityLabel(item.title)
+                .accessibilityValue(item.detail)
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
         .padding(3)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelFill))
+        .background(Capsule().fill(Color.panelFill))
     }
 
-    // MARK: 排行榜
+    private func segmentLabel(_ item: MineLevel, on: Bool, withDetail: Bool) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "chart.bar.fill")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(on ? MineStyle.flag : Color.panelTertiary)
+            Text(item.title)
+                .font(.system(size: 14, weight: on ? .bold : .semibold))
+                .foregroundStyle(on ? Color.panelPrimary : Color.panelSecondary)
+            if withDetail {
+                Text(item.detail)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.panelTertiary)
+                    .monospacedDigit()
+            }
+        }
+        .lineLimit(1)
+        .fixedSize()
+    }
 
-    /// 一条可展开的玻璃小区块：标题行（奖杯、「排行榜」、第一名用时、箭头），展开后是
-    /// 前 5 名（名次、用时、日期），这一局刚进榜的那行小熊猫橙描边高亮、写「本局」。
-    private func leaderboard(_ board: MineBoard, level: MineLevel) -> some View {
+    // MARK: 读数
+
+    /// 「剩余 10 雷」（数字 24pt 粗圆体，三档颜色）、计时「00:05」、音效圆钮。
+    private func counters(_ board: MineBoard, now: Double) -> some View {
+        let tone = MineCountTone(minesLeft: board.minesLeft)
+        let color = MineStyle.count(tone)
+        let parts = Minesweeper.minesLeftParts()
+        return HStack(spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                Image(systemName: tone == .over ? "exclamationmark.triangle.fill" : "flag.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(color)
+                if !parts.before.isEmpty {
+                    Text(parts.before.trimmingCharacters(in: .whitespaces))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.panelSecondary)
+                }
+                Text(verbatim: Minesweeper.minesLeftText(board.minesLeft))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(color)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(value: Double(board.minesLeft)))
+                    .animation(.snappy(duration: 0.2), value: board.minesLeft)
+                if !parts.after.isEmpty {
+                    Text(parts.after.trimmingCharacters(in: .whitespaces))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(Color.panelSecondary)
+                }
+            }
+            .lineLimit(1)
+            .fixedSize()
+            .help(tone == .over ? tr("旗插多了：比雷还多 \(-board.minesLeft) 面") : tr("剩余雷数"))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(tr("剩余雷数"))
+            .accessibilityValue(Minesweeper.minesLeftText(board.minesLeft))
+            Spacer(minLength: 6)
+            HStack(spacing: 5) {
+                Image(systemName: "stopwatch")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(board.status == .won ? MineStyle.win : Color.panelSecondary)
+                Text(verbatim: Minesweeper.clockText(board, now: now))
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.panelPrimary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            .lineLimit(1)
+            .fixedSize()
+            .help(tr("用时"))
+            Spacer(minLength: 6)
+            MineSoundToggle(on: context.isPreview || Minesweeper.soundOn(instance.config), diameter: 30) {
+                guard !context.isPreview else { return }
+                MinePlay.toggleSound(in: instance)
+            }
+        }
+        .padding(.leading, 4)
+    }
+
+    // MARK: 结果卡
+
+    /// 盖在棋盘上的玻璃卡：小熊猫表情、一句话、「查看棋盘」「再来一盘」。
+    private func resultCard(_ board: MineBoard, level: MineLevel, width: CGFloat) -> some View {
+        let now = Date().timeIntervalSince1970
+        let won = board.status == .won
+        let fresh = won && (board.endedAt.map { now - $0 < 3 } ?? false)
+        return VStack(spacing: 8) {
+            ZStack {
+                if won { MineConfetti(animated: fresh) }
+                PandaStateView(Minesweeper.pandaState(board.status), size: 76)
+            }
+            .frame(height: 80)
+            if let title = Minesweeper.resultTitle(board.status) {
+                Text(title)
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(won ? MineStyle.winText : Color.panelPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let detail = Minesweeper.resultDetail(board, rank: rank(board, level: level), now: now) {
+                Text(detail)
+                    .font(.system(size: 13, weight: won ? .semibold : .regular))
+                    .foregroundStyle(Color.panelSecondary)
+                    .monospacedDigit()
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 8) {
+                MineGlassButton(title: tr("查看棋盘")) {
+                    withAnimation(.snappy(duration: 0.22)) { reviewing = true }
+                }
+                MineOrangeButton(title: tr("再来一盘")) {
+                    reviewing = false
+                    MinePlay.restart(level, in: instance)
+                }
+            }
+            .padding(.top, 2)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 14)
+        .frame(width: min(width - 24, 280))
+        .readableGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+        .accessibilityElement(children: .contain)
+    }
+
+    // MARK: 本机纪录
+
+    /// 一条可展开的玻璃小区块：折叠时一行「本机纪录 初级 · 最佳 00:28」，展开后是前 5 名
+    /// （名次、用时、日期），这一局刚进榜的那行小熊猫橙描边高亮、写「本局」。
+    private func records(_ board: MineBoard, level: MineLevel) -> some View {
         let scores = context.isPreview ? [] : Minesweeper.leaderboard(instance.config, level: level)
         let mine = rank(board, level: level)
         return VStack(alignment: .leading, spacing: 4) {
             Button {
-                withAnimation(.snappy(duration: 0.25)) { showsBoard.toggle() }
+                withAnimation(.snappy(duration: 0.25)) { showsRecords.toggle() }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "trophy.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(MineStyle.flag)
-                    Text(tr("排行榜"))
                         .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(MineStyle.flag)
+                    Text(tr("本机纪录"))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(Color.panelPrimary)
-                    Text(level.title)
+                        .layoutPriority(1)
+                    Text(context.isPreview ? level.title : Minesweeper.recordSummary(instance.config, level: level))
                         .font(.system(size: 13))
                         .foregroundStyle(Color.panelTertiary)
+                        .monospacedDigit()
+                        .truncationMode(.middle)
                     Spacer(minLength: 6)
-                    if !showsBoard, let first = scores.first {
-                        Text(Minesweeper.scoreText(first.seconds))
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(Color.panelSecondary)
-                            .monospacedDigit()
-                    }
                     Image(systemName: "chevron.down")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Color.panelTertiary)
-                        .rotationEffect(.degrees(showsBoard ? 180 : 0))
+                        .rotationEffect(.degrees(showsRecords ? 180 : 0))
                 }
                 .lineLimit(1)
-                .padding(.horizontal, 10)
-                .frame(height: 30)
+                .padding(.horizontal, 12)
+                .frame(height: 34)
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .help(showsBoard ? tr("收起排行榜") : tr("展开排行榜"))
-            .accessibilityAddTraits(showsBoard ? .isSelected : [])
+            .help(showsRecords ? tr("收起本机纪录") : tr("展开本机纪录"))
+            .accessibilityAddTraits(showsRecords ? .isSelected : [])
 
-            if showsBoard {
+            if showsRecords {
                 Group {
                     if scores.isEmpty {
                         Text(tr("还没有成绩"))
@@ -234,8 +348,8 @@ struct MinesweeperDetail: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.panelFill))
-        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        .readableGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(.rect(cornerRadius: 14, style: .continuous))
     }
 
     private func scoreRow(_ score: MineScore, rank: Int, highlighted: Bool) -> some View {
@@ -288,29 +402,131 @@ struct MinesweeperDetail: View {
         return sameYear ? date.formatted(style.month(.abbreviated).day())
                         : date.formatted(style.year().month(.abbreviated).day())
     }
+}
 
-    // MARK: 读数
+// MARK: - 按钮
 
-    /// 剩余雷数最大最醒目（24pt 粗圆体，橙 / 绿 / 红三档），中间难度，右边计时和音效开关。
-    private func counters(_ board: MineBoard, level: MineLevel, now: Double) -> some View {
-        HStack(spacing: 6) {
-            MineCountReadout(minesLeft: board.minesLeft, size: 24)
-            Spacer(minLength: 4)
-            Text(level.detail)
-                .font(.system(size: 13))
-                .foregroundStyle(Color.panelTertiary)
+/// 小熊猫橙实心胶囊：逆时针箭头加字，字用按底色算出的深墨（白字在 #E8743B 上只有约 3:1）。
+struct MineOrangeButton: View {
+    var title: String
+    var action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .bold))
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .lineLimit(1)
+            .foregroundStyle(MineStyle.flagInk)
+            .padding(.horizontal, 13)
+            .frame(height: 32)
+            .background {
+                Capsule().fill(Color(hex: ShelfColor.redPanda.hex))
+                    .brightness(hovering ? 0.05 : 0)
+            }
+            .overlay { Capsule().strokeBorder(.white.opacity(0.28), lineWidth: 0.5) }
+            .shadow(color: Color(hex: ShelfColor.redPanda.hex).opacity(0.25), radius: 4, y: 2)
+            .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+    }
+}
+
+/// 带字的玻璃胶囊（结果卡上的「查看棋盘」）。
+struct MineGlassButton: View {
+    var title: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.panelPrimary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.9)
-            Spacer(minLength: 4)
-            MineReadout(symbol: "timer", value: "\(board.displaySeconds(now: now))",
-                        tint: board.status == .won ? MineStyle.win : nil, size: 15)
-                .fixedSize()
-                .help(tr("用时（秒）"))
-            MineSoundToggle(on: context.isPreview || Minesweeper.soundOn(instance.config), diameter: 28) {
-                guard !context.isPreview else { return }
-                MinePlay.toggleSound(in: instance)
+                .padding(.horizontal, 14)
+                .frame(height: 32)
+                .readableGlass(in: Capsule())
+                .overlay { Capsule().strokeBorder(Color.panelStroke, lineWidth: 0.5) }
+                .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - 彩纸
+
+/// 赢了时小熊猫身边一小把彩纸（9 片，位置固定不随机）。刚赢时往下飘一下再淡出，只出现一次；
+/// 减弱动态效果或不是刚赢时静止地停在原处。
+struct MineConfetti: View {
+    var animated: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var fallen = false
+
+    private static let pieces: [(x: CGFloat, y: CGFloat, w: CGFloat, angle: Double, hex: String)] = [
+        (-62, -26, 8, 24, "#E8743B"), (-44, 6, 6, -30, "#7DB6FF"), (-70, 22, 6, 50, "#F4C542"),
+        (58, -30, 8, -20, "#C9A4FF"), (70, 0, 6, 36, "#63D394"), (48, 26, 7, -48, "#FF7F75"),
+        (-24, -36, 5, 12, "#63D394"), (28, -38, 6, -64, "#F4C542"), (0, -42, 5, 40, "#FF7F75"),
+    ]
+
+    var body: some View {
+        let moving = animated && !reduceMotion
+        ZStack {
+            ForEach(Self.pieces.indices, id: \.self) { i in
+                let piece = Self.pieces[i]
+                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                    .fill(Color(hex: piece.hex))
+                    .frame(width: piece.w, height: piece.w * 1.8)
+                    .rotationEffect(.degrees(piece.angle + (fallen ? 90 : 0)))
+                    .offset(x: piece.x, y: piece.y + (fallen ? 26 : 0))
+                    .opacity(moving && fallen ? 0 : 0.9)
             }
         }
-        .padding(.leading, 4)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear {
+            guard moving else { return }
+            withAnimation(.easeIn(duration: 1.4).delay(0.15)) { fallen = true }
+        }
+    }
+}
+
+// MARK: - 面板底
+
+/// 玻璃上一层很淡的暖橙到雾紫，棋盘外两只低透明度爪印（右下、左上，落在卡片边距里）。
+/// 不铺实心底色、不发光；「降低透明度」时卡片换实心底，这层照旧很淡。
+struct MineWarmBackdrop: View {
+    @Environment(\.colorScheme) private var scheme
+
+    private static let paws: [(x: CGFloat, y: CGFloat, size: CGFloat, angle: Double)] = [
+        (0.968, 0.86, 13, 18), (0.032, 0.30, 11, -16),
+    ]
+
+    var body: some View {
+        let light = scheme == .light
+        GeometryReader { geo in
+            ZStack {
+                LinearGradient(colors: light
+                               ? [Color(hex: "#FFD7BF").opacity(0.24), Color(hex: "#DCD2F4").opacity(0.18)]
+                               : [Color(hex: "#9A4E2A").opacity(0.2), Color(hex: "#4A3C82").opacity(0.2)],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                ForEach(Self.paws.indices, id: \.self) { i in
+                    let paw = Self.paws[i]
+                    PawPrint()
+                        .fill(Color.panelPrimary.opacity(light ? 0.06 : 0.08))
+                        .frame(width: paw.size, height: paw.size)
+                        .rotationEffect(.degrees(paw.angle))
+                        .position(x: geo.size.width * paw.x, y: geo.size.height * paw.y)
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

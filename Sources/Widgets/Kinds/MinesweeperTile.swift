@@ -5,7 +5,7 @@ import SwiftUI
 //
 // 扩展栏卡片只有 58pt 高，9×9 的格子放进去每格不到 5pt，点不准，所以卡片上是这一局的
 // 缩略图、剩余雷数、计时和重开键，点卡片打开面板玩；能直接点着玩的是面板和桌面卡片
-// （小 160×160、中 340×160 放初级，大 340×340 放面板里选的难度，见 DesktopCardsGames）。
+// （小 160×160、中 340×160 放初级，大 340×340 放面板里选的难度、选大师时放中级，见 DesktopCardsGames）。
 // 规则和存法都在 Core 的 `Minesweeper`。
 
 struct MinesweeperTile: View {
@@ -68,7 +68,7 @@ struct MinesweeperTile: View {
         }
     }
 
-    /// 这一局的缩略图；结束时右下角坐一只小熊猫（赢了欢呼，输了被炸成小骷髅）。
+    /// 这一局的缩略图；结束时右下角坐一只小熊猫（赢了举爪庆祝，输了举爪提醒）。
     private func thumbnail(_ board: MineBoard, side: CGFloat) -> some View {
         MineThumbnail(board: board)
             .frame(width: side, height: side)
@@ -188,6 +188,10 @@ struct MineCell: View {
     var size: CGFloat
     var hovered = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 刚插上旗：小旗弹一下（放大再落回），减弱动态效果时不弹。
+    @State private var pop = false
+
     private var corner: CGFloat { max(2, size * 0.24) }
     private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: corner, style: .continuous) }
     /// 格子里的字不小于 13pt（全仓最小字号），大格子按格子放大。
@@ -200,17 +204,30 @@ struct MineCell: View {
             content
         }
         .frame(width: size, height: size)
+        .onChange(of: face) { old, new in
+            guard new == .flagged, old == .hidden, !reduceMotion else { return }
+            withAnimation(.spring(duration: 0.16, bounce: 0.6)) { pop = true }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.14))
+                withAnimation(.spring(duration: 0.22, bounce: 0.4)) { pop = false }
+            }
+        }
     }
 
     @ViewBuilder private var background: some View {
         switch face {
         case .hidden, .flagged, .wrongFlag:
             shape.fill(hovered ? MineStyle.hiddenHover : MineStyle.hiddenFill)
-                .overlay { shape.strokeBorder(MineStyle.hiddenEdge, lineWidth: 0.5) }
+                .overlay {
+                    // 悬停：提亮之外再描一圈小熊猫橙，指到哪一格一眼看得出。
+                    shape.strokeBorder(hovered ? MineStyle.flag.opacity(0.75) : MineStyle.hiddenEdge,
+                                       lineWidth: hovered ? max(1, min(1.5, size * 0.08)) : 0.5)
+                }
         case .open, .mine:
             shape.fill(MineStyle.openFill)
         case .exploded:
             shape.fill(MineStyle.boom)
+                .overlay { shape.strokeBorder(.white.opacity(0.55), lineWidth: 1) }
         }
     }
 
@@ -222,6 +239,8 @@ struct MineCell: View {
             Image(systemName: "flag.fill")
                 .font(.system(size: glyph, weight: .bold))
                 .foregroundStyle(MineStyle.flag)
+                .scaleEffect(pop ? 1.3 : 1, anchor: .bottom)
+                .offset(y: pop ? -size * 0.08 : 0)
         case .wrongFlag:
             Image(systemName: "flag.fill")
                 .font(.system(size: glyph, weight: .bold))
@@ -354,7 +373,7 @@ struct MineClickCatcher: NSViewRepresentable {
 
 // MARK: - 缩略图（不能点）
 
-/// 一局的缩略图：没揭开的浅块、揭开的凹下、旗子橙点、踩雷红块。用 Canvas 画，16×16 也不卡。
+/// 一局的缩略图：没揭开的浅块、揭开的凹下、旗子橙点、踩雷红块。用 Canvas 画，32×32 也不卡。
 struct MineThumbnail: View {
     var board: MineBoard
     @Environment(\.colorScheme) private var scheme
@@ -364,8 +383,9 @@ struct MineThumbnail: View {
             let dark = scheme == .dark
             let columns = CGFloat(board.columns), rows = CGFloat(board.rows)
             let pitch = min(size.width / columns, size.height / rows)
-            let gap = pitch >= 4 ? max(0.6, pitch * 0.14) : 0.4
-            let cell = pitch - gap
+            // 大师 32×32 塞进 44pt 每格不到 1.4pt：缝去掉、圆角去掉，按整片色块画，不出格。
+            let gap = pitch >= 4 ? max(0.6, pitch * 0.14) : (pitch >= 2 ? 0.4 : 0)
+            let cell = max(0.5, pitch - gap)
             let origin = CGPoint(x: (size.width - pitch * columns + gap) / 2,
                                  y: (size.height - pitch * rows + gap) / 2)
             let hiddenColor = dark ? Color.white.opacity(0.24) : Color.black.opacity(0.16)
@@ -374,7 +394,7 @@ struct MineThumbnail: View {
             for index in 0..<board.cellCount {
                 let r = CGFloat(index / board.columns), c = CGFloat(index % board.columns)
                 let rect = CGRect(x: origin.x + c * pitch, y: origin.y + r * pitch, width: cell, height: cell)
-                let path = Path(roundedRect: rect, cornerRadius: cell * 0.25)
+                let path = pitch >= 2 ? Path(roundedRect: rect, cornerRadius: cell * 0.25) : Path(rect)
                 let color: Color = switch board.face(index) {
                 case .hidden: hiddenColor
                 case .flagged, .wrongFlag: flagColor
@@ -438,70 +458,15 @@ struct MineRestartButton: View {
     }
 }
 
-/// 结果小熊猫：赢了欢呼，输了「被炸」成电子宠物用过的那只小骷髅（转圈眼、抱着奶瓶，
-/// 卡通不吓人），没结束时是平常的样子（Resources/Pet）。刚踩雷那一下放大再抖几下，
-/// 「减少动态效果」打开时只换图不动。
+/// 结果小熊猫：用六状态正式素材（Resources/PandaStates，经 PandaStateResolver），
+/// 没开始、进行中待机（偶尔眨眼），踩雷举爪提醒，赢了举爪庆祝（`Minesweeper.pandaState`）。
+/// 踩雷不再换成灰白的小骷髅。切到提醒、完成时轻轻弹一下，「减少动态效果」打开时只换图不动。
 struct MinePanda: View {
     var status: MineBoard.Status
     var size: CGFloat
 
-    @MainActor private static var cache: [String: NSImage] = [:]
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var blasts = 0
-
-    private struct Blast {
-        var scale: CGFloat = 1
-        var angle: Double = 0
-    }
-
-    private var name: String {
-        switch status {
-        case .won: "pet-panda-cheer"
-        case .lost: "pet-panda-skeleton"
-        case .ready, .playing: "pet-panda-idle"
-        }
-    }
-
-    /// 赢了、等开始走六状态正式素材（完成、待机），踩雷的骷髅照旧。
-    @MainActor private static func image(_ name: String) -> NSImage? {
-        let migrated = PandaStateResolver.migratedName(name, exists: { PandaStateArt.exists($0) })
-        if migrated != name { return PandaStateArt.image(migrated) }
-        if let cached = cache[name] { return cached }
-        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
-              let image = NSImage(contentsOf: url) else { return nil }
-        cache[name] = image
-        return image
-    }
-
     var body: some View {
-        if let image = Self.image(name) {
-            Image(nsImage: image)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)
-                .keyframeAnimator(initialValue: Blast(), trigger: blasts) { content, value in
-                    content
-                        .scaleEffect(value.scale)
-                        .rotationEffect(.degrees(value.angle))
-                } keyframes: { _ in
-                    KeyframeTrack(\.scale) {
-                        CubicKeyframe(1.28, duration: 0.09)
-                        SpringKeyframe(1, duration: 0.32, spring: .bouncy)
-                    }
-                    KeyframeTrack(\.angle) {
-                        LinearKeyframe(-11, duration: 0.05)
-                        LinearKeyframe(9, duration: 0.06)
-                        LinearKeyframe(-6, duration: 0.06)
-                        LinearKeyframe(4, duration: 0.06)
-                        LinearKeyframe(0, duration: 0.06)
-                    }
-                }
-                .onChange(of: status) { _, new in
-                    if new == .lost, !reduceMotion { blasts += 1 }
-                }
-                .accessibilityHidden(true)
-        }
+        PandaStateView(Minesweeper.pandaState(status), size: size)
     }
 }
 

@@ -98,6 +98,26 @@ final class DetailPanelFitTests: XCTestCase {
         }
     }
 
+    func testMinesweeperIsExemptOnlyOnMaster() {
+        XCTAssertFalse(DetailPanelFit.isCapExempt(.minesweeper), "整种不豁免")
+        var config = WidgetConfig()
+        XCTAssertFalse(DetailPanelFit.isCapExempt(.minesweeper, config: config), "初级受上限")
+        Minesweeper.select(.intermediate, in: &config)
+        XCTAssertFalse(DetailPanelFit.isCapExempt(.minesweeper, config: config), "中级受上限")
+        Minesweeper.select(.master, in: &config)
+        XCTAssertTrue(DetailPanelFit.isCapExempt(.minesweeper, config: config), "大师按屏幕算")
+        XCTAssertFalse(DetailPanelFit.isCapExempt(.weather, config: config), "别的小组件不看扫雷的键")
+        XCTAssertTrue(DetailPanelFit.isCapExempt(.calendar, config: WidgetConfig()))
+        // 豁免后仍不超过屏幕：上限就是按屏幕算的那个。
+        let anchor = CGPoint(x: 700, y: 80)
+        let limit = DetailPanelFit.heightLimit(edge: .bottom, anchor: anchor, visible: mainVisible, capped: false)
+        let placed = DetailPanelFit.place(edge: .bottom, anchor: anchor, natural: CGSize(width: 712, height: 2000),
+                                          visible: mainVisible, capped: false)
+        XCTAssertLessThanOrEqual(placed.frame.height, limit)
+        XCTAssertTrue(mainVisible.insetBy(dx: DetailPanelFit.margin, dy: DetailPanelFit.margin).contains(placed.frame))
+        XCTAssertTrue(placed.overflows, "放不下在面板里滚动")
+    }
+
     func testNoRoomAboveTheTileFallsBackToTheWholeScreen() {
         let anchor = CGPoint(x: 700, y: 850)
         XCTAssertEqual(DetailPanelFit.heightLimit(edge: .bottom, anchor: anchor, visible: mainVisible,
