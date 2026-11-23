@@ -48,6 +48,8 @@ final class WidgetDetailWindow {
                       content: CGFloat, footer: CGFloat,
                       viewports: DetailPanelFit.Viewports, overflows: Bool)?
     private var screenObserver: NSObjectProtocol?
+    /// 面板窗口挪动、变大小时检查是否还在屏幕里，见 `keepOnScreen`。
+    private var frameObservers: [NSObjectProtocol] = []
     /// 收起时的淡出领号，淡出途中又打开就作废，见 `PopupToggle.Fade`。
     private var fade = PopupToggle.Fade()
 
@@ -232,6 +234,23 @@ final class WidgetDetailWindow {
               content: current.content, footer: current.footer)
     }
 
+    /// 窗口一旦超出所在屏幕的可用区域（减边距），夹回去：高度不超过可用高度，
+    /// 位置整个落在里面。正常情况下 place() 已经算好，这里只是兜底。
+    private func keepOnScreen() {
+        guard let panel, isOpen, let current = fit,
+              let visible = visibleFrame(for: current.anchor) else { return }
+        let fixed = DetailPanelFit.contain(panel.frame, in: visible)
+        guard fixed != panel.frame else { return }
+        if fixed.height < panel.frame.height - 0.5, let shown {
+            // 太高：整套重算，滚动区和外观栏的高度跟着变，不是硬切窗口。
+            place(current.instance, context: shown.context, edge: shown.edge,
+                  anchor: current.anchor, width: current.width,
+                  content: current.content, footer: current.footer)
+            if let again = self.panel, DetailPanelFit.contain(again.frame, in: visible) == again.frame { return }
+        }
+        panel.setFrame(fixed, display: panel.isVisible)
+    }
+
     /// 显示器插拔、分辨率、菜单栏或系统程序坞变了：按新的可用区域重摆。
     private func screensChanged() {
         guard isOpen, let shown, let current = fit else { return }
@@ -406,6 +425,8 @@ final class WidgetDetailWindow {
         hosting = nil
         if let screenObserver { NotificationCenter.default.removeObserver(screenObserver) }
         screenObserver = nil
+        frameObservers.forEach(NotificationCenter.default.removeObserver)
+        frameObservers.removeAll()
     }
 
     private func existingOrNew() -> NSPanel {
@@ -415,7 +436,10 @@ final class WidgetDetailWindow {
                                                                   config: WidgetConfig()),
                                          context: WidgetContext(),
                                          edge: .bottom, session: session))
-        hosting.sizingOptions = [.intrinsicContentSize]
+        // 窗口大小只由 place() 按所在屏幕算出来定。原来是 .intrinsicContentSize：
+        // 内容的固有高度在自动布局里优先级比窗口“保持原尺寸”高，内容一变高，
+        // AppKit 就按原点往上把窗口撑高，顶上一截跑出屏幕，绕过了限高。
+        hosting.sizingOptions = []
 
         let panel = KeyablePanel(contentRect: .zero,
                                  styleMask: [.borderless, .nonactivatingPanel],
@@ -434,6 +458,13 @@ final class WidgetDetailWindow {
 
         self.panel = panel
         self.hosting = hosting
+        // 兜底：不管谁改了窗口（系统、自动布局、别的代码），只要超出所在屏幕
+        // 的可用区域就立刻拉回来，面板任何时候都不出屏幕。
+        frameObservers = [NSWindow.didResizeNotification, NSWindow.didMoveNotification].map { name in
+            NotificationCenter.default.addObserver(forName: name, object: panel, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.keepOnScreen() }
+            }
+        }
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main) { [weak self] _ in
@@ -483,6 +514,10 @@ struct WidgetDetailChrome: View {
     /// 回到顶上。
     @State private var scrollPosition = ScrollPosition(edge: .top)
     /// 滚动区两头的淡出，见 `DetailPanelFit.fades`。
+    /// 用户自己用触控板、滚轮或拖动滚过。没滚过时滚动区一直停在顶上：点面板
+    /// 里靠下的按钮（拔牙的牙、列表行）时系统会把它滚进视野，内容变高时也会
+    /// 跟着跑，顶上一截就像被切掉了。
+    @State private var userScrolled = false
     @State private var fadeTop = false
     @State private var fadeBottom = false
 
@@ -500,6 +535,9 @@ struct WidgetDetailChrome: View {
             .frame(width: WidgetDetail.width(instance), alignment: .leading)
             .background(surface(WidgetDetailBody.ground(instance, context)))
             .fixedSize()
+            // 窗口和内容万一差一点，顶边对齐：多出来的只会落在底下，标题一行
+            // 永远不被切掉。
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             // Rises a little and fades in. It used to scale up out of the
             // tile, which is an iOS sheet's entrance; a panel on this
             // platform arrives more or less where it means to stay.
@@ -508,6 +546,7 @@ struct WidgetDetailChrome: View {
             .onAppear { enter() }
             .onChange(of: session) { _, _ in
                 appeared = false
+                userScrolled = false
                 scrollPosition.scrollTo(edge: .top)
                 Task { @MainActor in enter() }
             }
@@ -564,6 +603,12 @@ struct WidgetDetailChrome: View {
                         }
                 }
                 .scrollPosition($scrollPosition)
+                .onScrollPhaseChange { _, phase in
+                    switch phase {
+                    case .interacting, .tracking, .decelerating: userScrolled = true
+                    default: break
+                    }
+                }
                 // 滚动区变矮（屏幕变了、外观栏展开）时保持顶边不动，不往中间跑。
                 .defaultScrollAnchor(.top)
                 .scrollBounceBehavior(.basedOnSize)
@@ -575,6 +620,9 @@ struct WidgetDetailChrome: View {
                     [geometry.contentOffset.y + geometry.contentInsets.top,
                      geometry.containerSize.height, geometry.contentSize.height]
                 } action: { _, values in
+                    if !userScrolled, values[0] > 0.5 {
+                        scrollPosition.scrollTo(edge: .top)
+                    }
                     let fades = DetailPanelFit.fades(offset: values[0], container: values[1],
                                                      content: values[2])
                     fadeTop = fades.top

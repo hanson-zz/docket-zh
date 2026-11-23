@@ -252,4 +252,21 @@ final class DetailPanelFitTests: XCTestCase {
         XCTAssertTrue(DetailPanelFit.fades(offset: 200, container: 500, content: 900) == (true, true))
         XCTAssertTrue(DetailPanelFit.fades(offset: 400, container: 500, content: 900) == (true, false))
     }
+
+    func testContainPullsATallPanelBackOnScreen() {
+        let visible = CGRect(x: 0, y: 0, width: 1440, height: 870)
+        let m = DetailPanelFit.margin
+        // 顶上出了屏幕
+        let out = DetailPanelFit.contain(CGRect(x: 600, y: 300, width: 380, height: 700), in: visible)
+        XCTAssertLessThanOrEqual(out.maxY, visible.maxY - m)
+        XCTAssertGreaterThanOrEqual(out.minY, visible.minY + m)
+        XCTAssertEqual(out.width, 380)
+        // 比屏幕还高
+        let tall = DetailPanelFit.contain(CGRect(x: 600, y: 0, width: 380, height: 2000), in: visible)
+        XCTAssertLessThanOrEqual(tall.height, visible.height - 2 * m)
+        XCTAssertTrue(visible.insetBy(dx: m, dy: m).contains(tall))
+        // 已经在里面：原样
+        let fine = CGRect(x: 600, y: 100, width: 380, height: 500)
+        XCTAssertEqual(DetailPanelFit.contain(fine, in: visible), fine)
+    }
 }

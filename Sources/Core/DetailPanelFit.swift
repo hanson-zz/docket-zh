@@ -135,6 +135,22 @@ public enum DetailPanelFit {
                          overflows: natural.height > size.height + 0.5)
     }
 
+    /// 把一个已经摆好的面板 frame 夹回屏幕可用区域（减 `margin`）：太高就压到
+    /// 可用高度，再把整个面板挪进来。已经在里面时原样返回。宽度不动。
+    public static func contain(_ frame: CGRect, in visible: CGRect,
+                               margin: CGFloat = margin) -> CGRect {
+        let inner = visible.insetBy(dx: margin, dy: margin)
+        guard inner.width > 0, inner.height > 0 else { return frame }
+        var out = frame
+        if out.height > inner.height {
+            // 压高度时保住顶边以下那部分的位置不乱跳：从可用区顶上往下排。
+            out.size.height = inner.height.rounded(.down)
+        }
+        out.origin.y = clamp(out.origin.y, low: inner.minY, high: inner.maxY - out.height)
+        out.origin.x = clamp(out.origin.x, low: inner.minX, high: inner.maxX - out.width)
+        return out
+    }
+
     /// 面板能用的屏幕区域：系统给的 visibleFrame，顶上再确保让出菜单栏。
     ///
     /// 菜单栏设成自动隐藏时，visibleFrame 会一直伸到屏幕顶边；面板的窗口层级
