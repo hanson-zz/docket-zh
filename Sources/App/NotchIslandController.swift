@@ -218,6 +218,12 @@ final class NotchIslandController {
         refresh()
     }
 
+    /// AI 对话面板打开、收起时叫这里：开着时展开的卡片马上收回，收起后马上恢复，不用等下一秒。
+    func aiPanelChanged() {
+        guard active else { return }
+        refresh()
+    }
+
     /// 「灵动提示」的会议倒计时换了一个（或没了）时叫这里，不用等下一秒。
     func meetingChanged() {
         guard active, settings.isOn(.meeting) else { return }
@@ -310,7 +316,10 @@ final class NotchIslandController {
             levelFlash: levelFlash,
             shiduoShelf: shiduoShelf)
         guard NotchIslandGate.visible(context) else { return hide(animated: true) }
-        guard let form = NotchIslandStack.form(ordered, hovering: wantsExpanded) else { return hide(animated: true) }
+        // AI 对话面板在这块屏幕上开着时只留收起态，不往下长进面板（`NotchIslandGate.expands`）。
+        let aiPanelOpen = AINotchController.shared.panelFrame.map { $0.intersects(screen.frame) } ?? false
+        let hovering = NotchIslandGate.expands(hovering: wantsExpanded, aiPanelOpen: aiPanelOpen)
+        guard let form = NotchIslandStack.form(ordered, hovering: hovering) else { return hide(animated: true) }
         show(form, on: screen)
     }
 

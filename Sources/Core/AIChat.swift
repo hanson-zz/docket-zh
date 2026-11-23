@@ -287,6 +287,36 @@ public enum AIChatContext {
         while let first = recent.first, first.role == .assistant { recent.removeFirst() }
         return recent
     }
+
+    /// 真正发给接口的几条：在 `history` 之前先去掉被换掉的问题，之后把还连着的问题合成一条。
+    ///
+    /// - 一个问题后面紧跟一条「已停止、一个字都没流出来」的回答，说明用户在它开口之前就换了
+    ///   问题（小组件连续提问会顶掉上一条，或者刚发出就点了停止）：这个问题不再带上，免得模型把
+    ///   旧问题和新问题一起答。最后一条（这次要问的）永远留着。
+    /// - 还连着的几个问题（前一个出错没答上）合成一条，中间空一行：有的接口（如 DeepSeek 的
+    ///   推理模型）不接受连续两条用户消息，直接回 400。
+    public static func outgoing(_ messages: [AIChatMessage], limit: Int = limit) -> [AIChatMessage] {
+        var kept: [AIChatMessage] = []
+        for (index, message) in messages.enumerated() {
+            if message.role == .user, index + 1 < messages.count {
+                let next = messages[index + 1]
+                if next.role == .assistant, next.status == .stopped,
+                   next.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    continue
+                }
+            }
+            kept.append(message)
+        }
+        var merged: [AIChatMessage] = []
+        for message in history(kept, limit: limit) {
+            if message.role == .user, let last = merged.last, last.role == .user {
+                merged[merged.count - 1].text = last.text + "\n\n" + message.text
+            } else {
+                merged.append(message)
+            }
+        }
+        return merged
+    }
 }
 
 // MARK: - 请求

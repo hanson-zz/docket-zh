@@ -45,6 +45,9 @@ final class AINotchController {
 
     var isOpen: Bool { panel?.isVisible == true && panelModel.isOpen }
 
+    /// 完整对话面板开着时它在屏幕上的位置，收起时 nil。刘海小岛按它决定悬停时展不展开。
+    var panelFrame: CGRect? { isOpen ? panel?.frame : nil }
+
     /// 快捷结果卡片显示着（刘海下或备用浮窗）。
     var isQuickOpen: Bool { quickModel.target != nil && quickWindow?.isVisible == true }
 
@@ -266,6 +269,7 @@ final class AINotchController {
         panel.orderFrontRegardless()
         panel.makeKey()
         watchForDismissal()
+        NotchIslandController.shared.aiPanelChanged()
     }
 
     func close() {
@@ -273,6 +277,7 @@ final class AINotchController {
         panelModel.isOpen = false
         AIChatCenter.shared.holdNoticeOnce = false
         stopWatching()
+        NotchIslandController.shared.aiPanelChanged()
         guard let panel, panel.isVisible else { return }
         let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         NSAnimationContext.runAnimationGroup { context in

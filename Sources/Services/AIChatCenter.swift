@@ -262,7 +262,8 @@ final class AIChatCenter {
 
     private func start(_ service: AIService) {
         let id = service.id
-        let history = AIChatContext.history(conversations[id] ?? [])
+        // 被换掉的旧问题不带上，连着的问题合成一条（见 `AIChatContext.outgoing`）。
+        let history = AIChatContext.outgoing(conversations[id] ?? [])
         let reply = AIChatMessage(role: .assistant, text: "", status: .streaming)
         conversations[id, default: []].append(reply)
         guard let endpoint = self.endpoint(for: service) else { return finish(id, reply.id, .failed(AIChatFailure.missingEndpoint.message)) }

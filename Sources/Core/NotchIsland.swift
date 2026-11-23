@@ -274,6 +274,13 @@ public enum NotchIslandGate {
         context.active && !context.presenting && !context.fullscreen && !context.messageCard
             && !context.plugAnimation && !context.levelFlash && !context.shiduoShelf
     }
+
+    /// 指针停在小岛上时展不展开成卡片。码头的 AI 对话面板在同一块屏幕上开着时不展开，只留
+    /// 收起态：面板打开时是按收起态的小岛摆在它下面的，展开的卡片往下长会压进面板（两边都在
+    /// 菜单栏层，谁盖谁看先后），按钮还会被面板挡住。面板收起后指针还在小岛上就照常展开。
+    public static func expands(hovering: Bool, aiPanelOpen: Bool) -> Bool {
+        hovering && !aiPanelOpen
+    }
 }
 
 // MARK: - 给拾掇的暂存架让位
