@@ -685,7 +685,7 @@ final class MinesweeperTests: XCTestCase {
     func testCatalogEntry() throws {
         let entry = try XCTUnwrap(WidgetCatalog.entry(.minesweeper))
         XCTAssertEqual(entry.name, "扫雷")
-        XCTAssertEqual(entry.category, .tools)
+        XCTAssertEqual(entry.category, .games)
         XCTAssertTrue(entry.selfContained)
         XCTAssertTrue(WidgetCatalog.configurableKeys(.minesweeper).isEmpty, "局和成绩不进设置页")
         XCTAssertFalse(ProFeatures.isProKind(.minesweeper), "免费")

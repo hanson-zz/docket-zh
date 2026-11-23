@@ -424,6 +424,11 @@ public enum WidgetCatalog {
         Entry(kind: .pullTooth, name: tr("拔牙"), category: .games, defaults: c([:]),
               variants: [], supportsCompact: false, selfContained: true),
 
+        // 柴犬翻翻乐（免费）：进行中的盘、最佳纪录和音效开关都由卡片和面板写进配置
+        // （ShibaMatch 的 game.*、best.*、sound），不放进默认值，设置页不列。
+        Entry(kind: .shibaMatch, name: tr("柴犬翻翻乐"), category: .games, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // 卜卦（免费）：今天的签、起卦记录、解忧书翻过的页、停在哪页和音效开关都由卡片和面板
         // 写进配置（Divination 的 stickDay、stick、history、casting、bookRecent、page、sound，
         // 每日一签的 sign、stickLog、stickFavs 和皮肤 tubeSkin、coinSkin），不放进默认值；
@@ -726,7 +731,7 @@ public enum WidgetCatalog {
              .translate,
              .github,
              .microphone, .gauges,
-             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper, .pullTooth, .divination:
+             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper, .pullTooth, .divination, .shibaMatch:
             nil
         }
     }
@@ -968,7 +973,7 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .emoji, .appSwitcher, .bookmarks, .calculator, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper, .pullTooth, .divination:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper, .pullTooth, .divination, .shibaMatch:
             nil
         }
     }
@@ -1054,6 +1059,9 @@ public enum WidgetCatalog {
         // 拔牙：河马缩略图、已拔几颗和最高连拔、重开键。
         case .pullTooth:
             return CGSize(width: PullTooth.tileWidth, height: PullTooth.tileHeight)
+        // 柴犬翻翻乐：柴犬、状态和「继续游戏」入口，不在卡片上玩。
+        case .shibaMatch:
+            return CGSize(width: ShibaMatch.tileWidth, height: ShibaMatch.tileHeight)
         // 卜卦：小熊猫、今日签级和签号。
         case .divination:
             return CGSize(width: Divination.tileWidth, height: Divination.tileHeight)
@@ -1319,6 +1327,9 @@ public enum WidgetCatalog {
         // 拔牙：缩略图加两行读数。
         case .pullTooth:
             return PullTooth.columnHeight
+        // 柴犬翻翻乐：柴犬在上，进度和入口在下。
+        case .shibaMatch:
+            return ShibaMatch.columnHeight
         // 卜卦：小熊猫在上，签级在下。
         case .divination:
             return Divination.columnHeight

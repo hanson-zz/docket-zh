@@ -45,6 +45,7 @@ final class WidgetLibraryGroupsTests: XCTestCase {
         XCTAssertEqual(category(.appSwitcher), .appsAndFolders)
         XCTAssertEqual(category(.minesweeper), .games)
         XCTAssertEqual(category(.pullTooth), .games)
+        XCTAssertEqual(category(.shibaMatch), .games)
         XCTAssertEqual(category(.shortcut), .appsAndFolders)
         XCTAssertEqual(category(.slacker), .time)
         XCTAssertEqual(category(.lunar), .time)

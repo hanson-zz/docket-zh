@@ -883,6 +883,8 @@ enum WidgetDetail {
         case .minesweeper: CGFloat(Minesweeper.panelWidth)
         // 拔牙：380（效果图里小熊猫占满面板宽，每颗牙点击区至少 24pt），按卡片真实内容宽画（PullTooth.panelContentWidth）。
         case .pullTooth: CGFloat(PullTooth.panelWidth)
+        // 柴犬翻翻乐：和同组的扫雷一样 340，3 行 4 列按卡片真实内容宽排（ShibaMatch.panelContentWidth）。
+        case .shibaMatch: CGFloat(ShibaMatch.panelWidth)
         // 卜卦：和同组的扫雷一样 340，内容按卡片真实内容宽排（Divination.panelContentWidth）。
         case .divination: CGFloat(Divination.panelWidth)
         // 相册按第二批效果图改成 320；标准、宽幅两套面板一样宽，换样式面板不跳。

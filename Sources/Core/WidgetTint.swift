@@ -292,6 +292,8 @@ public enum WidgetTint {
         case .pullTooth: Palette("#E5487A", "#9C88D8")
         // 卜卦：签级的喜庆红，对比色是铜钱金。
         case .divination: Palette("#C8382E", "#D4A63A")
+        // 柴犬翻翻乐：柴犬的橙，对比色是网球的黄绿。
+        case .shibaMatch: Palette("#E8963A", "#8DBA3C")
         }
     }
 

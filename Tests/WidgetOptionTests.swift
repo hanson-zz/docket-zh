@@ -134,6 +134,8 @@ final class WidgetOptionTests: XCTestCase {
             .pullTooth: [],
             // 卜卦：签、起卦记录、解忧书、页和音效开关由卡片和面板写，设置页不列（Divination）。
             .divination: [],
+            // 柴犬翻翻乐：盘、最佳纪录和音效开关由卡片和面板写，设置页不列（ShibaMatch）。
+            .shibaMatch: [],
             .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
 

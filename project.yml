@@ -122,6 +122,13 @@ targets:
         optional: true
         excludes:
           - ".gitkeep"
+      # 柴犬翻翻乐的牌面图（match-<shiba|paw|bone|house|ball|bowl>.png，可带 @2x），作者之后画，
+      # 缺图时代码回退（柴犬脸用柴犬母版小头，其余用系统彩色 emoji）；规则同上。
+      - path: Resources/ShibaMatch
+        buildPhase: resources
+        optional: true
+        excludes:
+          - ".gitkeep"
       # 桌面伙伴的图（desk-<吉祥物>-<动作>.png，可带 @2x）。指针旁扒边探头用这里的 peek（遮罩边在前爪下沿，见 DesktopPetPointerPeek.cut），缺图时退到 Resources/Pet/sprites 的整张坐姿；桌宠本体换吉祥物的图在 Resources/Pet/sprites（pet-sprite-<吉祥物>-<动作>.png），
       # 缺图时回退专注面板的站姿图。
       - path: Resources/DeskCompanion

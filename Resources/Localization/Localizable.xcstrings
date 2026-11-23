@@ -1992,6 +1992,39 @@
         }
       }
     },
+    "%@ 步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ moves"
+          }
+        }
+      }
+    },
+    "%@ 步 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ moves · %@"
+          }
+        }
+      }
+    },
+    "%@ 步 · 用时 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ moves · Time %@"
+          }
+        }
+      }
+    },
     "%@ 毫升" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2098,6 +2131,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@, Pro"
+          }
+        }
+      }
+    },
+    "%@，已配对" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, matched"
           }
         }
       }
@@ -2553,6 +2597,17 @@
         }
       }
     },
+    "全部配对完成！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All pairs matched!"
+          }
+        }
+      }
+    },
     "八爪鱼" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2571,6 +2626,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compatibility and diagnostics"
+          }
+        }
+      }
+    },
+    "再来" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Again"
+          }
+        }
+      }
+    },
+    "再点一次重新开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Click again to restart"
           }
         }
       }
@@ -2839,6 +2916,17 @@
         }
       }
     },
+    "完成 · %@ 步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done · %@ moves"
+          }
+        }
+      }
+    },
     "小熊猫滑下来了" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2960,6 +3048,17 @@
         }
       }
     },
+    "已配对" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matched"
+          }
+        }
+      }
+    },
     "废纸篓救回" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3011,6 +3110,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Start Asking"
+          }
+        }
+      }
+    },
+    "开始游戏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play"
           }
         }
       }
@@ -3356,6 +3466,17 @@
         }
       }
     },
+    "新纪录！" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New best!"
+          }
+        }
+      }
+    },
     "日历图标换成今天的星期和日期。下一场日程开始前一段时间里，图标下部的液面随剩余时间从满降到底，底部小胶囊写倒计时，剩 5 分钟变暖橙，到点写「即将开始」「进行中」，随后整枚图标顺时针转一圈换到下一场；减弱动态效果时不转直接换。悬停显示今天剩下的日程。只读今天的定时日程（不含全天和已拒绝的），不读备注、不上传；没有日历权限或今天没有日程时图标保持原样。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3363,6 +3484,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The Calendar icon shows today's weekday and date. Before your next event, a liquid level in the lower part drains from full to empty as the start approaches, with a countdown in a small capsule at the bottom that turns warm orange in the last 5 minutes and reads Starting, then In progress. The whole icon then turns once clockwise to the next event; with Reduce Motion on, it switches without turning. Hover to see the rest of today's events. Only today's timed events are read (no all-day or declined ones), never notes, and nothing is uploaded. Without calendar access, or with nothing left today, the icon stays as it is."
+          }
+        }
+      }
+    },
+    "星星" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Star"
+          }
+        }
+      }
+    },
+    "最佳 %@ 步" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best %@ moves"
+          }
+        }
+      }
+    },
+    "最佳 暂无" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best: none"
           }
         }
       }
@@ -3389,6 +3543,17 @@
         }
       }
     },
+    "未开始" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not started"
+          }
+        }
+      }
+    },
     "未生效" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3407,6 +3572,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compatibility and diagnostics"
+          }
+        }
+      }
+    },
+    "柴犬翻翻乐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shiba Match"
+          }
+        }
+      }
+    },
+    "柴犬翻翻乐，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shiba Match, %@"
+          }
+        }
+      }
+    },
+    "树叶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leaf"
           }
         }
       }
@@ -3440,6 +3638,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previewing"
+          }
+        }
+      }
+    },
+    "步数 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moves %@"
           }
         }
       }
@@ -3506,6 +3715,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Smoked Glass"
+          }
+        }
+      }
+    },
+    "爪印" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paw print"
+          }
+        }
+      }
+    },
+    "爱心" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heart"
+          }
+        }
+      }
+    },
+    "牌桌，%@ 行 %@ 列" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Card table, %@ rows, %@ columns"
+          }
+        }
+      }
+    },
+    "狗窝" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doghouse"
           }
         }
       }
@@ -3697,6 +3950,28 @@
         }
       }
     },
+    "第 %@ 行第 %@ 张，%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Row %@, card %@, %@"
+          }
+        }
+      }
+    },
+    "第 %@ 行第 %@ 张，未翻开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Row %@, card %@, face down"
+          }
+        }
+      }
+    },
     "管理更多模型" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3770,6 +4045,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ask More"
+          }
+        }
+      }
+    },
+    "继续游戏" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "网球" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tennis ball"
           }
         }
       }
@@ -4016,6 +4313,17 @@
         }
       }
     },
+    "还没有完成过" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not finished yet"
+          }
+        }
+      }
+    },
     "这一轮你手动停了或换了声音，下一轮再自动播放" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4049,6 +4357,17 @@
         }
       }
     },
+    "进行中 · 已配对 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In progress · %@ matched"
+          }
+        }
+      }
+    },
     "连响" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4078,6 +4397,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fill this one in again"
+          }
+        }
+      }
+    },
+    "铃铛" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bell"
           }
         }
       }
@@ -4419,6 +4749,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Music playing: %@"
+          }
+        }
+      }
+    },
+    "饭碗" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food bowl"
+          }
+        }
+      }
+    },
+    "骨头" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bone"
           }
         }
       }

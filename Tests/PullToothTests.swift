@@ -490,7 +490,7 @@ final class PullToothTests: XCTestCase {
         let entry = WidgetCatalog.entry(.pullTooth)
         XCTAssertNotNil(entry)
         XCTAssertEqual(entry?.name, "拔牙")
-        XCTAssertEqual(entry?.category, .tools)
+        XCTAssertEqual(entry?.category, .games)
         XCTAssertEqual(entry?.selfContained, true)
         XCTAssertTrue(WidgetLibraryGroups.isNew(.pullTooth))
         XCTAssertFalse(ProFeatures.isProKind(.pullTooth), "免费")

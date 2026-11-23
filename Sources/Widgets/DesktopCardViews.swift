@@ -168,6 +168,7 @@ enum DesktopCardLayouts {
         DesktopCardsFiles.view,
         DesktopCardsGames.view,
         DesktopCardsGames.toothView,
+        DesktopCardsGames.shibaView,
         DesktopCardsGames.divinationView,
     ]
 
@@ -180,6 +181,7 @@ enum DesktopCardLayouts {
         .union(DesktopCardsFilesPlan.kinds)
         .union(DesktopCardsGamesPlan.kinds)
         .union(DesktopCardsToothPlan.kinds)
+        .union(DesktopCardsShibaPlan.kinds)
         .union(DesktopCardsDivinationPlan.kinds)
 
     static func view(_ widget: WidgetInstance, size: DesktopPinSize, now: Date) -> AnyView? {

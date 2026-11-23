@@ -282,6 +282,7 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case minesweeper
     case pullTooth = "pull-tooth"
     case divination
+    case shibaMatch = "shiba-match"
 }
 
 /// What a widget opens when its card is clicked.
