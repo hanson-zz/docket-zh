@@ -139,17 +139,12 @@ struct VinylStageView<Cover: View>: View {
 
 /// 唱片本身：黑色底、一圈圈细纹路、两道分轨的空白、中心标签。整张画好后
 /// 只转不重画。
-private struct VinylDisc: View, Equatable {
+private struct VinylDisc: View {
     var radius: CGFloat
     var label: CGFloat
     var artwork: NSImage?
     var labelColor: Color
     var scale: CGFloat
-
-    static func == (a: VinylDisc, b: VinylDisc) -> Bool {
-        a.radius == b.radius && a.label == b.label && a.artwork === b.artwork
-            && a.labelColor == b.labelColor && a.scale == b.scale
-    }
 
     var body: some View {
         ZStack {
