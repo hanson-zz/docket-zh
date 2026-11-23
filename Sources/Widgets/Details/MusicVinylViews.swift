@@ -142,22 +142,41 @@ struct VinylStageView: View {
                     .frame(width: platter * 2, height: platter * 2)
                     .shadow(color: .black.opacity(dark ? 0.55 : 0.22), radius: 12 * s, y: 8 * s)
                     .position(x: center.x, y: center.y + CGFloat(stage.thickness))
-                // 唱盘金属边：斜向渐变加一圈高光。
-                Circle()
-                    .fill(AngularGradient(colors: platterMetal, center: .center, angle: .degrees(-35)))
-                    .overlay(Circle().strokeBorder(.white.opacity(dark ? 0.22 : 0.75), lineWidth: 0.8))
-                    .overlay(Circle().inset(by: 3 * s).strokeBorder(.black.opacity(dark ? 0.35 : 0.12), lineWidth: 0.6))
-                    .frame(width: platter * 2, height: platter * 2)
-                    .position(center)
+                // 唱盘金属边：有写实素材用素材（拉丝金属），没有时斜向渐变加一圈高光。
+                Group {
+                    if let art = VinylArt.platter {
+                        Image(nsImage: art)
+                            .resizable()
+                            .interpolation(.high)
+                            .brightness(dark ? -0.12 : 0)
+                    } else {
+                        Circle()
+                            .fill(AngularGradient(colors: platterMetal, center: .center, angle: .degrees(-35)))
+                            .overlay(Circle().strokeBorder(.white.opacity(dark ? 0.22 : 0.75), lineWidth: 0.8))
+                            .overlay(Circle().inset(by: 3 * s).strokeBorder(.black.opacity(dark ? 0.35 : 0.12), lineWidth: 0.6))
+                    }
+                }
+                .frame(width: platter * 2, height: platter * 2)
+                .position(center)
                 VinylDisc(radius: r, label: CGFloat(stage.label), artwork: artwork,
-                          labelColor: labelColor, scale: s)
+                          labelColor: labelColor, scale: s, texture: VinylArt.disc)
                     .frame(width: r * 2, height: r * 2)
                     .rotationEffect(.degrees(frame.discAngle))
                     .position(center)
                 // 唱片表面的反光跟着灯，不跟着唱片转。
-                VinylSheen(radius: r, label: CGFloat(stage.label), dark: dark)
-                    .frame(width: r * 2, height: r * 2)
-                    .position(center)
+                Group {
+                    if let art = VinylArt.sheen {
+                        Image(nsImage: art)
+                            .resizable()
+                            .interpolation(.high)
+                            .opacity(dark ? 0.85 : 0.7)
+                            .allowsHitTesting(false)
+                    } else {
+                        VinylSheen(radius: r, label: CGFloat(stage.label), dark: dark)
+                    }
+                }
+                .frame(width: r * 2, height: r * 2)
+                .position(center)
                 // 中心轴。
                 Circle()
                     .fill(RadialGradient(colors: [Color(white: 0.98), Color(white: 0.5)],
@@ -203,6 +222,18 @@ struct VinylStageView: View {
     }
 }
 
+/// 黑胶模式的写实素材（Resources/Vinyl，用户按效果图用 ChatGPT 画的透明 PNG）。缺哪张就回退那一部分的代码画法。
+enum VinylArt {
+    static var disc: NSImage? { PandaStateArt.image("vinyl-disc") }
+    static var sheen: NSImage? { PandaStateArt.image("vinyl-sheen") }
+    static var platter: NSImage? { PandaStateArt.image("vinyl-platter") }
+    static var tonearm: NSImage? { PandaStateArt.image("vinyl-tonearm") }
+    /// 唱臂素材（170×887）里转轴圆心和唱针尖的位置，按图片宽高的比例。
+    static let armPivot = (x: 0.5, y: 165.0 / 887.0)
+    static let armTip = 874.0 / 887.0
+    static let armAspect = 170.0 / 887.0
+}
+
 /// 唱片本身：黑色底、一圈圈细纹路和压纹、两道分轨的空白、中心圆形封面标签。
 /// 整张画好后只转不重画。
 private struct VinylDisc: View {
@@ -211,9 +242,28 @@ private struct VinylDisc: View {
     var artwork: NSImage?
     var labelColor: Color
     var scale: CGFloat
+    /// 写实唱片素材（音轨纹理、外圈光边，中心 34% 透明），有它就不用代码画纹路。
+    var texture: NSImage?
 
     var body: some View {
         ZStack {
+            if let texture {
+                Image(nsImage: texture)
+                    .resizable()
+                    .interpolation(.high)
+                // 素材中心是空的：垫一圈深色，标签外缘和音轨之间不露底。
+                Circle()
+                    .fill(Color(white: 0.06))
+                    .frame(width: label * 2 + 6 * scale, height: label * 2 + 6 * scale)
+            } else {
+                grooves
+            }
+            labelView
+        }
+        .drawingGroup()
+    }
+
+    private var grooves: some View {
             Canvas { context, size in
                 let c = CGPoint(x: size.width / 2, y: size.height / 2)
                 func ring(_ r: CGFloat) -> Path {
@@ -242,6 +292,9 @@ private struct VinylDisc: View {
                 context.stroke(ring(label + 3 * scale), with: .color(.black.opacity(0.65)), lineWidth: 3 * scale)
                 context.stroke(ring(label + 4.8 * scale), with: .color(.white.opacity(0.07)), lineWidth: 0.6)
             }
+    }
+
+    private var labelView: some View {
             Group {
                 if let artwork {
                     Image(nsImage: artwork)
@@ -268,8 +321,6 @@ private struct VinylDisc: View {
             .frame(width: label * 2, height: label * 2)
             .clipShape(Circle())
             .overlay(Circle().strokeBorder(.black.opacity(0.3), lineWidth: 0.6))
-        }
-        .drawingGroup()
     }
 }
 
@@ -357,6 +408,46 @@ private struct VinylTonearm: View {
         let base = CGFloat(stage.pivotBase)
         let raise = CGFloat(min(1, max(0, lift)))
         ZStack(alignment: .topLeading) {
+            if let art = VinylArt.tonearm {
+                photoArm(art, pivot: pivot, length: length, raise: raise, s: s)
+            } else {
+                drawnArm(pivot: pivot, length: length, base: base, raise: raise, s: s,
+                         top: top, frameWidth: frameWidth, frameHeight: frameHeight)
+            }
+        }
+        .frame(width: CGFloat(stage.width), height: CGFloat(stage.height), alignment: .topLeading)
+        .allowsHitTesting(false)
+    }
+
+    /// 写实唱臂素材：竖着画，转轴在 `VinylArt.armPivot`，唱针尖在 `VinylArt.armTip`；
+    /// 按 Core 的唱臂长度缩放，让唱针尖正好落在 `MusicVinyl.stylus` 算的点上。
+    @ViewBuilder
+    private func photoArm(_ art: NSImage, pivot: CGPoint, length: CGFloat, raise: CGFloat, s: CGFloat) -> some View {
+        let height = length / CGFloat(VinylArt.armTip - VinylArt.armPivot.y)
+        let width = height * CGFloat(VinylArt.armAspect)
+        let anchor = UnitPoint(x: VinylArt.armPivot.x, y: VinylArt.armPivot.y)
+        // 支架：唱臂收起时搭在这里。
+        Capsule()
+            .fill(metal(horizontal: false))
+            .frame(width: 11 * s, height: 7 * s)
+            .shadow(color: .black.opacity(0.28), radius: 1.5 * s, y: 1 * s)
+            .position(x: pivot.x, y: pivot.y + length * 0.68)
+        Image(nsImage: art)
+            .resizable()
+            .interpolation(.high)
+            .brightness(dark ? -0.08 : 0)
+            .frame(width: width, height: height)
+            .scaleEffect(1 + 0.015 * raise, anchor: anchor)
+            .shadow(color: .black.opacity(0.32 - 0.1 * raise), radius: (1.5 + 2.5 * raise) * s,
+                    x: (1 + 3 * raise) * s, y: (1.5 + 4 * raise) * s)
+            .rotationEffect(.degrees(angle), anchor: anchor)
+            .position(x: pivot.x + width * (0.5 - anchor.x), y: pivot.y + height * (0.5 - anchor.y))
+    }
+
+    /// 没有素材时的代码画法（原样保留）。
+    @ViewBuilder
+    private func drawnArm(pivot: CGPoint, length: CGFloat, base: CGFloat, raise: CGFloat, s: CGFloat,
+                          top: CGFloat, frameWidth: CGFloat, frameHeight: CGFloat) -> some View {
             // 支架：唱臂收起时搭在这里。
             Capsule()
                 .fill(metal(horizontal: false))
@@ -389,9 +480,6 @@ private struct VinylTonearm: View {
                 .frame(width: base * 0.95, height: base * 0.95)
                 .shadow(color: .black.opacity(0.3), radius: 1, y: 0.5)
                 .position(pivot)
-        }
-        .frame(width: CGFloat(stage.width), height: CGFloat(stage.height), alignment: .topLeading)
-        .allowsHitTesting(false)
     }
 
     /// 竖着画：配重在转轴上面，细管往下，最下面是唱头，唱针在底边中点。
