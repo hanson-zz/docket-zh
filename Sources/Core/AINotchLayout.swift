@@ -229,21 +229,33 @@ public enum AINotchLayout {
         let base = panelFrame(below: entry, screen: screen, size: size)
         let hits = blockers.filter { overlaps($0, base) }
         guard let lowest = hits.map(\.minY).min() else { return (base, false) }
-        var frame = base
-        frame.origin.y = max(lowest - blockerGap - size.height, screen.minY + margin)
-        return (frame, true)
+        return (fitted(base, top: lowest - blockerGap, screen: screen), true)
+    }
+
+    /// 让开遮挡后面板最矮多高：再矮输入条和一两条消息就放不下了。
+    public static let minPanelHeight: CGFloat = 300
+
+    /// 面板顶边放在 `top`，往下摆；下面空间不够原高时先缩短面板（消息列表在面板里滚动），
+    /// 最矮到 `minPanelHeight`，不再一味往下挪到底边再被夹回来压住小岛。小屏、放大显示或
+    /// 刘海上同时有几个活动时会走到这里。连最矮都放不下（极端缩放）才贴底边。
+    static func fitted(_ frame: CGRect, top: CGFloat, screen: CGRect) -> CGRect {
+        let floor = screen.minY + margin
+        let room = top - floor
+        var out = frame
+        out.size.height = min(frame.height, max(minPanelHeight, room))
+        out.origin.y = max(top - out.height, floor)
+        return out
     }
 
     /// 面板已经开着、刘海上后来才出现或变高的东西压到它（典型是面板打开以后才出现的倒计时小岛，
     /// 下面那条约 26 点高的剩余时间会伸进面板顶上一截）：面板往下挪到它下沿下面，留 `blockerGap`，
-    /// 底边不出屏幕（`margin`）。只往下挪、不往上回：小岛闪一下收起又出现时面板不跟着上下跳，
+    /// 底边不出屏幕（`margin`），空间不够时缩短面板（`fitted`）。只往下挪、不往上回：小岛闪一下收起又出现时面板不跟着上下跳，
     /// 收起再打开时按当时的情况重新摆（`placement`）。不用挪时 nil。
     public static func avoidance(current: CGRect, screen: CGRect, avoiding blockers: [CGRect]) -> CGRect? {
         let hits = blockers.filter { overlaps($0, current) }
         guard let lowest = hits.map(\.minY).min() else { return nil }
-        var frame = current
-        frame.origin.y = max(lowest - blockerGap - current.height, screen.minY + margin)
-        return frame.origin.y < current.origin.y ? frame : nil
+        let frame = fitted(current, top: lowest - blockerGap, screen: screen)
+        return frame.maxY < current.maxY ? frame : nil
     }
 
     /// 展开的对话卡片：在入口正下方，水平对着入口中间，超出屏幕时往里收。刘海入口时

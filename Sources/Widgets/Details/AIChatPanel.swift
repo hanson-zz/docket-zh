@@ -199,7 +199,9 @@ struct AIChatPanelView: View {
 
     var body: some View {
         content
-            .frame(width: AINotchLayout.panelSize.width, height: AINotchLayout.panelSize.height)
+            // 高度跟窗口走：小屏上为了让开刘海小岛面板会被缩短（AINotchLayout.fitted），消息在里面滚动。
+            .frame(width: AINotchLayout.panelSize.width)
+            .frame(maxHeight: AINotchLayout.panelSize.height)
             .background { ReadableGlass(shape: Self.shape) }
             .clipShape(Self.shape)
             .scaleEffect(appeared ? 1 : 0.94, anchor: .top)

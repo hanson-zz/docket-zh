@@ -328,6 +328,8 @@ final class AINotchController {
                                                                       close: { [weak self] in self?.close() }))
         hosting.frame = CGRect(origin: .zero, size: size)
         hosting.autoresizingMask = [.width, .height]
+        // 窗口大小由 AINotchLayout 定（小屏会缩短），不让 SwiftUI 的内容尺寸反过来撑住窗口。
+        hosting.sizingOptions = []
         let panel = KeyablePanel(contentRect: CGRect(origin: .zero, size: size),
                                  styleMask: [.borderless, .nonactivatingPanel],
                                  backing: .buffered, defer: false)

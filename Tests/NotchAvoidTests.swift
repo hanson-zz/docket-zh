@@ -73,6 +73,33 @@ final class NotchAvoidTests: XCTestCase {
         XCTAssertNil(AINotchLayout.avoidance(current: moved, screen: laptop, avoiding: [huge]), "到底了不再反复挪")
     }
 
+    // MARK: 小屏：空间不够时缩短面板，不压回小岛
+
+    /// 13 寸放大显示（「更大字体」档）一类的矮屏幕：菜单栏下只剩约 600 多点。
+    private let shortScreen = CGRect(x: 0, y: 0, width: 1024, height: 640)
+
+    func testShortScreenShrinksPanelInsteadOfOverlapping() throws {
+        let entry = CGRect(x: 420, y: 608, width: 185, height: 32)
+        let panel = AINotchLayout.placement(below: entry, screen: shortScreen, avoiding: []).frame
+        let island = CGRect(x: 380, y: 360, width: 265, height: 280) // 几个活动叠在一起的高小岛
+        let moved = try XCTUnwrap(AINotchLayout.avoidance(current: panel, screen: shortScreen, avoiding: [island]))
+        XCTAssertEqual(moved.maxY, island.minY - AINotchLayout.blockerGap, "顶边贴着小岛下沿，不压住它")
+        XCTAssertLessThan(moved.height, AINotchLayout.panelSize.height, "放不下原高就缩短")
+        XCTAssertGreaterThanOrEqual(moved.height, AINotchLayout.minPanelHeight)
+        XCTAssertGreaterThanOrEqual(moved.minY, shortScreen.minY + AINotchLayout.margin, "底边不出屏幕")
+        XCTAssertFalse(moved.intersects(island))
+        let opened = AINotchLayout.placement(below: entry, screen: shortScreen, avoiding: [island])
+        XCTAssertTrue(opened.clearedBlockers)
+        XCTAssertEqual(opened.frame, moved, "打开时小岛已经在，摆法一样")
+    }
+
+    func testRoomyScreenKeepsFullHeight() throws {
+        let panel = AINotchLayout.placement(below: notchEntry, screen: laptop, avoiding: []).frame
+        let moved = try XCTUnwrap(AINotchLayout.avoidance(current: panel, screen: laptop,
+                                                          avoiding: [islandWindow(.compact(countdown))]))
+        XCTAssertEqual(moved.height, AINotchLayout.panelSize.height, "空间够时不缩")
+    }
+
     // MARK: 插电动画期间的快捷结果卡片
 
     private var plug: CGRect {
