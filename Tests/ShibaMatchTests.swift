@@ -185,6 +185,19 @@ final class ShibaMatchTests: XCTestCase {
         XCTAssertEqual(game.elapsed(now: 10), 0, "时间往回拨不出负数")
     }
 
+    func testIdleTimeIsNotCounted() throws {
+        var game = try fixed()
+        game.flip(0, now: 100)
+        XCTAssertEqual(game.elapsed(now: 110), 10)
+        XCTAssertEqual(game.elapsed(now: 1000), ShibaMatchGame.idleCap, "离开后计时停在上次翻牌后 idleCap 秒")
+        game.flip(3, now: 1000)
+        XCTAssertEqual(game.elapsed(now: 1000), ShibaMatchGame.idleCap, "回来接着翻从停住的地方继续")
+        XCTAssertEqual(game.elapsed(now: 1005), ShibaMatchGame.idleCap + 5)
+        let data = try JSONEncoder().encode(game)
+        let back = try JSONDecoder().decode(ShibaMatchGame.self, from: data)
+        XCTAssertEqual(back.elapsed(now: 1005), ShibaMatchGame.idleCap + 5, "存档后扣掉的离开时间还在")
+    }
+
     // MARK: 存档
 
     func testRoundTripKeepsAGameInProgress() throws {

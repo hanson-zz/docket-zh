@@ -137,6 +137,14 @@ public struct ShibaMatchGame: Equatable, Sendable {
     public private(set) var endedAt: Double?
     /// 刚翻出没配上的两张的时间；翻回去后清掉。
     public private(set) var mismatchAt: Double?
+    /// 最近一次有效翻牌的时间。离开超过 `idleCap` 的部分不计入用时（关面板、休眠、退出都算离开）。
+    /// 旧存档没有这项时为 nil，按原来的连续计时。
+    public private(set) var lastActiveAt: Double?
+    /// 已经扣掉的离开时间（秒）。
+    public private(set) var pausedSeconds: Double = 0
+
+    /// 两次翻牌间隔超过这么久，多出来的部分算离开、不计时（秒）。
+    public static let idleCap: Double = 30
 
     /// 新开一盘：用 `rng` 洗牌（测试注入固定种子）。规格不合法时按标准规格。
     public init<G: RandomNumberGenerator>(spec: ShibaBoardSpec = .standard, using rng: inout G) {
@@ -208,10 +216,20 @@ public struct ShibaMatchGame: Equatable, Sendable {
     }
 
     /// 用时（秒）：没开始是 0，完成后停在完成那一刻。
+    /// 离开（距上次翻牌超过 `idleCap`）时计时停在上次翻牌后 `idleCap` 秒，回来接着翻再继续。
     public func elapsed(now: Double) -> Double {
         guard let start = startedAt else { return 0 }
-        let end = endedAt ?? now
-        return max(0, end - start)
+        var end = endedAt ?? now
+        if endedAt == nil, let last = lastActiveAt { end = min(end, last + Self.idleCap) }
+        return max(0, end - start - pausedSeconds)
+    }
+
+    /// 记一次有效翻牌：离开太久的部分记进 `pausedSeconds`。
+    private mutating func markActive(_ now: Double) {
+        if let last = lastActiveAt, now - last > Self.idleCap {
+            pausedSeconds += now - last - Self.idleCap
+        }
+        if lastActiveAt == nil || now >= lastActiveAt! { lastActiveAt = now }
     }
 
     // MARK: 改
@@ -226,6 +244,7 @@ public struct ShibaMatchGame: Equatable, Sendable {
         }
         guard !matched[index], !faceUp.contains(index) else { return .ignored }
         if startedAt == nil { startedAt = now }
+        markActive(now)
         guard let first = faceUp.first else {
             faceUp = [index]
             return .first
@@ -262,6 +281,7 @@ extension ShibaMatchGame: Codable {
     private enum CodingKeys: String, CodingKey {
         case rows = "r", columns = "c", cards = "k", matched = "m", faceUp = "u", moves = "n"
         case startedAt = "t0", endedAt = "t1", mismatchAt = "w"
+        case lastActiveAt = "ta", pausedSeconds = "tp"
     }
 
     /// 图案是一串用逗号隔开的名字，已配对是一串 0 / 1。读到任何对不上的地方都抛错，
@@ -295,6 +315,8 @@ extension ShibaMatchGame: Codable {
         startedAt = try c.decodeIfPresent(Double.self, forKey: .startedAt)
         endedAt = try c.decodeIfPresent(Double.self, forKey: .endedAt)
         mismatchAt = try c.decodeIfPresent(Double.self, forKey: .mismatchAt)
+        lastActiveAt = try c.decodeIfPresent(Double.self, forKey: .lastActiveAt)
+        pausedSeconds = max(0, try c.decodeIfPresent(Double.self, forKey: .pausedSeconds) ?? 0)
 
         guard moves >= 0, faceUp.count <= 2, Set(faceUp).count == faceUp.count,
               faceUp.allSatisfy({ contains($0) && !matched[$0] }) else { throw bad(.faceUp, "bad face up") }
@@ -323,6 +345,8 @@ extension ShibaMatchGame: Codable {
         try c.encodeIfPresent(startedAt, forKey: .startedAt)
         try c.encodeIfPresent(endedAt, forKey: .endedAt)
         try c.encodeIfPresent(mismatchAt, forKey: .mismatchAt)
+        try c.encodeIfPresent(lastActiveAt, forKey: .lastActiveAt)
+        if pausedSeconds > 0 { try c.encode(pausedSeconds, forKey: .pausedSeconds) }
     }
 }
 

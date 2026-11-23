@@ -1,13 +1,18 @@
 # Notice and attribution
 
-> **Docket 中文版（Chinese localization fork）：** 本仓库是
+> **码头 Dockling（基于 Docket 的独立分支）：** 本仓库最初是
 > [Docket](https://github.com/nparashar150/dockset)（MIT 许可，版权归其原作者所有）的
-> **非官方简体中文本地化分支**，仅翻译了界面文字并调整了构建配置。本分支与 Dockset、
-> Docket 上游及其作者均**无任何关联**，也未获得其认可或赞助。This repository is an
-> unofficial Simplified Chinese localization fork of Docket
-> (https://github.com/nparashar150/dockset, MIT, © its author). It is not
-> affiliated with, endorsed by, or connected to Dockset or the upstream Docket
-> project.
+> 非官方简体中文本地化分支，之后在其基础上独立新增了大量功能与素材（如小熊猫等吉祥物、
+> 刘海活动、桌面伙伴、AI 助手、休闲游戏等新小组件）。Docket 原有代码继续遵循 MIT 许可，
+> 原作者署名与许可证全文保留在 LICENSE 中。本分支与 Dockset、Docket 上游及其作者均
+> **无任何关联**，也未获得其认可或赞助。This repository began as an unofficial
+> Simplified Chinese localization fork of Docket
+> (https://github.com/nparashar150/dockset, MIT, © its author) and has since
+> added many independent features and assets of its own (mascots, notch
+> activities, desktop companion, AI assistant, casual games and more). Code
+> inherited from Docket remains under the MIT license, with the original
+> copyright notice kept in LICENSE. This fork is not affiliated with, endorsed
+> by, or connected to Dockset or the upstream Docket project.
 
 ## Dockset
 
