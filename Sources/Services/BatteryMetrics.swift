@@ -20,9 +20,19 @@ struct BatteryDevice: Identifiable, Sendable {
     /// the same as `charging`, which is false on an adapter once the battery
     /// is full or charging is held back.
     var onPower: Bool = false
+    /// 连着（Mac 有内置电池）但读不到电量：`present` 为 false，界面写「电量不可获取」，
+    /// 不写「未连接」，也不画百分比。
+    var unreadable: Bool = false
+    /// 读数超过 `BluetoothBatteries.staleAfter` 没更新（只有系统信息那份配件会这样）。
+    var stale: Bool = false
 
     static func absent(_ kind: BatteryDeviceKind) -> BatteryDevice {
         BatteryDevice(id: kind.rawValue, kind: kind, level: 0, charging: false, present: false)
+    }
+
+    /// 连着但读不到电量的那一格。
+    static func unreadableSlot(_ kind: BatteryDeviceKind) -> BatteryDevice {
+        BatteryDevice(id: kind.rawValue, kind: kind, level: 0, charging: false, present: false, unreadable: true)
     }
 }
 
@@ -105,15 +115,19 @@ final class BatteryMetrics {
     /// 多设备圆环悬停时读它写「更新于」。
     @ObservationIgnored private(set) var sampledAt: Date?
     @ObservationIgnored private var profiler: [BluetoothBattery] = []
+    /// 上一份读成功的系统信息快照是什么时候开始读的；读失败不算，旧快照不会因此「变新」。
     @ObservationIgnored private var profiledAt = Date.distantPast
+    /// 上一次去读系统信息（成功与否）的时刻，只管多久再读一次。
+    @ObservationIgnored private var profileTriedAt = Date.distantPast
     @ObservationIgnored private var profiling = false
+    /// 上一份快照之后从注册表里消失的配件，见 `AccessoryDepartures`。
+    @ObservationIgnored private var departures = AccessoryDepartures()
+    @ObservationIgnored private var lastRegistry: [BluetoothBattery] = []
 
     /// System Information is slow (a second or two) and its readings move
-    /// slowly, so it is asked every five minutes, off the main thread.
-    static let profilerInterval: TimeInterval = 5 * 60
-    /// A device only System Information knows is dropped once its snapshot
-    /// is this old, so a headset switched off does not linger for ever.
-    static let profilerStale: TimeInterval = 11 * 60
+    /// slowly, so it is asked every few minutes (`BluetoothBatteries.profilerInterval`),
+    /// off the main thread. A snapshot older than `BluetoothBatteries.profilerDropAfter`
+    /// is not used at all, so a headset switched off does not linger for ever.
 
     private init() {}
 
@@ -169,48 +183,59 @@ final class BatteryMetrics {
         if let previous = sampledAt, Date.now.timeIntervalSince(previous) > 30 {
             accessoryChanges.rebaseline(now: .now)
         }
-        sampledAt = .now
+        let now = Date.now
+        sampledAt = now
         let registry = Self.registryAccessories()
+        lastRegistry = registry
+        let departed = departures.update(registry: registry, now: now)
         refreshProfilerIfDue()
-        let profiled = Date.now.timeIntervalSince(profiledAt) < Self.profilerStale ? profiler : []
-        let merged = BluetoothBatteries.panelOrder(
-            BluetoothBatteries.merge(registry: registry, profiler: profiled))
+        let profiled = now.timeIntervalSince(profiledAt) < BluetoothBatteries.profilerDropAfter ? profiler : []
+        let merged = BluetoothBatteries.panelOrder(BluetoothBatteries.markStale(
+            BluetoothBatteries.merge(registry: registry, profiler: profiled, departed: departed), now: now))
 
         var found: [BatteryDeviceKind: BatteryDevice] = [:]
         var sources: [BatteryDeviceKind: String] = [:]
-        if let reading = Self.macDevice() {
+        let macReading = Self.macDevice()
+        if let reading = macReading, reading.0.present {
             let (mac, macPower) = reading
             found[.mac] = mac
             if macPower != power { power = macPower }
             noteTransitions(mac)
             noteFull(mac)
             recordHistory(mac)
-        } else if power != MacPower() {
-            power = MacPower()
+        } else {
+            // 有内置电池却读不到电量（电源 API 这一刻没给容量）：写「电量不可获取」，
+            // 不留上一秒的百分比，也不记进今日曲线。
+            if let reading = macReading, reading.0.unreadable { found[.mac] = reading.0 }
+            if power != MacPower() { power = MacPower() }
         }
         let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         if lowPower != lowPowerMode { lowPowerMode = lowPower }
         refreshHealthIfDue(hasBattery: found[.mac] != nil)
-        // The old fixed slots, read from the same list: the first AirPods
-        // (or any buds pair) and the first keyboard.
-        let pods = merged.first { $0.kind.isAirPods && $0.hasBuds }
-            ?? merged.first { $0.kind.isAirPods }
-            ?? merged.first { $0.hasBuds }
-        if let pods {
+        // The old fixed slots, read from the same list (`BluetoothBatteries.budsSource`,
+        // `keyboardSource`): one with a usable level first; one that is connected but
+        // reports nothing says 电量不可获取 rather than 未连接 or an old number.
+        if let pods = BluetoothBatteries.budsSource(merged) {
             if let level = pods.level {
                 found[.pods] = BatteryDevice(id: "pods", kind: .pods, level: Double(level) / 100,
-                                             charging: pods.charging, present: true)
+                                             charging: pods.charging, present: true, stale: pods.stale)
+            } else {
+                found[.pods] = .unreadableSlot(.pods)
             }
             if let caseLevel = pods.caseLevel {
                 found[.podsCase] = BatteryDevice(id: "podsCase", kind: .podsCase, level: Double(caseLevel) / 100,
-                                                 charging: false, present: true)
+                                                 charging: false, present: true, stale: pods.stale)
             }
             sources[.pods] = pods.id
             sources[.podsCase] = pods.id
         }
-        if let keyboard = merged.first(where: { $0.kind == .keyboard }), let level = keyboard.level {
-            found[.keyboard] = BatteryDevice(id: "keyboard", kind: .keyboard, level: Double(level) / 100,
-                                             charging: keyboard.charging, present: true)
+        if let keyboard = BluetoothBatteries.keyboardSource(merged) {
+            if let level = keyboard.level {
+                found[.keyboard] = BatteryDevice(id: "keyboard", kind: .keyboard, level: Double(level) / 100,
+                                                 charging: keyboard.charging, present: true, stale: keyboard.stale)
+            } else {
+                found[.keyboard] = .unreadableSlot(.keyboard)
+            }
             sources[.keyboard] = keyboard.id
         }
         let next = Self.order.map { found[$0] ?? .absent($0) }
@@ -227,6 +252,7 @@ final class BatteryMetrics {
         a.count == b.count && zip(a, b).allSatisfy {
             $0.kind == $1.kind && $0.level == $1.level && $0.charging == $1.charging
                 && $0.present == $1.present && $0.onPower == $1.onPower
+                && $0.unreadable == $1.unreadable && $0.stale == $1.stale
         }
     }
 
@@ -235,21 +261,28 @@ final class BatteryMetrics {
     /// Only while a 电池 widget is in some layout: with none, nobody reads
     /// the accessories and the subprocess would be waste.
     private func refreshProfilerIfDue() {
-        guard !profiling, Date.now.timeIntervalSince(profiledAt) >= Self.profilerInterval,
+        let interval = BluetoothBatteries.profilerInterval(registry: lastRegistry, profiler: profiler)
+        guard !profiling, Date.now.timeIntervalSince(profileTriedAt) >= interval,
               BatteryAlerts.shared.hasBatteryWidget else { return }
         profiling = true
+        let started = Date.now
+        profileTriedAt = started
         Task.detached(priority: .utility) {
             let data = Self.runProfiler()
-            let parsed = data.map(SystemProfilerBluetooth.parse) ?? []
+            let parsed = data.map { SystemProfilerBluetooth.parse($0, keepUnreadable: true, readAt: started) } ?? []
             await MainActor.run {
                 let metrics = BatteryMetrics.shared
                 let now = Date.now
+                metrics.profiling = false
+                // 读失败（data 为 nil）时旧快照原样留着、读到的时刻也不改：它照常变旧、标过期，
+                // 到 `profilerDropAfter` 整份不用，不会因为又试了一次就被当成新读数。
+                guard data != nil else { return }
                 // 第一次（启动后系统信息可能要十几秒才回来）或过期以后重新报上来的那批配件，
                 // 不算「已连上」，轻提示从这里重新当底数。
-                let wasStale = now.timeIntervalSince(metrics.profiledAt) >= BatteryMetrics.profilerStale
-                metrics.profiling = false
-                metrics.profiledAt = now
-                if data != nil { metrics.profiler = parsed }
+                let wasStale = now.timeIntervalSince(metrics.profiledAt) >= BluetoothBatteries.profilerDropAfter
+                metrics.profiledAt = started
+                metrics.profiler = parsed
+                metrics.departures.snapshotArrived(startedAt: started)
                 if wasStale { metrics.accessoryChanges.rebaseline(now: now) }
             }
         }
@@ -382,8 +415,12 @@ final class BatteryMetrics {
                 .takeUnretainedValue() as? [String: Any] else { continue }
             guard description[kIOPSTypeKey as String] as? String == kIOPSInternalBatteryType else { continue }
             guard let current = description[kIOPSCurrentCapacityKey as String] as? Int,
-                  let capacity = description[kIOPSMaxCapacityKey as String] as? Int, capacity > 0
-            else { continue }
+                  let capacity = description[kIOPSMaxCapacityKey as String] as? Int, capacity > 0,
+                  current >= 0
+            else {
+                // 有内置电池，这一刻读不到容量：不是台式机，也不该显示上一秒的数。
+                return (.unreadableSlot(.mac), MacPower())
+            }
             let onPower = description[kIOPSPowerSourceStateKey as String] as? String == kIOPSACPowerValue
             let charged = description[kIOPSIsChargedKey as String] as? Bool ?? false
             let powerSourceSays = description[kIOPSIsChargingKey as String] as? Bool ?? false
@@ -463,7 +500,6 @@ final class BatteryMetrics {
             let left = BluetoothBattery.percent(properties["BatteryPercentLeft"])
             let right = BluetoothBattery.percent(properties["BatteryPercentRight"])
             let caseLevel = BluetoothBattery.percent(properties["BatteryPercentCase"])
-            guard main != nil || left != nil || right != nil || caseLevel != nil else { continue }
             let address = (properties["DeviceAddress"] as? String)
                 ?? (properties["SerialNumber"] as? String)
             let kind = AccessoryClassifier.kind(AccessoryHints(
@@ -473,6 +509,11 @@ final class BatteryMetrics {
                 usagePage: BluetoothBattery.hexOrInt(properties["PrimaryUsagePage"]),
                 usage: BluetoothBattery.hexOrInt(properties["PrimaryUsage"]),
                 hasBuds: left != nil || right != nil))
+            // 没报电量的：只有蓝牙连着的耳机、鼠标、触控板、键盘留下，写「电量不可获取」。
+            let reported = main != nil || left != nil || right != nil || caseLevel != nil
+            guard reported || BluetoothBatteries.keepsUnreadable(kind: kind,
+                                                                 transport: properties["Transport"] as? String)
+            else { continue }
             // Magic accessories report 3 in BatteryStatusFlags while on the
             // cable. Not documented; nothing else reports charging here.
             let flags = BluetoothBattery.hexOrInt(properties["BatteryStatusFlags"])
@@ -480,8 +521,9 @@ final class BatteryMetrics {
                 id: BluetoothBattery.makeID(address: address, name: name),
                 name: name, kind: kind, main: main, left: left, right: right, caseLevel: caseLevel,
                 charging: flags == 3, address: BluetoothBattery.normalizedAddress(address))
-            // One device can publish several services; the first one wins.
-            if !found.contains(where: { $0.id == device.id }) { found.append(device) }
+            // One device can publish several services; the first one wins, unless it
+            // reports no battery and a later one does.
+            BluetoothBatteries.insert(device, into: &found)
         }
         return found
     }

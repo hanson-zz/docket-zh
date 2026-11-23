@@ -119,12 +119,14 @@ struct BatteryTile: View {
     private func powerLine(_ reading: Reading) -> String {
         BatteryWords.powerLine(level: reading.level, charging: reading.charging, onPower: reading.onPower,
                                present: reading.present,
-                               charged: reading.onPower && !context.isPreview && BatteryMetrics.shared.power.charged)
+                               charged: reading.onPower && !context.isPreview && BatteryMetrics.shared.power.charged,
+                               unreadable: reading.unreadable, stale: reading.stale)
     }
 
     /// 迷你卡片放不下整句时的短说法：「未充电」「正在充电」「已充满」「使用电池」「未连接」。
     private func shortPowerLine(_ reading: Reading) -> String {
-        guard reading.present else { return tr("未连接") }
+        guard reading.present else { return BatteryWords.absentWord(unreadable: reading.unreadable) }
+        if reading.stale { return BatteryWords.staleWord }
         return BatteryWords.chargeWord(level: reading.level, charging: reading.charging, onPower: reading.onPower,
                                        charged: reading.onPower && !context.isPreview
                                            && BatteryMetrics.shared.power.charged)
@@ -137,7 +139,9 @@ struct BatteryTile: View {
         BatteryWords.hover(name: displayName(slot), level: reading.level, charging: reading.charging,
                            onPower: reading.onPower, present: reading.present,
                            charged: reading.onPower && !context.isPreview && BatteryMetrics.shared.power.charged,
-                           updated: context.isPreview ? nil : BatteryMetrics.shared.sampledAt, now: .now)
+                           unreadable: reading.unreadable, stale: reading.stale,
+                           updated: context.isPreview ? nil : (reading.readAt ?? BatteryMetrics.shared.sampledAt),
+                           now: .now)
     }
 
     /// The first three slots never change position. The fourth prefers a mouse,
@@ -154,15 +158,9 @@ struct BatteryTile: View {
                                                      kind: .mouse, main: 89))
         } else {
             // 耳机那一格已经在读的设备（比如带左右耳的非 AirPods 耳机）不再放进第四格，免得同一台画两遍。
+            // 电量读得到的优先，连着但读不到的那台写「电量不可获取」（`BluetoothBatteries.peripheralPick`）。
             let budsID = metrics.slotSources[.pods]
-            let available = metrics.accessories.filter {
-                $0.level != nil && !$0.kind.isAirPods && $0.id != budsID
-            }
-            let candidate = available.first { $0.kind == .mouse }
-                ?? available.first { $0.kind == .trackpad }
-                ?? available.first { $0.kind == .keyboard }
-                ?? available.first
-            if let candidate {
+            if let candidate = BluetoothBatteries.peripheralPick(metrics.accessories, excluding: budsID) {
                 peripheral = .accessory(candidate)
             } else {
                 peripheral = .unavailable(id: "peripheral", name: tr("鼠标"),
@@ -646,7 +644,8 @@ struct BatteryTile: View {
                     }
                 }
                 .frame(minHeight: 62, maxHeight: .infinity)
-                .help(layout == "multi" ? hoverText(slot, reading) : "\(slot.name) \(percentText(reading))")
+                .help(layout == "multi" ? hoverText(slot, reading)
+                      : "\(slot.name) \(reading.present ? percentText(reading) : BatteryWords.absentWord(unreadable: reading.unreadable))")
             }
         }
         .lineLimit(1)
@@ -818,14 +817,27 @@ struct BatteryTile: View {
         var present: Bool
         /// The Mac only: on the adapter, charging or not.
         var onPower = false
+        /// 连着但读不到电量：写「电量不可获取」，不写「未连接」。
+        var unreadable = false
+        /// 读数过期：数字照画，旁边写「数据已过期」。
+        var stale = false
+        /// 配件读数真正读到的时刻（系统信息那份）；nil 用采样器的时刻。
+        var readAt: Date?
     }
 
     private func reading(_ slot: Slot) -> Reading {
         switch slot {
-        case .fixed(let kind, _): return reading(kind)
+        case .fixed(let kind, let source):
+            var result = reading(kind)
+            if !context.isPreview { result.readAt = source?.readAt }
+            return result
         case .accessory(let device):
-            guard let level = device.level else { return Reading(level: 0, charging: false, present: false) }
-            return Reading(level: Double(level) / 100, charging: device.charging, present: true)
+            guard let level = device.level else {
+                // 配件清单里的都连着；读不到电量就说读不到。
+                return Reading(level: 0, charging: false, present: false, unreadable: true)
+            }
+            return Reading(level: Double(level) / 100, charging: device.charging, present: true,
+                           stale: device.stale, readAt: device.readAt)
         case .unavailable:
             return Reading(level: 0, charging: false, present: false)
         }
@@ -841,13 +853,16 @@ struct BatteryTile: View {
             }
         }
         guard let device = BatteryMetrics.shared.device(kind), device.present else {
-            return Reading(level: 0, charging: false, present: false)
+            return Reading(level: 0, charging: false, present: false,
+                           unreadable: BatteryMetrics.shared.device(kind)?.unreadable ?? false)
         }
-        return Reading(level: device.level, charging: device.charging, present: true, onPower: device.onPower)
+        return Reading(level: device.level, charging: device.charging, present: true, onPower: device.onPower,
+                       stale: device.stale)
     }
 
     private func caption(_ reading: Reading) -> String {
-        guard reading.present else { return tr("未连接") }
+        guard reading.present else { return BatteryWords.absentWord(unreadable: reading.unreadable) }
+        if reading.stale { return BatteryWords.staleWord }
         if reading.charging { return tr("正在充电") }
         // On the adapter and not charging: full, or held back. It is not
         // running on battery, whatever the old caption said.

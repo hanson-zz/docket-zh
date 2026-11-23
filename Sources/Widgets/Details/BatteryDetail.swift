@@ -240,7 +240,9 @@ struct BatteryDetail: View {
     /// 「MacBook · 已接电源」；配件是「AirPods Pro · 正在充电」这类。
     private func heroTitle(_ device: Item) -> String {
         guard device.isMac else { return "\(device.name) · \(caption(device))" }
-        guard device.present else { return "\(BatteryWords.macName) · \(tr("未连接"))" }
+        guard device.present else {
+            return "\(BatteryWords.macName) · \(BatteryWords.absentWord(unreadable: device.unreadable))"
+        }
         return "\(BatteryWords.macName) · \(BatteryWords.source(onPower: device.onPower, charging: device.charging))"
     }
 
@@ -437,6 +439,10 @@ struct BatteryDetail: View {
         var onPower = false
         /// AirPods: "左 80% · 右 78% · 盒 45%".
         var parts: String?
+        /// 连着但读不到电量：写「电量不可获取」，不写「未连接」。
+        var unreadable = false
+        /// 读数过期：小字前面加「数据已过期」。
+        var stale = false
 
         var isMac: Bool { id == "fixed.mac" }
     }
@@ -461,9 +467,10 @@ struct BatteryDetail: View {
         let covered = !accessories.isEmpty || context.isPreview
         let kinds: [BatteryDeviceKind] = [.mac, .pods, .podsCase, .keyboard].filter { kind in
             let device = device(kind)
-            if kind == .mac { return configured.contains(kind) || device.present }
-            // A present AirPods or keyboard already has its accessory row.
-            if bluetooth && device.present && covered { return false }
+            if kind == .mac { return configured.contains(kind) || device.present || device.unreadable }
+            // A present (or connected but unreadable) AirPods or keyboard already
+            // has its accessory row.
+            if bluetooth && (device.present || device.unreadable) && covered { return false }
             return configured.contains(kind) || device.present
         }
         return kinds.map { item(device($0)) } + accessories.map { item($0) }
@@ -481,14 +488,16 @@ struct BatteryDetail: View {
     private func item(_ device: BatteryDevice) -> Item {
         Item(id: "fixed.\(device.kind.rawValue)", name: device.kind.name,
              symbol: BatterySymbol.resolve(device.kind.symbol), level: device.level,
-             charging: device.charging, present: device.present, onPower: device.onPower)
+             charging: device.charging, present: device.present, onPower: device.onPower,
+             unreadable: device.unreadable, stale: device.stale)
     }
 
     private func item(_ device: BluetoothBattery) -> Item {
         Item(id: "bt.\(device.id)", name: device.displayName,
              symbol: BatterySymbol.resolve(device.kind.symbol),
              level: Double(device.level ?? 0) / 100, charging: device.charging,
-             present: device.level != nil, parts: device.partsCaption)
+             present: device.level != nil, parts: device.partsCaption,
+             unreadable: device.isUnreadable, stale: device.stale)
     }
 
     /// The service's own model rather than a second one: an absent device is
@@ -502,10 +511,8 @@ struct BatteryDetail: View {
             case .keyboard: return BatteryDevice(id: "keyboard", kind: kind, level: 0.92, charging: false, present: true)
             }
         }
-        guard let device = BatteryMetrics.shared.device(kind), device.present else {
-            return .absent(kind)
-        }
-        return device
+        // 读不到电量的那一格原样拿来（`unreadable`），好写「电量不可获取」而不是「未连接」。
+        return BatteryMetrics.shared.device(kind) ?? .absent(kind)
     }
 
     /// The tile's thresholds, so a battery does not change colour on its way
@@ -533,9 +540,8 @@ struct BatteryDetail: View {
     }
 
     private func caption(_ device: Item) -> String {
-        guard device.present else { return tr("未连接") }
-        if let parts = device.parts { return device.charging ? tr("正在充电 · \(parts)") : parts }
-        return device.charging ? tr("正在充电") : tr("使用电池")
+        BatteryWords.accessoryCaption(present: device.present, unreadable: device.unreadable, stale: device.stale,
+                                      charging: device.charging, parts: device.parts)
     }
 
     @ViewBuilder

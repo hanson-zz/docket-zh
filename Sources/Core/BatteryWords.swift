@@ -17,6 +17,33 @@ public enum BatteryWords {
         return "\(BatteryColorMap.percent(level))%"
     }
 
+    /// 读不到电量时那一格写什么：连着写「电量不可获取」，不在写「未连接」。
+    public static func absentWord(unreadable: Bool) -> String {
+        unreadable ? tr("电量不可获取") : tr("未连接")
+    }
+
+    /// 配件读数超过 `BluetoothBatteries.staleAfter` 没更新时的提示。
+    public static var staleWord: String { tr("数据已过期") }
+
+    /// 详情面板配件行（和 Mac 以外的固定格）的小字：
+    /// 读不到时「电量不可获取」「未连接」（有充电盒读数时后面接「盒 45%」）；
+    /// 读得到时「正在充电」「使用电池」或「左 80% · 右 78% · 盒 45%」，过期时前面加「数据已过期 · 」。
+    public static func accessoryCaption(present: Bool, unreadable: Bool = false, stale: Bool = false,
+                                        charging: Bool, parts: String?) -> String {
+        guard present else {
+            let word = absentWord(unreadable: unreadable)
+            if unreadable, let parts { return "\(word) · \(parts)" }
+            return word
+        }
+        let base: String
+        if let parts {
+            base = charging ? tr("正在充电 · \(parts)") : parts
+        } else {
+            base = charging ? tr("正在充电") : tr("使用电池")
+        }
+        return stale ? "\(staleWord) · \(base)" : base
+    }
+
     /// 充电这件事本身：「正在充电」「已充满」「未充电」；用电池时 nil（没有接电源就谈不上充没充）。
     public static func chargeWord(level: Double, charging: Bool, onPower: Bool, charged: Bool = false) -> String? {
         if charging { return tr("正在充电") }
@@ -32,8 +59,9 @@ public enum BatteryWords {
     /// 迷你卡片第二行：「接通电源 · 未充电」「接通电源 · 正在充电」「接通电源 · 已充满」
     /// 「使用电池」「未连接」。配件不知道接没接电源，充电时写「正在充电」。
     public static func powerLine(level: Double, charging: Bool, onPower: Bool, present: Bool,
-                                 charged: Bool = false) -> String {
-        guard present else { return tr("未连接") }
+                                 charged: Bool = false, unreadable: Bool = false, stale: Bool = false) -> String {
+        guard present else { return absentWord(unreadable: unreadable) }
+        if stale { return staleWord }
         if onPower {
             let word = chargeWord(level: level, charging: charging, onPower: true, charged: charged) ?? tr("未充电")
             return tr("接通电源 · \(word)")
@@ -43,11 +71,17 @@ public enum BatteryWords {
 
     /// 多设备圆环悬停的说明，三行：设备名；连接状态（和电量、电源）；更新时间。
     /// `charged` 和迷你卡片同一个来源（macOS 认为已充满），两处写法一致。
+    /// 连着但读不到电量时第二行是「已连接 · 电量不可获取」；读数过期时多一行「数据已过期」，
+    /// `updated` 也应当传那份读数真正读到的时刻。
     public static func hover(name: String, level: Double, charging: Bool, onPower: Bool, present: Bool,
-                             charged: Bool = false, updated: Date?, now: Date) -> String {
+                             charged: Bool = false, unreadable: Bool = false, stale: Bool = false,
+                             updated: Date?, now: Date) -> String {
         var lines = [name]
         if present {
             lines.append(tr("已连接 · \(percentText(level: level, present: true)) · \(powerLine(level: level, charging: charging, onPower: onPower, present: true, charged: charged))"))
+            if stale { lines.append(staleWord) }
+        } else if unreadable {
+            lines.append(tr("已连接 · \(absentWord(unreadable: true))"))
         } else {
             lines.append(tr("未连接"))
         }

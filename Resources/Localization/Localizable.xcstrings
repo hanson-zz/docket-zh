@@ -3037,6 +3037,17 @@
         }
       }
     },
+    "已连接 · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected · %@"
+          }
+        }
+      }
+    },
     "已连接 · %@ · %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3466,6 +3477,17 @@
         }
       }
     },
+    "数据已过期" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data out of date"
+          }
+        }
+      }
+    },
     "新纪录！" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3847,6 +3869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open the assistant with %@ (default)"
+          }
+        }
+      }
+    },
+    "电量不可获取" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Battery level unavailable"
           }
         }
       }
