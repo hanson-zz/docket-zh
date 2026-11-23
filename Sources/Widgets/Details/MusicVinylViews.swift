@@ -223,6 +223,7 @@ struct VinylStageView: View {
 }
 
 /// 黑胶模式的写实素材（Resources/Vinyl，用户按效果图用 ChatGPT 画的透明 PNG）。缺哪张就回退那一部分的代码画法。
+@MainActor
 enum VinylArt {
     static var disc: NSImage? { PandaStateArt.image("vinyl-disc") }
     static var sheen: NSImage? { PandaStateArt.image("vinyl-sheen") }
