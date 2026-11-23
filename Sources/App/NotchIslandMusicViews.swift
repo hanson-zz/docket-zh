@@ -129,6 +129,7 @@ struct NotchIslandMusicCard: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
+        .overlay(alignment: .topTrailing) { sticker }
         .accessibilityElement(children: .contain)
         .accessibilityValue(NotchIslandText.spoken(.music(song), now: Date()))
     }
@@ -143,10 +144,10 @@ struct NotchIslandMusicCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(tr("打开音乐面板"))
-        .overlay(alignment: .bottomLeading) { sticker }
     }
 
-    /// 封面左下角戴耳机的小熊猫贴纸（Resources/PandaStates/panda-scene-listen，戴耳机趴着听歌），
+    /// 卡片右上角戴耳机的小熊猫贴纸（Resources/PandaStates/panda-scene-listen，戴耳机趴着听歌），
+    /// 原先在封面左下角会挡住封面，挪到右上角歌名旁边；歌名右侧让出同样宽度，长歌名不钻到它下面。
     /// 高度不超过卡片三分之一，不挡字和按钮，也不拦截点击。
     @ViewBuilder private var sticker: some View {
         if let image = PandaStateArt.image(.scene(.listen)) {
@@ -158,10 +159,16 @@ struct NotchIslandMusicCard: View {
                 .scaledToFit()
                 .frame(height: height)
                 .shadow(color: .black.opacity(0.22), radius: 3, y: 1.5)
-                .offset(x: -10, y: 8)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
+    }
+
+    /// 歌名右侧给小熊猫让出的宽度（贴纸近似正方形，再留 4 点空隙）；没有贴纸图时不让。
+    private var stickerRoom: CGFloat {
+        guard PandaStateArt.image(.scene(.listen)) != nil else { return 0 }
+        let card = NotchIslandLayout.cardHeight(model.geometry, kind: .music, hasSecondary: false)
+        return NotchIslandMusicLook.stickerHeight(cardHeight: card) + 4
     }
 
     // MARK: 歌名、进度
@@ -185,6 +192,7 @@ struct NotchIslandMusicCard: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.trailing, stickerRoom)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

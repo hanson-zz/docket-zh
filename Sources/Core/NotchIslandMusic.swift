@@ -165,7 +165,7 @@ public enum NotchIslandMusicLook {
     public static let glowOpacity: Double = ArtworkTint.glowOpacity
     public static let glowReach: Double = ArtworkTint.glowReach
 
-    /// 封面左下角戴耳机小熊猫贴纸的高度：不超过卡片高度的三分之一，也不超过 46 点。
+    /// 卡片右上角戴耳机小熊猫贴纸的高度：不超过卡片高度的三分之一，也不超过 46 点。
     public static func stickerHeight(cardHeight: CGFloat) -> CGFloat {
         min(46, floor(cardHeight / 3))
     }
