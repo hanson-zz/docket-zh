@@ -13,6 +13,9 @@ import SwiftUI
 ///   最先结束的那个（`NotchIslandStack.ordered`）；
 /// - 会议：「灵动提示」的会议倒计时找到的那一个（`IslandController.meeting`）；
 /// - 收音机：`RadioPlayer`；
+/// - 音乐：「正在播放」小组件同一套读数（`MusicService` 的当前显示来源，Apple Music、Spotify
+///   走 AppleScript，网易云、QQ 音乐等读系统「正在播放」），打开这一项时顺带让它开始轮询；
+///   暂停后留多久在 `NotchIslandMusicTracker`；
 /// - 插电：插电霓虹动画 `BatteryNeonPlugController` 看到插上电源时叫 `pluggedIn`。
 ///
 /// 判断都在 Core：活动栈和优先级 `NotchIslandStack`，什么时候不显示 `NotchIslandGate`，
@@ -37,6 +40,8 @@ final class NotchIslandController {
     private var charging: (percent: Int, until: Date)?
     /// 在小岛上按了暂停的收音机，留一会儿方便继续。
     private var radioHold: (station: String, until: Date)?
+    /// 别的 App 正在播放的音乐：在播显示，暂停后留一会儿。
+    private var music = NotchIslandMusicTracker()
     private var plugAnimationUntil: Date?
     /// 「灵动提示」的音量、亮度胶囊正闪着。
     private var levelFlash = false
@@ -123,6 +128,12 @@ final class NotchIslandController {
         }
         if !settings.isOn(.charging) { charging = nil }
         if !settings.isOn(.radio) { radioHold = nil }
+        if settings.isOn(.music) {
+            // 和「正在播放」小组件共用一份轮询（重复 start 不多读）；不弹任何授权提示。
+            MusicService.shared.start()
+        } else {
+            music = NotchIslandMusicTracker()
+        }
         startTicker()
         if !observing {
             observing = true
@@ -137,6 +148,7 @@ final class NotchIslandController {
         downloads = NotchIslandDownloadTracker()
         charging = nil
         radioHold = nil
+        music = NotchIslandMusicTracker()
         ticker?.invalidate()
         ticker = nil
         hide(animated: false)
@@ -250,7 +262,22 @@ final class NotchIslandController {
                 radioHold = nil
             }
         }
+        if settings.isOn(.music) {
+            music.update(Self.musicReading(), now: now)
+            // 指针停在卡片上时暂停的歌不收起。
+            if wantsExpanded { music.keepAlive(now: now) }
+            if let activity = music.activity(now: now) { list.append(activity) }
+        }
         return list
+    }
+
+    /// 「正在播放」当前显示的那个播放器的歌（和小组件卡片、面板同一首）；显示的是浏览器标签页、
+    /// 停止、没有会话时 nil。
+    private static func musicReading() -> NotchIslandMusic? {
+        let service = MusicService.shared
+        guard case .native(let source) = service.display, let track = service.track(for: source) else { return nil }
+        return NotchIslandMusic.reading(title: track.title, artist: track.artist, playing: track.isPlaying,
+                                        tint: track.tint, source: source)
     }
 
     private func refresh() {
@@ -321,6 +348,10 @@ final class NotchIslandController {
         if case .expanded(.radio(_, _), _) = form {
             model.radioVolume = RadioPlayer.shared.currentVolume
             model.canSwitchStation = RadioPlayer.shared.canSwitchStation
+        }
+        if case .expanded(.music(let song), _) = form, model.form?.isExpanded != true {
+            // 刚展开时读一次播放器音量（只有 Apple Music、Spotify 读得到），拖音量条时本地改。
+            model.musicVolume = song.source.flatMap { MusicService.shared.track(for: $0)?.volume }
         }
         if model.form != form { model.form = form }
         if !window.isVisible { window.orderFrontRegardless() }
@@ -466,6 +497,25 @@ final class NotchIslandController {
             writeCountdown(widget, timer: timer) { CountdownList.stopping($0) }
         case .openDownloads:
             DesktopPetDownloadsWatcher.reveal([])
+        case .musicToggle(let source):
+            if let source { MusicService.shared.playPause(on: source) } else { MusicService.shared.playPause() }
+        case .musicPrevious(let source):
+            if let source { MusicService.shared.previous(on: source) } else { MusicService.shared.previous() }
+        case .musicNext(let source):
+            if let source { MusicService.shared.next(on: source) } else { MusicService.shared.next() }
+        case .musicVolume(let level):
+            MusicService.shared.setVolume(level)
+        case .musicOpen(let source):
+            // 有「正在播放」（或复古卡带）小组件就打开它的面板（在别的布局、文件夹里也行），
+            // 没有就打开来源 App。
+            let current = DockItemTree.widgets(in: WidgetPanelOpener.shared.currentItems())
+            if let id = NotchIslandMusicRoute.panelWidget(current: current, all: TimedAlertDriver.shared.widgets()) {
+                WidgetPanelOpener.shared.open(id)
+            } else if let source {
+                MusicService.shared.open(source)
+            }
+        case .musicOpenApp(let source):
+            if let source { MusicService.shared.open(source) }
         case .openCalendar:
             if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.iCal") {
                 NSWorkspace.shared.open(url)
@@ -498,6 +548,13 @@ enum NotchIslandAction: Equatable {
     case timerEnd(NotchIslandTimerSource)
     case openDownloads
     case openCalendar
+    /// 音乐卡片：作用到这个播放器（读不到来源时作用到「正在播放」当前那个）。
+    case musicToggle(MusicSource?), musicPrevious(MusicSource?), musicNext(MusicSource?)
+    case musicVolume(Double)
+    /// 点歌曲区域：打开音乐小组件面板，没有时打开来源 App。
+    case musicOpen(MusicSource?)
+    /// 点来源 App 图标：打开那个 App。
+    case musicOpenApp(MusicSource?)
 }
 
 /// 小岛占的地方，给 AI 刘海入口、消息灵动岛的耳朵和插电动画让位用。变了发 `didChange`。
@@ -529,6 +586,8 @@ final class NotchIslandModel {
     /// 展开收音机卡片时读一次，拖音量条时本地改。
     var radioVolume: Double = 60
     var canSwitchStation = true
+    /// 展开音乐卡片时读一次播放器音量（0...100），读不到（网易云、QQ 音乐等）时 nil，不画音量键。
+    var musicVolume: Double?
 
     @ObservationIgnored var act: ((NotchIslandAction) -> Void)?
 }

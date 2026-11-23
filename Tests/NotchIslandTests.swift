@@ -12,21 +12,21 @@ final class NotchIslandTests: XCTestCase {
         let settings = NotchIslandSettings()
         XCTAssertFalse(settings.enabled)
         XCTAssertEqual(settings.kinds, NotchIslandKind.allCases)
-        XCTAssertEqual(NotchIslandKind.allCases, [.charging, .download, .timer, .meeting, .radio], "顺序就是优先级")
+        XCTAssertEqual(NotchIslandKind.allCases, [.charging, .download, .timer, .meeting, .radio, .music], "顺序就是优先级")
         XCTAssertEqual(Set(NotchIslandKind.settingsOrder), Set(NotchIslandKind.allCases))
-        XCTAssertEqual(NotchIslandKind.settingsOrder.count, 5)
+        XCTAssertEqual(NotchIslandKind.settingsOrder.count, 6)
     }
 
     func testSetKeepsFixedOrder() {
         var settings = NotchIslandSettings()
         settings.set(.download, false)
         settings.set(.charging, false)
-        XCTAssertEqual(settings.kinds, [.timer, .meeting, .radio])
+        XCTAssertEqual(settings.kinds, [.timer, .meeting, .radio, .music])
         settings.set(.charging, true)
         settings.set(.download, true)
-        XCTAssertEqual(settings.kinds, [.charging, .download, .timer, .meeting, .radio])
+        XCTAssertEqual(settings.kinds, [.charging, .download, .timer, .meeting, .radio, .music])
         settings.set(.radio, true)
-        XCTAssertEqual(settings.kinds.count, 5, "重复打开不重复存")
+        XCTAssertEqual(settings.kinds.count, 6, "重复打开不重复存")
     }
 
     func testSettingsDecodeLeniently() throws {
@@ -40,7 +40,7 @@ final class NotchIslandTests: XCTestCase {
         let decoded = try JSONDecoder().decode(NotchIslandSettings.self, from: future)
         XCTAssertTrue(decoded.enabled)
         XCTAssertEqual(decoded.kinds, [.timer, .meeting, .radio],
-                       "认不出的活动丢掉，其余按固定顺序；老文件没见过的会议默认勾上")
+                       "认不出的活动丢掉，其余按固定顺序；老文件没见过的会议默认勾上，音乐要自己勾")
 
         // 用户自己取消勾选会议后存的（带 known）：读回来仍是关着的。
         var noMeeting = NotchIslandSettings()

@@ -4,20 +4,23 @@ import Foundation
 // MARK: - 刘海小岛（码头 Pro）
 //
 // 从刘海两侧「长出」的黑色小岛，和刘海连成一体，显示码头自己正在进行的事：下载、
-// 专注计时和倒计时卡片、快开始的会议、收音机、刚插上电源。没有刘海的屏幕在顶部居中
+// 专注计时和倒计时卡片、快开始的会议、收音机、正在播放的音乐、刚插上电源。没有刘海的屏幕在顶部居中
 // 画一个同样形状的假刘海。
 //
 // 这里只有纯逻辑：设置、活动、优先级、三种形态（compact / split / expanded）、
 // 什么时候不显示、几何和计时。窗口、动画和数据来源在 App 的 `NotchIslandController`。
 
-/// 小岛能显示的五种活动，`allCases` 的顺序就是优先级（前面的先显示）：
-/// 插电提示 > 下载 > 计时器 > 会议 > 收音机。
+/// 小岛能显示的六种活动，`allCases` 的顺序就是优先级（前面的先显示）：
+/// 插电提示 > 下载 > 计时器 > 会议 > 收音机 > 音乐。码头自带的收音机在播时音乐让位
+/// （收音机是主岛、音乐是右边的小圆岛）；收音机只是暂停后留着、音乐在播时两者对调，
+/// 见 `NotchIslandStack.ordered`。
 public enum NotchIslandKind: String, CaseIterable, Codable, Hashable, Sendable {
     case charging
     case download
     case timer
     case meeting
     case radio
+    case music
 
     /// 越小越先显示。
     public var priority: Int { NotchIslandKind.allCases.firstIndex(of: self) ?? NotchIslandKind.allCases.count }
@@ -30,6 +33,7 @@ public enum NotchIslandKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .timer: tr("计时器")
         case .meeting: tr("会议")
         case .radio: tr("收音机")
+        case .music: tr("音乐")
         }
     }
 
@@ -41,14 +45,20 @@ public enum NotchIslandKind: String, CaseIterable, Codable, Hashable, Sendable {
         case .timer: tr("专注计时或倒计时卡片在跑或暂停时，在刘海下方显示剩余时间；同时有几个时显示最先结束的。")
         case .meeting: tr("「灵动提示」的会议倒计时打开时，会议快开始时在刘海旁显示还有几分钟，不再另起一个胶囊。")
         case .radio: tr("收音机正在播放时显示音波，悬停可暂停、换台、调音量。")
+        case .music: tr("Apple Music、Spotify 等正在播放时显示封面和音波，悬停可暂停、切歌。")
         }
     }
 
-    /// 设置里显示的顺序（和效果图一致）：下载、计时器、会议、收音机、充电。
-    public static let settingsOrder: [NotchIslandKind] = [.download, .timer, .meeting, .radio, .charging]
+    /// 设置里显示的顺序（和效果图一致）：下载、计时器、会议、收音机、音乐、充电。
+    public static let settingsOrder: [NotchIslandKind] = [.download, .timer, .meeting, .radio, .music, .charging]
 
     /// 最早一版就有的四种。老状态文件没记 `known` 时按这四种算，后来加的（会议）默认勾上。
     public static let original: [NotchIslandKind] = [.charging, .download, .timer, .radio]
+
+    /// 后来加的、老用户要自己勾上才显示的活动：存过设置的老用户读回来时它们是关着的，
+    /// 小岛不会突然多出来；新装（没存过设置）照默认全勾。音乐一播就常驻刘海，又要
+    /// 多读一份「正在播放」，所以不替老用户打开。
+    public static let optIn: [NotchIslandKind] = [.music]
 }
 
 /// 设置 ▸ 消息灵动岛与刘海小岛 ▸「刘海小岛」：总开关默认关，每种活动默认都勾上。
@@ -71,8 +81,9 @@ public struct NotchIslandSettings: Codable, Hashable, Sendable {
 
     /// 宽松解码：老状态文件没有这一组、以后多了认不出的活动，都照常读。
     ///
-    /// `known` 记存盘时认识哪几种：存盘时还没有的活动（这次新加的会议）当作默认勾上，
-    /// 只有用户自己取消勾选的才是关着的。没有 `known` 的老文件按最早的四种算。
+    /// `known` 记存盘时认识哪几种：存盘时还没有的活动（后来加的会议）当作默认勾上，
+    /// 只有用户自己取消勾选的才是关着的；`NotchIslandKind.optIn` 里的（音乐）例外，
+    /// 存盘时还没有就当关着。没有 `known` 的老文件按最早的四种算。
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         enabled = (try? c.decodeIfPresent(Bool.self, forKey: .enabled)) ?? false
@@ -81,7 +92,9 @@ public struct NotchIslandSettings: Codable, Hashable, Sendable {
             let knownRaw = (try? c.decodeIfPresent([String].self, forKey: .known)) ?? nil
             let known = knownRaw.map { Set($0.compactMap(NotchIslandKind.init(rawValue:))) }
                 ?? Set(NotchIslandKind.original)
-            kinds = NotchIslandKind.allCases.filter { on.contains($0) || !known.contains($0) }
+            kinds = NotchIslandKind.allCases.filter {
+                on.contains($0) || (!known.contains($0) && !NotchIslandKind.optIn.contains($0))
+            }
         }
     }
 
@@ -119,6 +132,9 @@ public enum NotchIslandActivity: Equatable, Sendable {
     case meeting(title: String, start: Date)
     /// 收音机：电台名和在不在播（刚在小岛上按了暂停时还留一会儿，方便继续）。
     case radio(station: String, playing: Bool)
+    /// 别的 App（Apple Music、Spotify 等）正在播放的歌：歌名、歌手、在不在播、封面主色。
+    /// 进度不放这里（每秒都变），卡片自己读。
+    case music(NotchIslandMusic)
 
     public var kind: NotchIslandKind {
         switch self {
@@ -127,6 +143,16 @@ public enum NotchIslandActivity: Equatable, Sendable {
         case .timer: .timer
         case .meeting: .meeting
         case .radio: .radio
+        case .music: .music
+        }
+    }
+
+    /// 在不在出声：收音机、音乐在播是 true，暂停后留着的是 false；别的活动是 nil。
+    public var mediaPlaying: Bool? {
+        switch self {
+        case .radio(_, let playing): playing
+        case .music(let music): music.playing
+        default: nil
         }
     }
 }
@@ -181,9 +207,16 @@ public enum NotchIslandStack {
             kept.append(activity)
         }
         // 稳定排序：同优先级（不会有）保持原顺序。
-        return kept.enumerated()
+        var sorted = kept.enumerated()
             .sorted { ($0.element.kind.priority, $0.offset) < ($1.element.kind.priority, $1.offset) }
             .map(\.element)
+        // 收音机和音乐挨着（优先级相邻）：收音机只是暂停后留着、音乐正在播时，音乐排前面。
+        if let radio = sorted.firstIndex(where: { $0.kind == .radio }),
+           radio + 1 < sorted.count, sorted[radio + 1].kind == .music,
+           sorted[radio].mediaPlaying == false, sorted[radio + 1].mediaPlaying == true {
+            sorted.swapAt(radio, radio + 1)
+        }
+        return sorted
     }
 
     /// 现在画哪种形态；没有活动时 nil。悬停时展开第一个活动的卡片。
@@ -300,6 +333,9 @@ public enum NotchIslandTiming {
     public static let downloadSettleGrace: TimeInterval = 6
     /// 在小岛上按了暂停的收音机还留多久（方便马上继续）。
     public static let radioPauseLinger: TimeInterval = 8
+    /// 音乐暂停后（在哪儿按的都算）还留多久：暂停态收起时有自己的样子（三条静止短竖线、
+    /// 封面变暗），留半分钟方便继续，指针停在卡片上时不收。
+    public static let musicPauseLinger: TimeInterval = 30
     /// 指针停在小岛上多久才展开（扫过菜单栏时不乱弹）。
     public static let hoverDelay: TimeInterval = 0.15
     /// 指针离开卡片多久才收起。
@@ -565,6 +601,9 @@ public enum NotchIslandText {
             return IslandCountdown.line(title: title, secondsUntil: start.timeIntervalSince(now))
         case .radio(let station, let playing):
             return playing ? tr("收音机正在播放 \(station)") : tr("收音机已暂停 \(station)")
+        case .music(let music):
+            let line = music.line
+            return music.playing ? tr("音乐正在播放 \(line)") : tr("音乐已暂停 \(line)")
         }
     }
 }
@@ -691,6 +730,14 @@ public enum NotchIslandLayout {
     public static let meetingWing: CGFloat = wing(textWidth("12 min"))
     /// 电台右边 20 点宽的声波：30（原来 44）。
     public static let radioWing: CGFloat = wing(20)
+    /// 音乐左边圆角封面缩略图的边长。
+    public static let musicArtSize: CGFloat = 20
+    /// 音乐右边细音波条（播放五根、暂停三根）的宽度。
+    public static let musicWaveWidth: CGFloat = 18
+    /// 音乐左边封面那侧：4 + 20 + 6 = 30。
+    public static let musicArtWing: CGFloat = wing(musicArtSize)
+    /// 音乐右边音波那侧：4 + 18 + 6 = 28。
+    public static let musicWaveWing: CGFloat = wing(musicWaveWidth)
 
     /// 一个活动在 compact 形态下左右两侧各多宽，以及刘海下面要不要一条显示剩余时间。
     /// 专注计时左边放吉祥物、右边放剩余时间，不要下面那一条；倒计时卡片的计时器照旧
@@ -704,6 +751,7 @@ public enum NotchIslandLayout {
         case .timer: return (left: 14, right: 14, chin: chinHeight)
         case .meeting: return (left: iconWing, right: meetingWing, chin: 0)
         case .radio: return (left: iconWing, right: radioWing, chin: 0)
+        case .music: return (left: musicArtWing, right: musicWaveWing, chin: 0)
         }
     }
 
@@ -740,11 +788,16 @@ public enum NotchIslandLayout {
     /// 展开卡片离刘海底边多远。卡片整个在菜单栏下面，不往两侧盖住菜单栏上的图标。
     public static let cardGap: CGFloat = 6
 
-    /// 这种卡片离刘海底边多远：电台卡片从刘海下沿直接长出来（0），别的卡片照旧空 `cardGap`。
-    /// 电台卡片顶上一截只有刘海那么宽，往下弯出 `radioShoulder` 再铺满整张卡片，
+    /// 电台和音乐的卡片从刘海下沿直接长出来（顶上一截和刘海同宽，接缝一体）。
+    public static func grows(_ kind: NotchIslandKind) -> Bool {
+        kind == .radio || kind == .music
+    }
+
+    /// 这种卡片离刘海底边多远：电台、音乐卡片从刘海下沿直接长出来（0），别的卡片照旧空 `cardGap`。
+    /// 这两种卡片顶上一截只有刘海那么宽，往下弯出 `radioShoulder` 再铺满整张卡片，
     /// 所以两侧仍不伸进菜单栏那一条，不挡右边的状态栏图标。
     public static func cardGap(kind: NotchIslandKind) -> CGFloat {
-        kind == .radio ? 0 : cardGap
+        grows(kind) ? 0 : cardGap
     }
 
     /// 电台卡片顶上和刘海同宽那一截往两侧弯出去的圆弧有多高（也是两侧弯出去多宽）。
@@ -754,13 +807,15 @@ public enum NotchIslandLayout {
     public static let radioCardWidth: CGFloat = 340
     /// 电台卡片铺满整宽那部分顶上两角的圆角。
     public static let radioTopRadius: CGFloat = 16
+    /// 音乐卡片的宽度：左边 96 点封面，右边歌名、进度和一排按钮（效果图约 380）。
+    public static let musicCardWidth: CGFloat = 380
 
     /// 展开卡片的高度（不含刘海那一段，卡片从刘海底下 `cardGap(kind:)` 处开始）。
     /// 电台卡片含顶上弯出去那一截 `radioShoulder`。
     public static func cardHeight(_ geometry: NotchIslandGeometry, kind: NotchIslandKind, hasSecondary: Bool) -> CGFloat {
         let content: CGFloat
         switch kind {
-        case .radio: content = 140 + radioShoulder
+        case .radio, .music: content = 140 + radioShoulder
         case .timer: content = 122
         case .download: content = 100
         case .meeting: content = 100
@@ -777,10 +832,15 @@ public enum NotchIslandLayout {
                       height: cardHeight(geometry, kind: kind, hasSecondary: hasSecondary))
     }
 
-    /// 展开卡片多宽。电台卡片 `radioCardWidth`，刘海特别宽时至少比刘海两边各宽出 60，
-    /// 保证顶上弯出去的圆弧和两角的圆角放得下。
+    /// 展开卡片多宽。电台卡片 `radioCardWidth`、音乐卡片 `musicCardWidth`，刘海特别宽时
+    /// 至少比刘海两边各宽出 60，保证顶上弯出去的圆弧和两角的圆角放得下。
     public static func cardWidth(_ geometry: NotchIslandGeometry, kind: NotchIslandKind) -> CGFloat {
-        let base = kind == .radio ? radioCardWidth : cardWidth
+        let base: CGFloat
+        switch kind {
+        case .radio: base = radioCardWidth
+        case .music: base = musicCardWidth
+        default: base = cardWidth
+        }
         return max(base, geometry.notchWidth + 120)
     }
 

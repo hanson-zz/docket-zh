@@ -40,10 +40,10 @@ struct NotchIslandRootView: View {
                 case .split(let primary, let secondary):
                     compact(primary, geometry: geometry, secondary: secondary)
                 case .expanded(let primary, let secondary):
-                    // 刘海那一段留着黑色，卡片从它下面长出来。电台卡片顶上一截和刘海同宽、紧贴着
-                    // 刘海下沿，这里下面两角不圆，两块接成一体。
+                    // 刘海那一段留着黑色，卡片从它下面长出来。电台、音乐卡片顶上一截和刘海同宽、
+                    // 紧贴着刘海下沿，这里下面两角不圆，两块接成一体。
                     NotchIslandShape(flare: NotchIslandLayout.topFlare,
-                                     bottomRadius: primary.kind == .radio ? 0 : 8)
+                                     bottomRadius: NotchIslandLayout.grows(primary.kind) ? 0 : 8)
                         .fill(.black)
                         .place(NotchIslandLayout.notch(geometry))
                         .id("island-body")
@@ -228,6 +228,10 @@ private struct NotchIslandBody: View {
             Image(systemName: "radio.fill")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(NotchIslandPalette.onBlack)
+        case .music(let song):
+            // 圆角封面缩略图，暂停时压暗。
+            NotchIslandMusicThumb(playing: song.playing, size: NotchIslandLayout.musicArtSize,
+                                  cornerRadius: 5)
         }
     }
 
@@ -285,6 +289,10 @@ private struct NotchIslandBody: View {
         case .radio(_, let playing):
             NotchIslandWave(playing: playing, tint: NotchIslandPalette.onBlack)
                 .frame(width: 20, height: 14)
+        case .music(let song):
+            // 细音波条，颜色取封面主色；暂停时三条静止短竖线。
+            NotchIslandMusicWave(playing: song.playing, color: NotchIslandMusicPalette.wave(song.tint))
+                .frame(width: NotchIslandLayout.musicWaveWidth, height: 14)
         }
     }
 
@@ -354,6 +362,9 @@ private struct NotchIslandBubble: View {
                 .foregroundStyle(NotchIslandPalette.onBlack)
         case .radio(_, let playing):
             NotchIslandWave(playing: playing, tint: NotchIslandPalette.onBlack)
+                .padding(8)
+        case .music(let song):
+            NotchIslandMusicWave(playing: song.playing, color: NotchIslandMusicPalette.wave(song.tint))
                 .padding(8)
         }
     }
@@ -472,11 +483,12 @@ private struct NotchIslandCard: View {
 
     @Environment(\.colorScheme) private var scheme
 
-    private var isRadio: Bool { primary.kind == .radio }
+    /// 电台、音乐卡片从刘海下沿长出来。
+    private var grows: Bool { NotchIslandLayout.grows(primary.kind) }
 
     private var shape: AnyShape {
-        if isRadio {
-            // 电台卡片从刘海下沿长出来：顶上一截和刘海同宽，往两侧弯出去再铺满整宽，
+        if grows {
+            // 电台、音乐卡片从刘海下沿长出来：顶上一截和刘海同宽，往两侧弯出去再铺满整宽，
             // 两侧仍在菜单栏下面，不盖住右边的状态栏图标。
             return AnyShape(NotchIslandGrownShape(neck: model.geometry.notchWidth,
                                                   shoulder: NotchIslandLayout.radioShoulder,
@@ -497,8 +509,8 @@ private struct NotchIslandCard: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.top, isRadio ? NotchIslandLayout.radioShoulder + 10 : 12)
-        .padding(.horizontal, isRadio ? 18 : 20)
+        .padding(.top, grows ? NotchIslandLayout.radioShoulder + 10 : 12)
+        .padding(.horizontal, grows ? 18 : 20)
         .padding(.bottom, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background { surface }
@@ -510,13 +522,29 @@ private struct NotchIslandCard: View {
     private var surface: some View {
         Color.clear
         .readableGlass(in: shape)
+        .overlay { glow }
         .clipShape(shape)
         .overlay { shape.stroke(Color.panelStroke, lineWidth: 0.6) }
         .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.16), radius: 18, y: 8)
     }
 
+    /// 音乐卡片顶部一层很淡的封面主色光晕（不超过 15%），往下渐隐；没有封面主色时不画。
+    @ViewBuilder private var glow: some View {
+        if case .music(let song) = primary, let tint = song.tint {
+            let color = NotchIslandMusicPalette.color(tint.glow)
+            LinearGradient(stops: [
+                .init(color: color.opacity(NotchIslandMusicLook.glowOpacity), location: 0),
+                .init(color: color.opacity(0), location: NotchIslandMusicLook.glowReach),
+            ], startPoint: .top, endPoint: .bottom)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+
     @ViewBuilder private var content: some View {
         switch primary {
+        case .music(let song):
+            NotchIslandMusicCard(model: model, song: song)
         case .radio(let station, _):
             NotchIslandRadioCard(model: model, fallbackStation: station)
         case .timer(let deadline, let pausedLeft, let total, let focus, let source, let name):
@@ -533,7 +561,7 @@ private struct NotchIslandCard: View {
 }
 
 /// 卡片上的圆形按钮：实心橙（主操作）或薄玻璃。
-private struct NotchIslandCircleButton: View {
+struct NotchIslandCircleButton: View {
     var symbol: String
     var label: String
     var solid: Bool
@@ -993,6 +1021,7 @@ private struct NotchIslandSecondaryRow: View {
         case .timer: "timer"
         case .meeting: "calendar"
         case .radio: "radio.fill"
+        case .music: "music.note"
         }
     }
 }

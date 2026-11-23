@@ -2223,6 +2223,17 @@
         }
       }
     },
+    "Apple Music、Spotify 等正在播放时显示封面和音波，悬停可暂停、切歌。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the cover and a sound wave while Apple Music, Spotify or another player is playing. Hover to pause or skip songs."
+          }
+        }
+      }
+    },
     "B 面 · %@ 首" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2322,13 +2333,13 @@
         }
       }
     },
-    "下载、专注计时和倒计时卡片、快开始的会议、收音机和插上电源时，从刘海两侧长出黑色小岛，和刘海连成一体；两件事同时进行时第二件变成右边的小圆岛。指针停在小岛上时展开成卡片，可以暂停、换台、调音量。没有刘海的屏幕在顶部居中显示同样的形状。全屏 App、演示模式和消息卡弹出时不显示，音量、亮度提示出现时先收起。" : {
+    "下载、专注计时和倒计时卡片、快开始的会议、收音机、正在播放的音乐和插上电源时，从刘海两侧长出黑色小岛，和刘海连成一体；两件事同时进行时第二件变成右边的小圆岛。指针停在小岛上时展开成卡片，可以暂停、换台、切歌、调音量。没有刘海的屏幕在顶部居中显示同样的形状。全屏 App、演示模式和消息卡弹出时不显示，音量、亮度提示出现时先收起。" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "While something downloads, the focus timer or a countdown card runs, a meeting is about to start, the radio plays or the power is plugged in, a black island grows out of both sides of the notch and blends into it. When two things happen at once, the second becomes a small round island on the right. Hover over it to expand a card where you can pause, change station or set the volume. Screens without a notch show the same shape centered at the top. Hidden for full screen apps, Presentation Mode and while a message card is open, and tucked away while the volume or brightness hint shows."
+            "value" : "While something downloads, the focus timer or a countdown card runs, a meeting is about to start, the radio or another player's music plays, or the power is plugged in, a black island grows out of both sides of the notch and blends into it. When two things happen at once, the second becomes a small round island on the right. Hover over it to expand a card where you can pause, change station or song, or set the volume. Screens without a notch show the same shape centered at the top. Hidden for full screen apps, Presentation Mode and while a message card is open, and tucked away while the volume or brightness hint shows."
           }
         }
       }
@@ -3121,6 +3132,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Calendar"
+          }
+        }
+      }
+    },
+    "打开音乐" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Music"
+          }
+        }
+      }
+    },
+    "打开音乐面板" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Music Panel"
           }
         }
       }
@@ -4364,6 +4397,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Update helper"
+          }
+        }
+      }
+    },
+    "音乐已暂停 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music paused: %@"
+          }
+        }
+      }
+    },
+    "音乐正在播放 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Music playing: %@"
           }
         }
       }
