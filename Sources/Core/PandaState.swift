@@ -63,8 +63,8 @@ public enum PandaExtra: String, CaseIterable, Sendable {
     }
 }
 
-/// 场景图：和六状态同一母版、同画布、同底部锚点的九张（Resources/PandaStates/panda-scene-<名>.png）。
-/// 天气（晴、雨雪、冷、热）、喝水、待办记下、录音、收音机在听、AI 助手输入与生成中用；缺图时回退待机。
+/// 场景图：和六状态同一母版、同画布、同底部锚点的十张（Resources/PandaStates/panda-scene-<名>.png）。
+/// 天气（晴、雨雪、冷、热）、喝水、待办记下、录音、收音机在听、AI 助手输入与生成中、刘海听歌用；缺图时回退待机。
 public enum PandaScene: String, CaseIterable, Sendable {
     /// 晴天。
     case sunny
@@ -84,6 +84,8 @@ public enum PandaScene: String, CaseIterable, Sendable {
     case aiInput = "ai-input"
     /// 抬头等回答，头顶三个点的气泡（AI 助手提交后到答完之前）。
     case aiGenerating = "ai-generating"
+    /// 戴着耳机趴着闭眼听歌（刘海「音乐」活动的封面贴纸）。
+    case listen
 
     public var imageName: String { "panda-scene-\(rawValue)" }
 }

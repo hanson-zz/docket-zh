@@ -146,10 +146,10 @@ struct NotchIslandMusicCard: View {
         .overlay(alignment: .bottomLeading) { sticker }
     }
 
-    /// 封面左下角戴耳机的小熊猫贴纸（Resources/PandaStates 的录音场景图，戴着耳机），
+    /// 封面左下角戴耳机的小熊猫贴纸（Resources/PandaStates/panda-scene-listen，戴耳机趴着听歌），
     /// 高度不超过卡片三分之一，不挡字和按钮，也不拦截点击。
     @ViewBuilder private var sticker: some View {
-        if let image = PandaStateArt.image(.scene(.record)) {
+        if let image = PandaStateArt.image(.scene(.listen)) {
             let card = NotchIslandLayout.cardHeight(model.geometry, kind: .music, hasSecondary: false)
             let height = NotchIslandMusicLook.stickerHeight(cardHeight: card)
             Image(nsImage: image)

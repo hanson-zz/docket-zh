@@ -166,7 +166,7 @@ final class PandaStateTests: XCTestCase {
     // MARK: 场景图
 
     func testSceneNamesAndCandidates() {
-        XCTAssertEqual(PandaScene.allCases.count, 9)
+        XCTAssertEqual(PandaScene.allCases.count, 10)
         for scene in PandaScene.allCases {
             XCTAssertEqual(scene.imageName, "panda-scene-\(scene.rawValue)")
             XCTAssertEqual(PandaStateResolver.candidates(.scene(scene)),
