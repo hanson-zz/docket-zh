@@ -9,6 +9,8 @@ import SwiftUI
 /// 扩散；暂停时唱片停在当时的角度、唱臂抬回支架、水波纹静止。减弱动态效果时
 /// 不转不扩散，只画静帧和唱臂该在的位置。转动只在面板看得见并在播放时跑
 /// （`TimelineView` 暂停），唱片本身画好后整张转（`drawingGroup` 后只改旋转）。
+/// 「看得见」既看 onAppear / onDisappear，也看所在窗口：面板关上只是 orderOut，
+/// 视图不会消失，靠窗口状态停帧（`MediaWindowShown`）。
 /// 摆位、落针角度、转速和水波纹都在 Core `MusicVinyl`。
 struct VinylStageView<Cover: View>: View {
     var artwork: NSImage?
@@ -20,6 +22,8 @@ struct VinylStageView<Cover: View>: View {
 
     @State private var width: CGFloat = CGFloat(MusicVinyl.designWidth)
     @State private var visible = false
+    /// 所在窗口在屏幕上、没被整个挡住。
+    @State private var windowShown = true
     /// 上次停下时唱片的角度，和开始转的时刻（停着时是 nil）。
     @State private var spinBase: Double = 0
     @State private var spinSince: Date?
@@ -29,7 +33,9 @@ struct VinylStageView<Cover: View>: View {
 
     private var stage: MusicVinyl.Stage { MusicVinyl.stage(width: Double(width)) }
     private var fps: Double? {
-        MusicVinyl.framesPerSecond(playing: playing, visible: visible, reduceMotion: reduceMotion)
+        MusicVinyl.framesPerSecond(playing: playing,
+                                   visible: MediaOnScreen.visible(appeared: visible, windowShown: windowShown),
+                                   reduceMotion: reduceMotion)
     }
     private var spinning: Bool { fps != nil }
 
@@ -56,6 +62,7 @@ struct VinylStageView<Cover: View>: View {
                 visible = false
             }
             .onChange(of: spinning) { _, now in updateSpin(now) }
+            .trackingWindowShown($windowShown)
     }
 
     /// 开始转时记下时刻，停下时把转到的角度存起来，下次从这里接着转。

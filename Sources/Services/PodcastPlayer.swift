@@ -36,6 +36,9 @@ final class PodcastPlayer {
     /// 上次告诉系统的播放状态，只有变了才重写“正在播放”。
     @ObservationIgnored private var publishedPlaying: Bool?
     @ObservationIgnored private var publishedDuration: Double = 0
+    /// 当前条目失败过（`failed()`）。坏条目再 `play()` 没有声音也不再报错，
+    /// 下次播放要重新载入（Core `PodcastResume`）。
+    @ObservationIgnored private var itemFailed = false
 
     private init() {}
 
@@ -65,6 +68,7 @@ final class PodcastPlayer {
         publishedPlaying = nil
         showID = show
         problem = nil
+        itemFailed = false
         duration = Double(episode.duration)
         let start = PodcastService.shared.library.resumePosition(episode.id)
         position = start
@@ -84,10 +88,17 @@ final class PodcastPlayer {
     }
 
     func resume() {
-        guard let player, player.currentItem != nil else {
+        switch PodcastResume.action(hasEpisode: episode != nil && showID != nil,
+                                    hasItem: player?.currentItem != nil, itemFailed: itemFailed) {
+        case .reload:
             if let episode, let showID { play(episode, show: showID) }
             return
+        case .nothing:
+            return
+        case .resume:
+            break
         }
+        guard let player else { return }
         MediaSessionCoordinator.shared.begin(.podcast) { [weak self] command, position in self?.remote(command, position: position) }
         problem = nil
         isPlaying = true
@@ -257,6 +268,7 @@ final class PodcastPlayer {
     }
 
     private func failed() {
+        itemFailed = true
         isPlaying = false
         isBuffering = false
         problem = tr("播放失败，请检查网络后再试。")

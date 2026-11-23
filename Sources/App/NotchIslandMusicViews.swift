@@ -122,7 +122,7 @@ struct NotchIslandMusicCard: View {
                 if showVolume, model.musicVolume != nil {
                     volumeRow
                 } else {
-                    progressRow(track)
+                    progressRow(track, playing: playing)
                 }
                 Spacer(minLength: 6)
                 controls(playing: playing, canControl: canControl)
@@ -192,7 +192,7 @@ struct NotchIslandMusicCard: View {
         .accessibilityHint(tr("打开音乐面板"))
     }
 
-    @ViewBuilder private func progressRow(_ track: NowPlaying?) -> some View {
+    @ViewBuilder private func progressRow(_ track: NowPlaying?, playing: Bool) -> some View {
         if let track, let times = NotchIslandMusicText.times(elapsed: track.elapsed, duration: track.duration) {
             VStack(spacing: 3) {
                 GeometryReader { proxy in
@@ -216,8 +216,9 @@ struct NotchIslandMusicCard: View {
                 .lineLimit(1)
             }
         } else {
-            // 直播流、读不到时长：不画进度，留一行副标题的高度。
-            Text(song.playing ? tr("正在播放") : tr("已暂停"))
+            // 直播流、读不到时长：不画进度，留一行副标题的高度。状态和播放键同一个
+            // `playing`（播放器的实时读数），刚按暂停时两边不会一个写「正在播放」一个画播放键。
+            Text(playing ? tr("正在播放") : tr("已暂停"))
                 .font(.system(size: 13))
                 .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
