@@ -9,37 +9,33 @@ import Foundation
 // 借的是扫雷的玩法，不借任何系统扫雷的素材、名字或外观：格子是液态玻璃小块，
 // 旗子是小熊猫橙，结果用小熊猫表情。
 
-/// 难度。经典的高级（30×16）不做；大师是 32×32、200 雷的方阵，面板为它加宽到
-/// `Minesweeper.panelWidth(for: .master)`，格子 18pt。存档解码上限 1024 格正好放得下。
+/// 难度：初级 9×9 · 10 雷、中级 16×16 · 40 雷。高级（30×16）和曾经短暂加过的大师（32×32）
+/// 在 340 宽的面板里都放不下，不做。旧版存过的 `master` 读成中级，见 `MineLevel.stored(_:)`。
 public enum MineLevel: String, Codable, Sendable, CaseIterable {
     case beginner
     case intermediate
-    case master
 
-    public var rows: Int {
-        switch self {
-        case .beginner: 9
-        case .intermediate: 16
-        case .master: 32
-        }
-    }
-
+    public var rows: Int { self == .beginner ? 9 : 16 }
     public var columns: Int { rows }
-
-    public var mines: Int {
-        switch self {
-        case .beginner: 10
-        case .intermediate: 40
-        case .master: 200
-        }
-    }
+    public var mines: Int { self == .beginner ? 10 : 40 }
 
     public var title: String {
         switch self {
         case .beginner: tr("初级", context: "mines")
         case .intermediate: tr("中级", context: "mines")
-        case .master: tr("大师", context: "mines")
         }
+    }
+
+    /// 从存下的文字读难度：认得的照读；旧版的「大师」（master）已经去掉，回退中级
+    /// （离它最近的一档）；空的或别的认不得的回退初级。不会崩溃。
+    public static func stored(_ raw: String) -> MineLevel {
+        if let level = MineLevel(rawValue: raw) { return level }
+        return raw == "master" ? .intermediate : .beginner
+    }
+
+    /// 解码也走 `stored(_:)`：存档里是 master 时读成中级，不抛错。
+    public init(from decoder: Decoder) throws {
+        self = Self.stored(try decoder.singleValueContainer().decode(String.self))
     }
 
     /// 「9×9 · 10 雷」
@@ -475,7 +471,7 @@ public enum Minesweeper {
     }
 
     public static func level(_ config: WidgetConfig) -> MineLevel {
-        MineLevel(rawValue: config.string(levelKey, default: "")) ?? .beginner
+        MineLevel.stored(config.string(levelKey, default: ""))
     }
 
     public static func board(_ config: WidgetConfig, level: MineLevel) -> MineBoard {
@@ -616,8 +612,8 @@ public enum Minesweeper {
 
     // MARK: 面板读数、首次提示和结果
 
-    /// 计时写成「分:秒」两位补零（00:05、12:34），封顶 99:59。大师一局常常超过 999 秒，
-    /// 所以不跟 `displaySeconds` 的三位上限。
+    /// 计时写成「分:秒」两位补零（00:05、12:34），封顶 99:59，不跟 `displaySeconds`
+    /// 的三位上限（慢慢玩的中级局可能超过 999 秒）。
     public static func clockText(seconds: Double) -> String {
         let total = min(5999, max(0, Int(seconds.isFinite ? seconds : 0)))
         return String(format: "%02d:%02d", total / 60, total % 60)
@@ -694,51 +690,26 @@ public enum Minesweeper {
     public static let tileWidth: Double = 188
     /// 左右两侧扩展栏的竖条高：缩略图在上，两行读数在下。
     public static let columnHeight: Double = 120
-    /// 初级、中级的面板宽（两档一样宽，换难度面板不跳）。
+    /// 面板宽，初级、中级一样（换难度面板不跳）。
     public static let panelWidth: Double = 340
-    /// 大师的格子和棋盘：32 列 18pt、缝 2，棋盘 638 见方。
-    public static let masterCell: Double = 18
     /// 面板卡片（DetailCard）自己的内边距，和别的面板一样 16。
     public static let panelCardPadding: Double = 16
     /// 面板尾巴的深度（PanelShape.arrowDepth）：扩展栏在左右两侧时尾巴在侧边，内容区再窄 10。
     public static let panelTailDepth: Double = 10
 
-    /// 这个难度的面板宽。大师按同一套公式倒推：棋盘宽 + 卡片两侧内边距 + 面板内容区
-    /// 两侧边距（DetailPanelWidth.padding）+ 侧边尾巴，638 + 32 + 32 + 10 = 712。
-    public static func panelWidth(for level: MineLevel) -> Double {
-        switch level {
-        case .beginner, .intermediate:
-            return panelWidth
-        case .master:
-            let board = boardSize(rows: level.rows, columns: level.columns, cell: masterCell).width
-            return board + panelCardPadding * 2 + Double(DetailPanelWidth.padding) * 2 + panelTailDepth
-        }
-    }
-
     /// 面板卡片里真正能放内容的宽：面板宽减面板内容区两侧边距（DetailPanelWidth.padding），
-    /// 按尾巴在侧边的最窄情况再减尾巴，最后减卡片自己的内边距。340 宽是 266，712 宽是 638。
-    public static func panelContentWidth(for level: MineLevel) -> Double {
-        Double(DetailPanelWidth.content(panel: CGFloat(panelWidth(for: level)),
-                                        tailDepth: CGFloat(panelTailDepth),
+    /// 按尾巴在侧边的最窄情况再减尾巴，最后减卡片自己的内边距。340 宽是 266。
+    public static var panelContentWidth: Double {
+        Double(DetailPanelWidth.content(panel: CGFloat(panelWidth), tailDepth: CGFloat(panelTailDepth),
                                         tailOnSide: true)) - panelCardPadding * 2
     }
 
-    /// 初级、中级的内容宽（266）。
-    public static var panelContentWidth: Double { panelContentWidth(for: .beginner) }
-
-    /// 面板里棋盘的宽，就是卡片的内容宽，左右边距和其他面板一样。初级、中级一样宽。
-    public static func panelBoardWidth(for level: MineLevel) -> Double { panelContentWidth(for: level) }
+    /// 面板里棋盘的宽（初级、中级一样宽），就是卡片的内容宽，左右边距和其他面板一样。
     public static var panelBoardWidth: Double { panelContentWidth }
 
-    /// 面板里这个难度每格多大：初级 26、中级 15、大师 18。
+    /// 面板里这个难度每格多大：初级 26、中级 15。
     public static func panelCell(for level: MineLevel) -> Double {
-        cellSize(columns: level.columns, side: panelBoardWidth(for: level))
-    }
-
-    /// 面板要不要受统一高度上限（DetailPanelFit.cap）约束：大师棋盘本身就有 638 高，
-    /// 限在 560 里只能看到半盘，所以按屏幕可见区算，放不下在面板里滚动；初级、中级照旧受限。
-    public static func panelIsCapExempt(_ config: WidgetConfig) -> Bool {
-        level(config) == .master
+        cellSize(columns: level.columns, side: panelBoardWidth)
     }
 
     /// 格子之间的缝。
@@ -770,7 +741,7 @@ public enum Minesweeper {
 }
 
 /// 钉在桌面：扫雷的小 / 中 / 大三档都能直接玩。小号、中号放初级（9×9），大号放面板里
-/// 选的难度；选了大师时大号退回中级（32 列在 340 宽里格子不到 10pt，点不准）。桌面卡片的边距、读数行高和每档格子大小放这里，测试保证格子不小于 13pt。
+/// 选的难度。桌面卡片的边距、读数行高和每档格子大小放这里，测试保证格子不小于 13pt。
 public enum DesktopCardsGamesPlan {
     public static let kinds: Set<WidgetKind> = [.minesweeper]
 
@@ -778,8 +749,7 @@ public enum DesktopCardsGamesPlan {
 
     /// 这一档玩哪个难度。
     public static func level(for size: DesktopPinSize, chosen: MineLevel) -> MineLevel {
-        guard size == .large else { return .beginner }
-        return chosen == .master ? .intermediate : chosen
+        size == .large ? chosen : .beginner
     }
 
     /// 卡片边距。

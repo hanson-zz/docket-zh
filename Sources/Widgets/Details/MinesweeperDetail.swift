@@ -5,18 +5,18 @@ import SwiftUI
 // 液态玻璃面板，按效果图精修（玩法不变）：
 // - 顶上：小熊猫（六状态图：准备、游戏中待机，踩雷举爪提醒，赢了举爪庆祝）、「扫雷」和一行
 //   副标题，右上小熊猫橙「再来一盘」胶囊。
-// - 难度：一条分段条，初级 / 中级 / 大师。放得下时写「9×9 · 10 雷」，窄时只写名字。
+// - 难度：一条分段条，初级 / 中级，只写名字；「9×9 · 10 雷」放在悬停提示和读屏里
+//   （两段各 128 宽，带上它中级和英文会挤掉，两段写法不一致）。
 // - 读数：「剩余 N 雷」（数字最大最醒目，橙 / 绿 / 红三档）、计时「00:05」，右边音效圆钮
 //   （扫雷没有别的设置入口，不放齿轮）。
-// - 棋盘：初级、中级在 340 宽的面板里一样宽（换难度不跳），大师面板加宽到 712、格子 18pt
-//   （`Minesweeper.panelWidth(for:)`）。悬停的格子提亮并描一圈橙边，插旗时小旗轻弹一下，
+// - 棋盘：初级、中级在 340 宽的面板里一样宽（换难度不跳）。悬停的格子提亮并描一圈橙边，插旗时小旗轻弹一下，
 //   踩到的那格红底。结束后棋盘上盖一张玻璃结果卡（小熊猫、一句话、「查看棋盘」「再来一盘」），
 //   赢了冒一小把彩纸（只在刚赢时，减弱动态效果时不动）。
 // - 本机纪录：默认折叠成一行「本机纪录 初级 · 最佳 00:28」，点开看前五，这一局刚进榜时自动展开。
 // - 首次提示一行，玩完一局（赢或输）后不再显示（`Minesweeper.showsHint`）。
 // 左键揭开，右键、⌥ 点或 ⌃ 点插旗，点数字揭开周围（和弦）。每个难度各存一局和本机纪录。
 // 底是很淡的暖橙到雾紫，棋盘外两只低透明度爪印；棋盘后面不画炸弹、星星，不发光。
-// 高度不自己定，交给通用面板容器（DetailPanelFit），大师放不下时在面板里滚动。
+// 高度不自己定，交给通用面板容器（DetailPanelFit）。
 
 struct MinesweeperDetail: View {
     var instance: WidgetInstance
@@ -36,7 +36,7 @@ struct MinesweeperDetail: View {
     var body: some View {
         let board = board
         let level = level
-        let side = CGFloat(Minesweeper.panelBoardWidth(for: level))
+        let side = CGFloat(Minesweeper.panelBoardWidth)
         let cell = CGFloat(Minesweeper.panelCell(for: level))
         let showsResult = board.isOver && !reviewing && !context.isPreview
         return DetailCard {
@@ -130,7 +130,7 @@ struct MinesweeperDetail: View {
 
     private func picker(_ selected: MineLevel) -> some View {
         let count = CGFloat(MineLevel.allCases.count)
-        let inner = CGFloat(Minesweeper.panelContentWidth(for: selected)) - 6
+        let inner = CGFloat(Minesweeper.panelContentWidth) - 6
         let segment = max(40, ((inner - 3 * (count - 1)) / count).rounded(.down))
         return HStack(spacing: 3) {
             ForEach(MineLevel.allCases, id: \.self) { item in
@@ -139,10 +139,7 @@ struct MinesweeperDetail: View {
                     guard !context.isPreview else { return }
                     withAnimation(.snappy(duration: 0.2)) { MinePlay.select(item, in: instance) }
                 } label: {
-                    ViewThatFits(in: .horizontal) {
-                        segmentLabel(item, on: on, withDetail: true)
-                        segmentLabel(item, on: on, withDetail: false)
-                    }
+                    segmentLabel(item, on: on)
                     .frame(width: segment, height: 30)
                     .background {
                         if on {
@@ -164,7 +161,7 @@ struct MinesweeperDetail: View {
         .background(Capsule().fill(Color.panelFill))
     }
 
-    private func segmentLabel(_ item: MineLevel, on: Bool, withDetail: Bool) -> some View {
+    private func segmentLabel(_ item: MineLevel, on: Bool) -> some View {
         HStack(spacing: 5) {
             Image(systemName: "chart.bar.fill")
                 .font(.system(size: 11, weight: .bold))
@@ -172,12 +169,6 @@ struct MinesweeperDetail: View {
             Text(item.title)
                 .font(.system(size: 14, weight: on ? .bold : .semibold))
                 .foregroundStyle(on ? Color.panelPrimary : Color.panelSecondary)
-            if withDetail {
-                Text(item.detail)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.panelTertiary)
-                    .monospacedDigit()
-            }
         }
         .lineLimit(1)
         .fixedSize()

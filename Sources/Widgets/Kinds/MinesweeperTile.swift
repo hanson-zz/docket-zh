@@ -5,7 +5,7 @@ import SwiftUI
 //
 // 扩展栏卡片只有 58pt 高，9×9 的格子放进去每格不到 5pt，点不准，所以卡片上是这一局的
 // 缩略图、剩余雷数、计时和重开键，点卡片打开面板玩；能直接点着玩的是面板和桌面卡片
-// （小 160×160、中 340×160 放初级，大 340×340 放面板里选的难度、选大师时放中级，见 DesktopCardsGames）。
+// （小 160×160、中 340×160 放初级，大 340×340 放面板里选的难度，见 DesktopCardsGames）。
 // 规则和存法都在 Core 的 `Minesweeper`。
 
 struct MinesweeperTile: View {
@@ -373,7 +373,7 @@ struct MineClickCatcher: NSViewRepresentable {
 
 // MARK: - 缩略图（不能点）
 
-/// 一局的缩略图：没揭开的浅块、揭开的凹下、旗子橙点、踩雷红块。用 Canvas 画，32×32 也不卡。
+/// 一局的缩略图：没揭开的浅块、揭开的凹下、旗子橙点、踩雷红块。用 Canvas 画，16×16 也不卡。
 struct MineThumbnail: View {
     var board: MineBoard
     @Environment(\.colorScheme) private var scheme
@@ -383,9 +383,8 @@ struct MineThumbnail: View {
             let dark = scheme == .dark
             let columns = CGFloat(board.columns), rows = CGFloat(board.rows)
             let pitch = min(size.width / columns, size.height / rows)
-            // 大师 32×32 塞进 44pt 每格不到 1.4pt：缝去掉、圆角去掉，按整片色块画，不出格。
-            let gap = pitch >= 4 ? max(0.6, pitch * 0.14) : (pitch >= 2 ? 0.4 : 0)
-            let cell = max(0.5, pitch - gap)
+            let gap = pitch >= 4 ? max(0.6, pitch * 0.14) : 0.4
+            let cell = pitch - gap
             let origin = CGPoint(x: (size.width - pitch * columns + gap) / 2,
                                  y: (size.height - pitch * rows + gap) / 2)
             let hiddenColor = dark ? Color.white.opacity(0.24) : Color.black.opacity(0.16)
@@ -394,7 +393,7 @@ struct MineThumbnail: View {
             for index in 0..<board.cellCount {
                 let r = CGFloat(index / board.columns), c = CGFloat(index % board.columns)
                 let rect = CGRect(x: origin.x + c * pitch, y: origin.y + r * pitch, width: cell, height: cell)
-                let path = pitch >= 2 ? Path(roundedRect: rect, cornerRadius: cell * 0.25) : Path(rect)
+                let path = Path(roundedRect: rect, cornerRadius: cell * 0.25)
                 let color: Color = switch board.face(index) {
                 case .hidden: hiddenColor
                 case .flagged, .wrongFlag: flagColor

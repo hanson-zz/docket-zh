@@ -141,7 +141,7 @@ final class WidgetDetailWindow {
     /// `partChanged` 再重新摆窗口，不用关了重开。
     func refresh(_ instance: WidgetInstance) {
         guard openWidgetID == instance.id, let shown, var current = fit else { return }
-        // 面板宽跟着配置变了（扫雷换到大师或换回来、纪念日换卡片样式）：重新量一遍、
+        // 面板宽跟着配置变了（纪念日换卡片样式）：重新量一遍、
         // 按新宽度重摆窗口。原来宽度只在打开时量，换宽后内容被裁或两边空一截。
         if abs(WidgetDetail.width(instance) - WidgetDetail.width(current.instance)) >= 0.5 {
             return rewidth(instance, context: shown.context, edge: shown.edge, anchor: current.anchor)
@@ -283,8 +283,7 @@ final class WidgetDetailWindow {
         let natural = CGSize(width: width, height: content + footer + tailHeight(edge))
         let placement = DetailPanelFit.place(edge: edge, anchor: anchor, natural: natural,
                                              visible: visible,
-                                             capped: !DetailPanelFit.isCapExempt(instance.kind,
-                                                                                          config: instance.config))
+                                             capped: !DetailPanelFit.isCapExempt(instance.kind))
         let frame = placement.frame
         let viewports = DetailPanelFit.viewports(panelHeight: frame.height, edge: edge,
                                                  tailDepth: PanelShape.arrowDepth, footer: footer)
@@ -853,10 +852,6 @@ enum WidgetDetail {
         if instance.kind == .anniversary {
             return CGFloat(Anniversary.panelWidth(layout: instance.config.string("layout", default: "single")))
         }
-        // 扫雷：初级、中级 340，大师加宽到 712（格子 18pt），见 Minesweeper.panelWidth(for:)。
-        if instance.kind == .minesweeper {
-            return CGFloat(Minesweeper.panelWidth(for: Minesweeper.level(instance.config)))
-        }
         return width(instance.kind)
     }
 
@@ -884,7 +879,7 @@ enum WidgetDetail {
         case .music: 320
         // 复古卡带：机身、玻璃键帽、推子和接下来 3 首，和正在播放一样 320（效果图）。
         case .cassette: 320
-        // 扫雷：初级、中级棋盘一样宽，换难度面板不跳；大师另算，见 width(_ instance:)。
+        // 扫雷：初级、中级棋盘一样宽，换难度面板不跳。
         case .minesweeper: CGFloat(Minesweeper.panelWidth)
         // 拔牙：380（效果图里小熊猫占满面板宽，每颗牙点击区至少 24pt），按卡片真实内容宽画（PullTooth.panelContentWidth）。
         case .pullTooth: CGFloat(PullTooth.panelWidth)

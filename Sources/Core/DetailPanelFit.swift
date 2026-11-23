@@ -10,8 +10,8 @@ import Foundation
 ///
 /// 只按屏幕算时，内容多的面板能占到屏幕的三分之二，所以再加一道统一的
 /// 上限（`cap(visible:)`）：含尾巴最高 560pt，且不超过屏幕可见高度的 60%，
-/// 取小的那个，但不低于 `minimumHeight`。日历规划和 AI 对话豁免，扫雷大师按实例豁免，见
-/// `isCapExempt(_:)`、`isCapExempt(_:config:)`。
+/// 取小的那个，但不低于 `minimumHeight`。日历规划和 AI 对话豁免，见
+/// `isCapExempt(_:)`。
 ///
 /// 坐标是 AppKit 的屏幕坐标，y 向上。不依赖 AppKit，方便测试。
 public enum DetailPanelFit {
@@ -48,14 +48,6 @@ public enum DetailPanelFit {
         case .calendar, .week, .aiAssistant: true
         default: false
         }
-    }
-
-    /// 按这张卡片的配置判断：整种豁免的照旧；扫雷只有选了大师时豁免（32×32 的棋盘本身
-    /// 就有 638 高，限在 560 里只看得到半盘），初级、中级仍受统一上限。豁免后仍不超过
-    /// 所在屏幕的可见区，放不下在面板里滚动。
-    public static func isCapExempt(_ kind: WidgetKind, config: WidgetConfig) -> Bool {
-        if isCapExempt(kind) { return true }
-        return kind == .minesweeper && Minesweeper.panelIsCapExempt(config)
     }
 
     public struct Placement: Equatable, Sendable {
