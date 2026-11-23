@@ -85,6 +85,10 @@ final class AINotchController {
         observers.append(center.addObserver(forName: NotchIslandOccupancy.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.layout() }
         })
+        // 插电霓虹动画开播、播完：快捷结果卡片改去备用浮窗、播完回刘海下。
+        observers.append(center.addObserver(forName: BatteryNeonPlugController.didChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.layout() }
+        })
         let workspace = NSWorkspace.shared.notificationCenter
         for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             workspaceObservers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
@@ -158,7 +162,26 @@ final class AINotchController {
                 strip.orderFrontRegardless()
             }
         }
+        avoidBlockersWhileOpen()
         relayoutQuick()
+    }
+
+    /// 面板开着时刘海小岛后来才出现或变高（倒计时小岛下面那条剩余时间、灵动提示）压到面板：
+    /// 面板平滑往下挪到它下面，减弱动态效果时直接到位。只往下不往上（`AINotchLayout.avoidance`）。
+    private func avoidBlockersWhileOpen() {
+        guard isOpen, let panel else { return }
+        let current = panel.frame
+        let screen = NSScreen.screens.first { $0.frame.intersects(current) }?.frame ?? current
+        guard let next = AINotchLayout.avoidance(current: current, screen: screen, avoiding: blockers) else { return }
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            panel.setFrame(next, display: true)
+            return
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().setFrame(next, display: true)
+        }
     }
 
     private func makeEntry(_ id: UInt32) -> AINotchEntryWindow {
@@ -327,8 +350,8 @@ final class AINotchController {
     // MARK: 快捷结果卡片
 
     /// 指针所在屏幕（小组件面板就在那块屏幕上）的描述和刘海是不是被占着。
-    /// 占着：刘海小岛（专注计时、下载、收音机、插电）、灵动提示、展开的消息卡片在这块屏幕上，
-    /// 或者拾掇在运行、这块屏幕有刘海（刘海让给拾掇）。
+    /// 占着：刘海小岛（专注计时、下载、收音机、插电）、灵动提示、展开的消息卡片、正在播的插电
+    /// 霓虹动画在这块屏幕上，或者拾掇在运行、这块屏幕有刘海（刘海让给拾掇）。
     private func quickScreen(id: UInt32? = nil) -> (screen: NSScreen, description: AINotchScreen, occupied: Bool)? {
         let screens = NSScreen.screens
         guard !screens.isEmpty else { return nil }
@@ -342,7 +365,8 @@ final class AINotchController {
         let description = Self.describe(target, isMain: target == screens[0])
         let frame = target.frame
         let busy = [NotchIslandOccupancy.shared.frame, IslandOccupancy.shared.frame,
-                    NotchMessageOccupancy.shared.frame].compactMap { $0 }.contains { $0.intersects(frame) }
+                    NotchMessageOccupancy.shared.frame,
+                    BatteryNeonPlugController.shared.playingFrame].compactMap { $0 }.contains { $0.intersects(frame) }
         let shiduo = shiduoRunning && description.notch != nil
         return (target, description, busy || shiduo)
     }
@@ -380,10 +404,12 @@ final class AINotchController {
         let next = AIQuickResult.relocated(current, notchOccupied: place.occupied)
         if next != current { quickModel.target = next }
         panelModel.quickCard = next == .notchCard
-        placeQuick(window, place: place)
+        // 刘海卡片和备用浮窗之间换位置时平滑挪过去（同一个窗口、同一条回答，不收起再弹）。
+        placeQuick(window, place: place, animated: next != current)
     }
 
-    private func placeQuick(_ window: NSWindow, place: (screen: NSScreen, description: AINotchScreen, occupied: Bool)) {
+    private func placeQuick(_ window: NSWindow, place: (screen: NSScreen, description: AINotchScreen, occupied: Bool),
+                            animated: Bool = false) {
         let description = place.description
         let screen = place.screen.frame
         let notchCard = quickModel.target == .notchCard
@@ -399,10 +425,20 @@ final class AINotchController {
             let others = blockers + [NotchMessageOccupancy.shared.frame].compactMap { $0 }
             card = AIQuickResult.floatingFrame(screen: screen, menuBar: AINotchLayout.menuBar(of: description),
                                                entry: AINotchLayout.anchor(for: description, shiduoRunning: shiduoRunning),
-                                               height: height, blockers: others)
+                                               height: height, blockers: others,
+                                               animation: BatteryNeonPlugController.shared.playingFrame)
         }
         let frame = AIQuickResult.windowFrame(card: card, withMascot: withMascot)
-        if window.frame != frame { window.setFrame(frame, display: true) }
+        guard window.frame != frame else { return }
+        guard animated, window.isVisible, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+            window.setFrame(frame, display: true)
+            return
+        }
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            window.animator().setFrame(frame, display: true)
+        }
     }
 
     /// 收起快捷结果卡片。回答挂在 `AIChatCenter` 上，收起了也照样答完，点刘海或小组件再看。

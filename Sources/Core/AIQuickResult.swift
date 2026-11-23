@@ -213,18 +213,29 @@ public enum AIQuickResult {
     }
 
     /// 备用浮窗：刘海那边有小岛（专注计时、通知、下载）挡着时放在它们下面（同对话面板的
-    /// 避让）；没有可避让的（拾掇占着刘海、消息卡片展开着）时放在屏幕右上角、菜单栏下方。
+    /// 避让）；没有可避让的（拾掇占着刘海、消息卡片展开着、插电动画在播）时放在屏幕右上角、
+    /// 菜单栏下方。
+    ///
+    /// `animation` 是插电霓虹动画占着的那一块（刘海往下到霓虹数字，见 `BatteryNeon.Plug.window`）：
+    /// 它很高，放到它下面卡片就掉到屏幕中间，所以先放右上角；屏幕太窄、右上角也压到它时
+    /// 才整块挪到它下面。
     public static func floatingFrame(screen: CGRect, menuBar: CGRect, entry: CGRect, height: CGFloat,
-                                     blockers: [CGRect]) -> CGRect {
+                                     blockers: [CGRect], animation: CGRect? = nil) -> CGRect {
         let size = CGSize(width: width, height: height)
         let onScreen = blockers.filter { $0.intersects(screen) }
+        let playing = animation.flatMap { $0.intersects(screen) ? $0 : nil }
         if !onScreen.isEmpty {
             let placed = AINotchLayout.placement(below: entry, screen: screen, size: size, avoiding: onScreen)
-            if placed.clearedBlockers { return placed.frame }
+            if placed.clearedBlockers, !(playing.map { AINotchLayout.overlaps($0, placed.frame) } ?? false) {
+                return placed.frame
+            }
         }
         let x = screen.maxX - margin - size.width
         let y = max(menuBar.minY - AINotchLayout.cardGap - size.height, screen.minY + margin)
-        return CGRect(x: max(x, screen.minX + margin), y: y, width: size.width, height: size.height)
+        let corner = CGRect(x: max(x, screen.minX + margin), y: y, width: size.width, height: size.height)
+        guard let playing, AINotchLayout.overlaps(playing, corner) else { return corner }
+        return AINotchLayout.placement(below: entry, screen: screen, size: size,
+                                       avoiding: onScreen + [playing]).frame
     }
 
     /// 卡片窗口：贴在刘海下时往上多留一截给探头的小熊猫（那一截透明，点击穿过去）。

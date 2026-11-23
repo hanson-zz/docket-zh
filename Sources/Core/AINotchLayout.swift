@@ -234,6 +234,18 @@ public enum AINotchLayout {
         return (frame, true)
     }
 
+    /// 面板已经开着、刘海上后来才出现或变高的东西压到它（典型是面板打开以后才出现的倒计时小岛，
+    /// 下面那条约 26 点高的剩余时间会伸进面板顶上一截）：面板往下挪到它下沿下面，留 `blockerGap`，
+    /// 底边不出屏幕（`margin`）。只往下挪、不往上回：小岛闪一下收起又出现时面板不跟着上下跳，
+    /// 收起再打开时按当时的情况重新摆（`placement`）。不用挪时 nil。
+    public static func avoidance(current: CGRect, screen: CGRect, avoiding blockers: [CGRect]) -> CGRect? {
+        let hits = blockers.filter { overlaps($0, current) }
+        guard let lowest = hits.map(\.minY).min() else { return nil }
+        var frame = current
+        frame.origin.y = max(lowest - blockerGap - current.height, screen.minY + margin)
+        return frame.origin.y < current.origin.y ? frame : nil
+    }
+
     /// 展开的对话卡片：在入口正下方，水平对着入口中间，超出屏幕时往里收。刘海入口时
     /// 卡片整个在菜单栏下面、空出 `cardGap`（和专注卡片一样），不接在刘海上；外接屏
     /// 胶囊下面空 4。

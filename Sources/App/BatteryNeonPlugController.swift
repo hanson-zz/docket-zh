@@ -24,7 +24,18 @@ final class BatteryNeonPlugController {
     private var panel: NSPanel?
     private var closeTask: Task<Void, Never>?
 
+    /// 动画正在播时窗口占的那一块（屏幕坐标），没在播时 nil。变了发 `didChange`：
+    /// 刘海下的 AI 快捷结果卡片按它改去备用浮窗，播完回刘海下（`AINotchController.quickScreen`）。
+    private(set) var playingFrame: CGRect?
+    nonisolated static let didChange = Notification.Name("DocklingBatteryNeonPlugDidChange")
+
     private init() {}
+
+    private func setPlaying(_ frame: CGRect?) {
+        guard frame != playingFrame else { return }
+        playingFrame = frame
+        NotificationCenter.default.post(name: Self.didChange, object: nil)
+    }
 
     func start() {
         guard source == nil else { return }
@@ -113,14 +124,12 @@ final class BatteryNeonPlugController {
         let notch = AINotchLayout.notchRect(screen: frame, topInset: screen.safeAreaInsets.top,
                                             leftArea: screen.auxiliaryTopLeftArea,
                                             rightArea: screen.auxiliaryTopRightArea)
-        var menuBar = frame.maxY - screen.visibleFrame.maxY
-        if menuBar <= 0 { menuBar = notch?.height ?? AINotchLayout.fallbackMenuBarHeight }
-        let width = min(frame.width, 520)
-        let centerX = notch?.midX ?? frame.midX
-        let digitsCenter = max(menuBar + 120, frame.height * 0.27)
-        let height = min(frame.height, digitsCenter + 130)
-        let windowFrame = CGRect(x: max(frame.minX, min(centerX - width / 2, frame.maxX - width)),
-                                 y: frame.maxY - height, width: width, height: height)
+        let layout = BatteryNeon.Plug.window(screen: frame, notch: notch,
+                                             menuBarHeight: frame.maxY - screen.visibleFrame.maxY)
+        let windowFrame = layout.frame
+        let menuBar = layout.menuBar
+        let centerX = layout.centerX
+        let digitsCenter = layout.digitsCenter
         // 刘海在窗口里的位置（SwiftUI 坐标，原点左上）。
         let localNotch = notch.map {
             CGRect(x: $0.minX - windowFrame.minX, y: 0, width: $0.width, height: $0.height)
@@ -140,12 +149,14 @@ final class BatteryNeonPlugController {
         host.autoresizingMask = [.width, .height]
         panel.contentView = host
         panel.orderFrontRegardless()
+        setPlaying(windowFrame)
 
         closeTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(BatteryNeon.Plug.total + 0.1))
             guard !Task.isCancelled else { return }
             self?.panel?.orderOut(nil)
             self?.panel?.contentView = nil
+            self?.setPlaying(nil)
         }
     }
 

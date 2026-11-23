@@ -210,6 +210,39 @@ public enum BatteryNeon {
         /// 窗口一共开这么久，到点收掉。
         public static var total: TimeInterval { duration + chipHold + chipFade }
 
+        /// 动画窗口最宽这么宽（以刘海中线对称，屏幕窄时收到屏幕宽）。
+        public static let windowWidth: CGFloat = 520
+        /// 菜单栏自动隐藏（量出来是 0）又没有刘海时按这个高度算，和 `AINotchLayout.fallbackMenuBarHeight`
+        /// 一样（这个文件也编进系统小组件，那边没有 AINotchLayout，所以单写一份，测试里对过）。
+        public static let fallbackMenuBarHeight: CGFloat = 24
+
+        /// 动画窗口放在哪，以及里面的几样东西离窗口顶边多远。AppKit 屏幕坐标，y 向上。
+        public struct Window: Equatable, Sendable {
+            /// 窗口范围：顶边贴屏幕顶，从刘海一直到霓虹数字下面。播放期间刘海这一块就算被它占着
+            /// （快捷结果卡片按它避让，见 `AIQuickResult.floatingFrame`）。
+            public var frame: CGRect
+            /// 菜单栏高度（量不到时按刘海高度，再不行按默认高度）。
+            public var menuBar: CGFloat
+            /// 光滴落下的那条竖线（刘海或菜单栏的中间），屏幕坐标。
+            public var centerX: CGFloat
+            /// 霓虹数字的中心离窗口顶边多远。
+            public var digitsCenter: CGFloat
+        }
+
+        /// 插电动画窗口：宽 `windowWidth`、以刘海（没有刘海时屏幕）中线对称、不出屏幕；数字中心
+        /// 在菜单栏下 120 点和屏幕高度 27% 处取靠下的那个，窗口再往下留 130 点放数字和状态行。
+        public static func window(screen: CGRect, notch: CGRect?, menuBarHeight: CGFloat) -> Window {
+            var menuBar = menuBarHeight
+            if menuBar <= 0 { menuBar = notch?.height ?? fallbackMenuBarHeight }
+            let width = min(screen.width, windowWidth)
+            let centerX = notch?.midX ?? screen.midX
+            let digitsCenter = max(menuBar + 120, screen.height * 0.27)
+            let height = min(screen.height, digitsCenter + 130)
+            let frame = CGRect(x: max(screen.minX, min(centerX - width / 2, screen.maxX - width)),
+                               y: screen.maxY - height, width: width, height: height)
+            return Window(frame: frame, menuBar: menuBar, centerX: centerX, digitsCenter: digitsCenter)
+        }
+
         /// 各段起止（秒）。
         static let glowEnd = 0.45
         static let dropStart = 0.3
