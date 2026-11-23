@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 详情面板底部的“外观”：一行入口（主题色小圆点和当前的颜色、背景），
 /// 点开就地显示和设置 ▸ 小组件同一块“颜色与背景”（`WidgetTintPicker`），
+/// 正在播放在它上面多一行「面板样式」（标准 / 黑胶模式，`MusicPanelStyle`），
 /// 改了立刻写回这张卡片，扩展栏上的卡片跟着变。自定义取色和渐变背景照旧
 /// 是码头 Pro，没解锁时带小锁，点了弹付费墙。
 ///
@@ -53,6 +54,9 @@ struct WidgetAppearanceSection: View {
             .accessibilityHint(open ? tr("收起外观") : tr("改这张卡片的主题色和背景"))
 
             if open {
+                if WidgetAppearance.offersPanelStyle(instance.kind) {
+                    panelStyleRow
+                }
                 WidgetTintPicker(instance: instance,
                                  columns: WidgetAppearance.swatchColumns(
                                      available: Double(width), cell: Double(WidgetTintPicker.swatchCell),
@@ -65,6 +69,32 @@ struct WidgetAppearanceSection: View {
                 }
             }
         }
+    }
+
+    /// 正在播放的面板样式：标准 / 黑胶模式，选了立刻写回，面板当场换样子。
+    private var panelStyleRow: some View {
+        HStack(spacing: 10) {
+            Text(tr("面板样式"))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
+            Picker(tr("面板样式"), selection: Binding(
+                get: { MusicPanelStyle.of(instance.config) },
+                set: { style in
+                    guard !context.isPreview else { return }
+                    let latest = WidgetWriter.current(instance.id) ?? instance
+                    WidgetWriter.write(latest) { $0 = MusicPanelStyle.choosing(style, in: $0) }
+                })) {
+                ForEach(MusicPanelStyle.allCases) { style in
+                    Text(style.title).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .font(.system(size: 13))
+        }
+        .padding(.bottom, 4)
     }
 
     /// 入口上的小圆点：卡片这一刻的主色（没解锁时自定义颜色退回默认，和卡片一样）。

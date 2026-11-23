@@ -74068,6 +74068,28 @@
           }
         }
       }
+    },
+    "黑胶模式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinyl"
+          }
+        }
+      }
+    },
+    "面板样式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Panel style"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

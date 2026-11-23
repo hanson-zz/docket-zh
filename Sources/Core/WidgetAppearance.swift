@@ -10,17 +10,25 @@ public enum WidgetAppearance {
         WidgetTint.offersColor(kind) || WidgetTint.offersBackground(kind)
     }
 
+    /// 外观里还能选面板样式（标准 / 黑胶模式）的卡片：只有正在播放。
+    public static func offersPanelStyle(_ kind: WidgetKind) -> Bool {
+        kind == .music
+    }
+
     /// 这张卡片的颜色或背景调过（不是默认）。只算这种卡片能选的那一项：
     /// 不提供背景的卡片里留着的旧背景值不算。
     public static func isCustomized(_ config: WidgetConfig, kind: WidgetKind) -> Bool {
         let color = WidgetTint.offersColor(kind) && WidgetTint.choice(config) != .kindDefault
         let background = WidgetTint.offersBackground(kind) && WidgetTint.background(config) != .plain
-        return color || background
+        return color || background || offersPanelStyle(kind) && MusicPanelStyle.of(config) != .standard
     }
 
-    /// 入口右边的一行摘要：选过的颜色和背景，用“ · ”连起来；都没调过是“默认”。
+    /// 入口右边的一行摘要：选过的面板样式、颜色和背景，用“ · ”连起来；都没调过是“默认”。
     public static func summary(_ config: WidgetConfig, kind: WidgetKind) -> String {
         var parts: [String] = []
+        if offersPanelStyle(kind), MusicPanelStyle.of(config) != .standard {
+            parts.append(MusicPanelStyle.of(config).title)
+        }
         if WidgetTint.offersColor(kind) {
             switch WidgetTint.choice(config) {
             case .kindDefault: break

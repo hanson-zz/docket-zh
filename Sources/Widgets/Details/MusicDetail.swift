@@ -10,6 +10,8 @@ import SwiftUI
 /// 有这块时封面 128、控制键收紧，内容底约 520，不再落进底部渐隐带；点「全部 N 首」
 /// 延展成迷你播放条吸顶加整张列表，判断在 Core `MusicQueue`）。底部「外观」行由面板外框画。
 /// 卡带外观搬成了单独的「复古卡带」小组件，面板里不再有「卡带外观」选择条。
+/// 外观里的「面板样式」选了黑胶模式时，播放页换成唱台（`vinylPlayer`、`VinylStageView`，
+/// 数学在 Core `MusicVinyl`），其余功能一样。
 ///
 /// 原来是一张铺满封面的卡片，往外多画 10pt（`bleed`），超出面板内边距，右边贴着面板
 /// 边缘露出一条亮边；现在不再越界，背景改成深色玻璃加封面主色光晕（外框按
@@ -44,6 +46,8 @@ struct MusicDetail: View {
     private var autoSwitch: Bool { MusicSourceSwitch.autoSwitch(config) }
     /// 固定着的来源（关了自动切换并选过来源）。
     private var pinnedSource: MusicSource? { MusicPin.pinned(config) }
+    /// 面板样式（标准 / 黑胶模式），在底部「外观」里切换。
+    private var style: MusicPanelStyle { MusicPanelStyle.of(config) }
 
     private static let base = Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
     private let ink = Color.panelPrimary
@@ -55,6 +59,9 @@ struct MusicDetail: View {
     @MainActor
     static func ground(instance: WidgetInstance, context: WidgetContext) -> ArtworkTint? {
         guard NSApp.effectiveAppearance.panelIsDark else { return nil }
+        // 黑胶模式不铺深色底，浅色、深色都是系统玻璃，跟随外观。
+        let latest = WidgetWriter.current(instance.id) ?? instance
+        guard MusicPanelStyle.of(latest.config) == .standard else { return nil }
         return MusicDetail(instance: instance, context: context).playing?.tint
             ?? ArtworkTint(hue: 0, saturation: 0)
     }
@@ -111,7 +118,11 @@ struct MusicDetail: View {
             default:
                 if let track = playing {
                     topRow(track)
-                    player(track)
+                    if style == .vinyl {
+                        vinylPlayer(track)
+                    } else {
+                        player(track)
+                    }
                 } else if needsPermission {
                     connect
                 } else {
@@ -327,7 +338,36 @@ struct MusicDetail: View {
         }
     }
 
-    private func cover(_ track: Playing, side: CGFloat) -> some View {
+    /// 黑胶模式：上面唱台（封面玻璃卡、唱片、唱臂、水波纹），下面歌名、歌手 · 专辑、
+    /// 进度两端时间、控制键和音量，有歌单入口时再接「接下来」。控制键和标准样式
+    /// 同一套判断，系统控制不了的键不画。高度交给面板容器。
+    private func vinylPlayer(_ track: Playing) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VinylStageView(artwork: track.artwork, tint: track.tint, playing: track.isPlaying,
+                           progress: track.duration > 0 ? track.progress : nil) { side in
+                cover(track, side: side - 10, glow: false)
+                    .padding(5)
+                    .readableGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(color: .black.opacity(0.18), radius: 10, y: 6)
+            }
+            .padding(.top, 10)
+            titles(track, big: 20)
+                .padding(.top, 12)
+            if track.duration > 0 || !track.isBrowser {
+                scrubber(track, inline: true)
+                    .padding(.top, 14)
+            }
+            transport(track, play: 56, height: 60, gap: 20, glyph: 18, glass: true)
+                .padding(.top, 12)
+            volume(track, top: 10)
+            if let block = queueBlock(track) {
+                queueCollapsed(track, block)
+                    .padding(.top, 14)
+            }
+        }
+    }
+
+    private func cover(_ track: Playing, side: CGFloat, glow showsGlow: Bool = true) -> some View {
         let glow = track.tint.map { Self.colour($0.glow) } ?? .white
         return Group {
             if let image = track.artwork {
@@ -349,19 +389,21 @@ struct MusicDetail: View {
         .matchedGeometryEffect(id: "cover", in: coverSpace)
         .overlay(RoundedRectangle(cornerRadius: side > 100 ? 16 : 10, style: .continuous)
             .strokeBorder(.panelStroke, lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.35), radius: 10, y: 6)
+        .shadow(color: .black.opacity(showsGlow ? 0.35 : 0.12), radius: showsGlow ? 10 : 3, y: showsGlow ? 6 : 2)
         .accessibilityLabel(tr("封面"))
         // 封面主色的光晕，不超过 15%。画在背景里，只往四周溢出、不参与排版：
         // 原来它和封面一起放在 ZStack 里，1.64 倍封面宽（约 335pt）比 320 面板
         // 的内容区（288pt）还宽，把整列内容撑宽，进度条、总时长和底部「外观」
         // 右边都被面板裁掉（见 Core `DetailPanelWidth`）。
         .background {
-            Circle()
-                .fill(RadialGradient(colors: [glow.opacity(ArtworkTint.glowOpacity), glow.opacity(0)],
-                                     center: .center, startRadius: 0, endRadius: side * 0.82))
-                .frame(width: side * 1.64, height: side * 1.64)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+            if showsGlow {
+                Circle()
+                    .fill(RadialGradient(colors: [glow.opacity(ArtworkTint.glowOpacity), glow.opacity(0)],
+                                         center: .center, startRadius: 0, endRadius: side * 0.82))
+                    .frame(width: side * 1.64, height: side * 1.64)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
         }
     }
 
@@ -488,7 +530,7 @@ struct MusicDetail: View {
 
     @ViewBuilder
     private func transport(_ track: Playing, play: CGFloat = 62, height: CGFloat = 64, gap: CGFloat = 30,
-                           glyph: CGFloat = 24) -> some View {
+                           glyph: CGFloat = 24, glass: Bool = false) -> some View {
         if track.isBrowser {
             // 浏览器标签页只能播放 / 暂停。
             playButton(track.isPlaying, size: play) { BrowserMedia.shared.playPause() }
@@ -498,20 +540,22 @@ struct MusicDetail: View {
             let extras = track.source?.hasShuffleAndRepeat == true
             ZStack {
                 HStack(spacing: gap) {
-                    glyphButton("backward.end.fill", glyph, label: tr("上一首")) { MusicService.shared.previous() }
+                    glyphButton("backward.end.fill", glyph, hit: glass ? 44 : 40, glass: glass,
+                                label: tr("上一首")) { MusicService.shared.previous() }
                     playButton(track.isPlaying, size: play) { MusicService.shared.playPause() }
-                    glyphButton("forward.end.fill", glyph, label: tr("下一首")) { MusicService.shared.next() }
+                    glyphButton("forward.end.fill", glyph, hit: glass ? 44 : 40, glass: glass,
+                                label: tr("下一首")) { MusicService.shared.next() }
                 }
                 if extras {
                     HStack {
                         toggleGlyph("shuffle", on: native?.shuffle == true, source: track.source,
-                                    label: tr("随机播放")) {
+                                    glass: glass, label: tr("随机播放")) {
                             MusicService.shared.setShuffle(!(native?.shuffle ?? false))
                         }
                         Spacer()
                         let mode = native?.repeatMode ?? .off
                         toggleGlyph(mode == .one ? "repeat.1" : "repeat", on: mode != .off,
-                                    source: track.source, label: mode.label) {
+                                    source: track.source, glass: glass, label: mode.label) {
                             MusicService.shared.cycleRepeat()
                         }
                     }
@@ -542,8 +586,9 @@ struct MusicDetail: View {
         .accessibilityLabel(playing ? tr("暂停") : tr("播放"))
     }
 
-    private func glyphButton(_ symbol: String, _ size: CGFloat, hit: CGFloat = 40, label: String,
-                             action: @escaping () -> Void) -> some View {
+    /// `glass`：黑胶模式里垫一圈读得清的玻璃圆。
+    private func glyphButton(_ symbol: String, _ size: CGFloat, hit: CGFloat = 40, glass: Bool = false,
+                             label: String, action: @escaping () -> Void) -> some View {
         Button {
             guard !context.isPreview else { return }
             action()
@@ -551,26 +596,32 @@ struct MusicDetail: View {
             Image(systemName: symbol)
                 .font(.system(size: size, weight: .semibold))
                 .foregroundStyle(.panelPrimary)
-                .frame(width: hit, height: 40)
+                .frame(width: hit, height: glass ? hit : 40)
+                .background {
+                    if glass { Color.clear.readableGlass(in: Circle()) }
+                }
                 .contentShape(Circle())
         }
         .buttonStyle(PressScale())
         .accessibilityLabel(label)
     }
 
-    private func toggleGlyph(_ symbol: String, on: Bool, source: MusicSource?, label: String,
-                             action: @escaping () -> Void) -> some View {
+    private func toggleGlyph(_ symbol: String, on: Bool, source: MusicSource?, glass: Bool = false,
+                             label: String, action: @escaping () -> Void) -> some View {
         Button {
             guard !context.isPreview else { return }
             action()
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: symbol)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: glass ? 15 : 17, weight: .semibold))
                     .foregroundStyle(on ? accent(source).panelReadable : .panelSecondary)
                 Circle().fill(on ? accent(source) : .clear).frame(width: 4, height: 4)
             }
-            .frame(width: 32, height: 40)
+            .frame(width: glass ? 38 : 32, height: glass ? 38 : 40)
+            .background {
+                if glass { Color.clear.readableGlass(in: Circle()) }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(PressScale())
