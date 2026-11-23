@@ -650,8 +650,8 @@ final class MinesweeperTests: XCTestCase {
         XCTAssertTrue(Minesweeper.showsHint(config), "第一次打开显示")
         Minesweeper.apply(.flag, at: 40, level: .beginner, to: &config, now: 1)
         XCTAssertTrue(Minesweeper.showsHint(config), "还没玩完一局")
-        // 输一局。
-        Minesweeper.store(MineBoard.fixed(rows: 9, columns: 9, mines: [0], startedAt: 1), level: .beginner, in: &config)
+        // 输一局（10 颗雷的初级棋盘，点在第 0 格的雷上）。
+        Minesweeper.store(oneClickBoard(startedAt: 1), level: .beginner, in: &config)
         XCTAssertTrue(Minesweeper.apply(.reveal, at: 0, level: .beginner, to: &config, now: 2).justLost)
         XCTAssertFalse(Minesweeper.showsHint(config))
         Minesweeper.restart(.beginner, in: &config)
