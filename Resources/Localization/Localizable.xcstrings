@@ -74512,6 +74512,28 @@
           }
         }
       }
+    },
+    "黑胶模式是 Pro 功能，现在显示标准样式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vinyl is a Pro feature. Showing the Standard style for now."
+          }
+        }
+      }
+    },
+    "解锁" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

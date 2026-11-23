@@ -23,7 +23,8 @@ import Foundation
 ///   科普卡、菜单栏第二时区都免费，见 `WorldClockLook`）、Codex 用量的精版（`layout` 为
 ///   medium；简版免费，见 `CodexCard`）。喝水卡片
 ///   选的是累计达标解锁的柴犬或橘猫时，角色样式不算 Pro，见 `waterCharacterEarned`。
-///   正在播放原来中卡上的三种卡带外观 2026-10-23 起搬成整种 Pro 的「复古卡带」。
+///   正在播放原来中卡上的三种卡带外观 2026-10-23 起搬成整种 Pro 的「复古卡带」；
+///   正在播放面板的黑胶模式（`panelStyle` 为 vinyl）是 Pro，标准样式免费。
 /// - 录音的转文字、裁剪和编辑，见 `ProLicenseGate.canUseRecorderTools`。
 /// - 书签的分组文件夹（`BookmarkGroups`），见 `ProLicenseGate.canUseBookmarkGroups`。
 /// - 邮件面板的多账户筛选（`MailInbox`），见 `ProLicenseGate.canFilterMailAccounts`。
@@ -259,6 +260,11 @@ public enum ProFeatures {
         case .water:
             // 喝水的角色样式 2026-10-20 起是 Pro，圆环免费。
             if case .string(let layout) = overrides[WaterLayout.key] { return layout == WaterLayout.character.rawValue }
+        case .music:
+            // 正在播放整种免费，面板的黑胶模式是 Pro，标准样式免费。
+            if case .string(let raw) = overrides[MusicPanelStyle.key] {
+                return (MusicPanelStyle(rawValue: raw) ?? .standard).isPro
+            }
         case .pet:
             // 电子宠物整种是 Pro，角色照旧：小熊猫以外都标 Pro。喝水的柴犬和
             // 橘猫靠达标天数解锁，那是喝水自己的规则，见 WaterCharacter.access。

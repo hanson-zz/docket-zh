@@ -31,19 +31,38 @@ final class MusicVinylTests: XCTestCase {
     // MARK: 唱台布局
 
     func testStageFitsWidth() {
-        for width in [288.0, 270, 250, 400] {
+        for width in [308.0, 288, 270, 250, 400] {
             let stage = MusicVinyl.stage(width: width)
             XCTAssertLessThanOrEqual(stage.width, width + 0.001)
-            XCTAssertLessThanOrEqual(stage.center.x + stage.radius, stage.width)
-            XCTAssertLessThanOrEqual(stage.pivot.x + stage.pivotBase, stage.width)
-            XCTAssertGreaterThanOrEqual(stage.center.y - stage.radius, 0)
-            XCTAssertLessThanOrEqual(stage.center.y + stage.radius, stage.height)
-            XCTAssertLessThanOrEqual(stage.cover.maxY, stage.height)
-            XCTAssertLessThanOrEqual(stage.cover.maxX, stage.center.x - stage.label,
-                                     "封面卡不挡住中心标签")
+            XCTAssertLessThanOrEqual(stage.height, 260)
+            // 唱盘（含金属边和厚度）轮廓完整，不被唱台裁掉。
+            XCTAssertGreaterThanOrEqual(stage.center.x - stage.platter, 0)
+            XCTAssertLessThanOrEqual(stage.center.x + stage.platter, stage.width)
+            XCTAssertGreaterThanOrEqual(stage.center.y - stage.platter, 0)
+            XCTAssertLessThanOrEqual(stage.platterBottom, stage.height)
+            // 唱臂底座在唱台里。
+            XCTAssertLessThanOrEqual(stage.pivot.x + stage.pivotBase * 1.15, stage.width)
+            XCTAssertGreaterThanOrEqual(stage.pivot.y - stage.pivotBase * 1.15, 0)
+            // 小熊猫贴纸在唱台里。
+            XCTAssertGreaterThanOrEqual(stage.sticker.x, 0)
+            XCTAssertLessThanOrEqual(stage.sticker.maxY, stage.height)
         }
         XCTAssertEqual(MusicVinyl.stage(width: 400).scale, 1, "宽了不放大")
         XCTAssertEqual(MusicVinyl.stage(width: .nan).scale, 1)
+        let full = MusicVinyl.stage(width: MusicVinyl.designWidth)
+        XCTAssertGreaterThanOrEqual(full.height, 240, "唱台约 240 到 260 高")
+        XCTAssertLessThanOrEqual(full.height, 260)
+        XCTAssertGreaterThanOrEqual(full.radius, 100, "唱片放大")
+        XCTAssertEqual(MusicVinyl.panelWidth - 32, MusicVinyl.designWidth, "340 面板的内容区正好放下唱台")
+    }
+
+    func testStickerStaysClearOfTheStylusPath() {
+        let stage = MusicVinyl.stage(width: MusicVinyl.designWidth)
+        for step in 0...20 {
+            let angle = MusicVinyl.armAngle(stage, progress: Double(step) / 20, playing: true)
+            XCTAssertGreaterThan(MusicVinyl.stylus(stage, angle: angle).x, stage.sticker.maxX,
+                                 "小熊猫不挡唱针走的音轨")
+        }
     }
 
     func testRippleStaysInsideStage() {
@@ -51,6 +70,9 @@ final class MusicVinylTests: XCTestCase {
         let widest = stage.radius * (1 + MusicVinyl.rippleReach)
         XCTAssertLessThanOrEqual(stage.center.x + widest, stage.width + 0.001)
         XCTAssertGreaterThanOrEqual(stage.center.x - widest, 0)
+        let water = stage.center.y + stage.radius * MusicVinyl.waterDrop
+        XCTAssertLessThanOrEqual(water + widest * MusicVinyl.waterFlatness, stage.height)
+        XCTAssertGreaterThan(widest, stage.platter, "两侧露得出一点水面")
     }
 
     // MARK: 唱臂
@@ -58,8 +80,8 @@ final class MusicVinylTests: XCTestCase {
     func testArmRestsOffTheRecord() {
         let stage = MusicVinyl.stage(width: 288)
         XCTAssertEqual(MusicVinyl.armAngle(stage, progress: 0.5, playing: false), MusicVinyl.restAngle)
-        XCTAssertGreaterThan(MusicVinyl.stylusDistance(stage, angle: MusicVinyl.restAngle), stage.radius,
-                             "收起时唱针在唱片外面")
+        XCTAssertGreaterThan(MusicVinyl.stylusDistance(stage, angle: MusicVinyl.restAngle), stage.platter,
+                             "收起时唱针在唱盘外面")
     }
 
     func testArmFollowsProgressFromOuterToInner() {

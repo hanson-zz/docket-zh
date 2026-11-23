@@ -18,6 +18,8 @@ import Foundation
 /// - 收音机整种免费，三款复古皮肤（木壳电子管、晶体管便携、数码卡座）和五款新外观
 ///   （烟晶、灯阵、瓷白圆盘、掌机像素、墨白直尺）是 Pro，
 ///   没解锁时画回经典的半圆表盘，不盖遮罩；配置照旧存着皮肤，解锁或试用时自动回来。
+/// - 正在播放面板的黑胶模式是 Pro：没解锁时选它弹付费墙、不改配置；已经存着黑胶模式的
+///   画标准样式，面板里一行 Pro 提示，配置不改写，解锁或试用时自动回来，见 `musicPanelStyle`。
 /// - 正在播放整种免费。卡带外观（磁带、随身听、收录机）2026-10-23 起搬成整种 Pro 的
 ///   「复古卡带」小组件，没解锁时和别的 Pro 小组件一样盖小锁遮罩；迁移见 `CassetteMigration`。
 /// - 习惯打卡整种免费，免费 3 个习惯：没解锁时加不了第 4 个（弹付费墙），已有
@@ -168,6 +170,14 @@ public enum ProLicenseGate {
         let skin = RadioSkin.stored(config)
         guard !unlocked, skin.isPro else { return skin }
         return .classic
+    }
+
+    /// 正在播放面板实际画哪种样式：黑胶模式是 Pro，没解锁时画标准样式；配置照旧存着
+    /// 黑胶模式，解锁或试用时自动回来。
+    public static func musicPanelStyle(config: WidgetConfig, unlocked: Bool) -> MusicPanelStyle {
+        let style = MusicPanelStyle.of(config)
+        guard !unlocked, style.isPro else { return style }
+        return .standard
     }
 
     /// 纪念日单个卡片实际画哪种样式：没解锁时玻璃沙漏退回线条沙漏，撕页照旧。

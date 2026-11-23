@@ -15,7 +15,13 @@ struct WidgetAppearanceSection: View {
     var width: CGFloat
 
     @State private var open = false
+    /// 没解锁时点了黑胶模式：显示一行 Pro 提示（付费墙同时弹出）。
+    @State private var vinylAsked = false
     @Environment(\.colorScheme) private var scheme
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporterUnlocked = false
+
+    private var unlocked: Bool { licenseUnlocked || supporterUnlocked || context.isPreview }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -71,28 +77,56 @@ struct WidgetAppearanceSection: View {
         }
     }
 
-    /// 正在播放的面板样式：标准 / 黑胶模式，选了立刻写回，面板当场换样子。
+    /// 正在播放的面板样式：标准 / 黑胶模式，选了立刻写回，面板当场换样子。黑胶模式是
+    /// Pro（旁边是 Pro 标识）：没解锁时点它弹付费墙、不改配置，下面一行提示；已经存着
+    /// 黑胶模式（试用到期）的照旧存着，面板画标准样式，同样显示这行提示。
     private var panelStyleRow: some View {
-        HStack(spacing: 10) {
-            Text(tr("面板样式"))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .fixedSize()
-            Picker(tr("面板样式"), selection: Binding(
-                get: { MusicPanelStyle.of(instance.config) },
-                set: { style in
-                    guard !context.isPreview else { return }
-                    let latest = WidgetWriter.current(instance.id) ?? instance
-                    WidgetWriter.write(latest) { $0 = MusicPanelStyle.choosing(style, in: $0) }
-                })) {
-                ForEach(MusicPanelStyle.allCases) { style in
-                    Text(style.title).tag(style)
+        let stored = MusicPanelStyle.of(instance.config)
+        let shown = ProLicenseGate.musicPanelStyle(config: instance.config, unlocked: unlocked)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Text(tr("面板样式"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize()
+                Picker(tr("面板样式"), selection: Binding(
+                    get: { shown },
+                    set: { style in
+                        guard !context.isPreview else { return }
+                        guard ProLicenseGate.canChoose(.music, [MusicPanelStyle.key: .string(style.rawValue)],
+                                                       unlocked: unlocked) else {
+                            vinylAsked = true
+                            PaywallWindow.shared.show()
+                            return
+                        }
+                        vinylAsked = false
+                        let latest = WidgetWriter.current(instance.id) ?? instance
+                        WidgetWriter.write(latest) { $0 = MusicPanelStyle.choosing(style, in: $0) }
+                    })) {
+                    ForEach(MusicPanelStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .font(.system(size: 13))
+                ProBadge()
+            }
+            if !unlocked, vinylAsked || stored.isPro {
+                HStack(spacing: 8) {
+                    Text(tr("黑胶模式是 Pro 功能，现在显示标准样式"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 4)
+                    Button(tr("解锁")) { PaywallWindow.shared.show() }
+                        .font(.system(size: 13, weight: .semibold))
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color(hex: ShelfColor.redPanda.hex))
                 }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .font(.system(size: 13))
         }
         .padding(.bottom, 4)
     }

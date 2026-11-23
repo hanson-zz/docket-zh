@@ -37,6 +37,8 @@ struct MusicDetail: View {
     @State private var hovered: String?
     @Namespace private var coverSpace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
+    @AppStorage(Supporter.key) private var supporterUnlocked = false
 
     /// 写过之后面板拿到的仍可能是打开时的那份，读最新存着的。
     private var current: WidgetInstance { WidgetWriter.current(instance.id) ?? instance }
@@ -46,8 +48,12 @@ struct MusicDetail: View {
     private var autoSwitch: Bool { MusicSourceSwitch.autoSwitch(config) }
     /// 固定着的来源（关了自动切换并选过来源）。
     private var pinnedSource: MusicSource? { MusicPin.pinned(config) }
-    /// 面板样式（标准 / 黑胶模式），在底部「外观」里切换。
-    private var style: MusicPanelStyle { MusicPanelStyle.of(config) }
+    /// 面板样式（标准 / 黑胶模式），在底部「外观」里切换。黑胶模式是 Pro：没解锁时画
+    /// 标准样式，配置照旧存着（`ProLicenseGate.musicPanelStyle`），预览照常画。
+    private var style: MusicPanelStyle {
+        ProLicenseGate.musicPanelStyle(config: config,
+                                       unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
+    }
 
     private static let base = Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
     private let ink = Color.panelPrimary
@@ -61,7 +67,9 @@ struct MusicDetail: View {
         guard NSApp.effectiveAppearance.panelIsDark else { return nil }
         // 黑胶模式不铺深色底，浅色、深色都是系统玻璃，跟随外观。
         let latest = WidgetWriter.current(instance.id) ?? instance
-        guard MusicPanelStyle.of(latest.config) == .standard else { return nil }
+        guard ProLicenseGate.musicPanelStyle(config: latest.config,
+                                             unlocked: ProAccess.isUnlocked || context.isPreview) == .standard
+        else { return nil }
         return MusicDetail(instance: instance, context: context).playing?.tint
             ?? ArtworkTint(hue: 0, saturation: 0)
     }
@@ -338,31 +346,29 @@ struct MusicDetail: View {
         }
     }
 
-    /// 黑胶模式：上面唱台（封面玻璃卡、唱片、唱臂、水波纹），下面歌名、歌手 · 专辑、
-    /// 进度两端时间、控制键和音量，有歌单入口时再接「接下来」。控制键和标准样式
-    /// 同一套判断，系统控制不了的键不画。高度交给面板容器。
+    /// 黑胶模式（V2）：上面唱台（大唱片、中心封面标签、唱臂、水面、听歌小熊猫），下面
+    /// 歌名（19pt）、歌手 · 专辑、进度两端时间、控制键和音量，有歌单入口时再接「接下来」
+    /// 或「刚才听过」。控制键和标准样式同一套判断，系统控制不了的键不画。高度交给面板容器。
     private func vinylPlayer(_ track: Playing) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             VinylStageView(artwork: track.artwork, tint: track.tint, playing: track.isPlaying,
-                           progress: track.duration > 0 ? track.progress : nil) { side in
-                cover(track, side: side - 10, glow: false)
-                    .padding(5)
-                    .readableGlass(in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .shadow(color: .black.opacity(0.18), radius: 10, y: 6)
-            }
-            .padding(.top, 10)
-            titles(track, big: 20)
-                .padding(.top, 12)
+                           progress: track.duration > 0 ? track.progress : nil,
+                           ended: VinylMotion.ended(playing: track.isPlaying, elapsed: track.elapsed,
+                                                    duration: track.duration),
+                           track: [track.sourceBundleID, track.title, track.artist].joined(separator: "\u{1}"))
+                .padding(.top, 6)
+            titles(track, big: 19)
+                .padding(.top, 10)
             if track.duration > 0 || !track.isBrowser {
                 scrubber(track, inline: true)
-                    .padding(.top, 14)
+                    .padding(.top, 12)
             }
-            transport(track, play: 56, height: 60, gap: 20, glyph: 18, glass: true)
-                .padding(.top, 12)
-            volume(track, top: 10)
+            transport(track, play: 54, height: 58, gap: 18, glyph: 18, glass: true)
+                .padding(.top, 10)
+            volume(track, top: 8)
             if let block = queueBlock(track) {
                 queueCollapsed(track, block)
-                    .padding(.top, 14)
+                    .padding(.top, 12)
             }
         }
     }
