@@ -923,15 +923,18 @@ struct SettingsView: View {
             .padding(.vertical, 2)
             .help("“透明”不绘制底板，每个小组件保留自己的卡片。")
 
-            ShelfTintToggle(raw: $state.customDock.shelfColor)
+            ShelfBackgroundColorPicker(selection: $state.customDock.shelfColor,
+                                       transparent: look.wrappedValue == .transparent)
 
-            // 只管扩展栏上的小组件：DockShelfView 的 TileContent 只给小组件加
-            // .saturation(0)，应用图标是它的身份，保持原色。
-            Toggle(isOn: Binding(
-                get: { state.customDock.widgetColor == .monochrome },
-                set: { state.customDock.widgetColor = $0 ? .monochrome : .original })) {
-                subtitled(tr("小组件单色"), tr("只把扩展栏上的小组件画成灰阶，应用图标保持原色。"))
+            Picker(selection: $state.customDock.widgetColor) {
+                Text("原色").tag(WidgetColorMode.original)
+                Text("单色").tag(WidgetColorMode.monochrome)
+            } label: {
+                // 实际只给扩展栏上的小组件加 .saturation(0)（DockShelfView 的 TileContent），
+                // 应用图标不变，说明照这个写。
+                subtitled(tr("图标单色"), tr("选单色时只把扩展栏上的小组件画成灰阶，应用图标保持原色。"))
             }
+            .pickerStyle(.segmented)
 
             Toggle(isOn: $state.customDock.reduceTransparency) {
                 subtitled(tr("降低透明度"),
@@ -1882,38 +1885,100 @@ final class ShortcutKeyRecorder {
 
 /// Pro 专属配色: swatches that tint the plate, locked until the sponsor
 /// window's thank-you button has been pressed on this Mac.
-/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板染色（Pro）：一个开关，颜色取 设置 ▸ 通用 ▸ 小组件外观，
-/// 扩展栏自己不再单独选颜色。存储和旧数据兼容见 `ShelfTint`。
-private struct ShelfTintToggle: View {
-    @Binding var raw: String
+/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 扩展栏背景颜色（Pro）：无、跟随小组件默认外观、六色。
+/// 只染整条扩展栏的底板；小组件的颜色在 设置 ▸ 通用 ▸ 小组件默认外观 和各小组件里。
+/// 存储和旧值兼容见 Core `ShelfColorChoice`。
+private struct ShelfBackgroundColorPicker: View {
+    @Binding var selection: String
+    /// 底板选了“透明”：没有底板可染，提示一行。
+    var transparent: Bool
     @AppStorage(Supporter.key) private var supporter = false
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     private var unlocked: Bool { supporter || licenseUnlocked }
 
+    private var current: ShelfColorChoice { ShelfColorChoice(raw: selection) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("底板染色")
-                if !unlocked {
-                    Image(systemName: "lock.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Text("扩展栏背景颜色")
+                Text(verbatim: "· " + current.statusTitle)
+                    .foregroundStyle(.secondary)
+                ProBadge()
                 Spacer()
-                if unlocked {
-                    Toggle("底板染色", isOn: Binding(
-                        get: { ShelfTint.isOn(raw) },
-                        set: { raw = ShelfTint.raw(on: $0) }))
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                } else {
+                if !unlocked {
                     Button("解锁码头 Pro…") { PaywallWindow.shared.show() }
                         .controlSize(.small)
                 }
             }
-            Text("用 设置 ▸ 通用 ▸ 小组件外观 的颜色给扩展栏底板染一层，“透明”外观下不生效。")
+            Text("仅改变整条扩展栏的背景底板，不影响小组件和应用图标的颜色。")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
+                swatch(.plain)
+                swatch(.followWidgets)
+                ForEach(ShelfColor.allCases) { swatch(.color($0)) }
+            }
+            .disabled(!unlocked)
+            .opacity(unlocked ? 1 : 0.45)
+            if transparent {
+                Text("当前使用透明底板，背景颜色不会显示。")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
         }
+    }
+
+    /// 跟随时的色块：和 DockShelfView 给底板取的颜色同一个解析。
+    private func fill(_ choice: ShelfColorChoice) -> Color {
+        switch choice.resolved(global: WidgetLook.shared.config) {
+        case .hex(let hex)?: Color(hex: hex)
+        case .systemAccent?: Color(nsColor: .controlAccentColor)
+        case nil: Color.secondary.opacity(0.15)
+        }
+    }
+
+    private func title(_ choice: ShelfColorChoice) -> String {
+        switch choice {
+        case .plain: tr("无")
+        case .followWidgets: tr("跟随小组件默认外观")
+        case .color(let color): color.title
+        }
+    }
+
+    private func swatch(_ choice: ShelfColorChoice) -> some View {
+        let chosen = current == choice
+        return Button {
+            selection = choice.raw
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(fill(choice))
+                    .frame(width: 26, height: 26)
+                switch choice {
+                case .plain:
+                    Image(systemName: "nosign")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                case .followWidgets:
+                    Image(systemName: "link")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.35), radius: 1)
+                case .color:
+                    EmptyView()
+                }
+                Circle()
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
+                    .frame(width: 32, height: 32)
+                    .opacity(chosen ? 1 : 0)
+            }
+            .frame(width: 34, height: 34)
+            .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .help(title(choice))
+        .accessibilityLabel(choice == .plain ? tr("无配色") : title(choice))
     }
 }

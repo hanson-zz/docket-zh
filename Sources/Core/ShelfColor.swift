@@ -1,10 +1,16 @@
 import Foundation
 
-/// 原来的六种扩展栏底板配色（11-24 之前）。
+/// 扩展栏背景颜色（Pro）的六种颜色：给扩展栏底板染一层颜色。
 ///
-/// 扩展栏不再单独选颜色，改成一个「底板染色」开关（`ShelfTint`），颜色取
-/// 设置 ▸ 通用 ▸ 小组件外观。这里留着是因为 `redPanda.hex` 这些色值被各处当
-/// 品牌强调色用，色值保持不变；旧配置里存的六色值读回时当作开关打开。
+/// `redPanda.hex` 等色值也被各处当品牌强调色用，不要改。
+///
+/// A thank-you for supporting Docket, unlocked from the sponsor window. It
+/// is on the honour system on purpose: Docket is open source and has no
+/// server, so any check could be built around, and pretending otherwise
+/// would only inconvenience the people who did pay. Stored as a raw value in
+/// `CustomDockSettings.shelfColor`, empty for none. A third kind of value,
+/// `followWidgetsRaw`, follows 设置 ▸ 通用 ▸ 小组件默认外观; it is deliberately
+/// not a case, so `allCases` stays the six colours (see `ShelfColorChoice`).
 public enum ShelfColor: String, CaseIterable, Sendable, Identifiable {
     case redPanda, sakura, mint, ocean, galaxy, amber
 
@@ -32,28 +38,53 @@ public enum ShelfColor: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// The stored value read back; nil for empty or unknown.
+    /// 存储值“跟随小组件默认外观”。
+    public static let followWidgetsRaw = "followWidgets"
+
+    /// The stored value read back; nil for empty, unknown, or the follow value.
     public static func parse(_ raw: String) -> ShelfColor? {
         raw.isEmpty ? nil : ShelfColor(rawValue: raw)
     }
 }
 
-/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板染色（Pro）：用 设置 ▸ 通用 ▸ 小组件外观 的颜色
-/// 给扩展栏底板染一层。
+/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 扩展栏背景颜色 选了什么：无、跟随小组件默认外观、或六色之一。
 ///
-/// 存在原来的 `CustomDockSettings.shelfColor` 字段里，旧数据不用迁移：
-/// 空串是关；非空是开。新写入的“开”是 `onRaw`，旧版存的六色值（`redPanda`、
-/// `sakura`……）或任何认不出的非空值也都读作开，原来选过配色的人升级后底板
-/// 照样有颜色，只是颜色改跟小组件外观。
+/// 存在 `CustomDockSettings.shelfColor`，字段含义不变：空串是无，六色存 rawValue，
+/// 新增的跟随存 `ShelfColor.followWidgetsRaw`。旧存储值原样读回；认不出的当“无”。
 ///
-/// Pro 是诚信制：码头开源、没有服务器，任何校验都能绕过，解锁判断在界面层。
-public enum ShelfTint {
-    /// 新写入的“开”。
-    public static let onRaw = "followWidgets"
+/// 只管扩展栏底板。小组件的主题色只由小组件自己的配置和通用外观决定
+/// （`WidgetTint.choice`），这里只读通用外观、从不写它。
+public enum ShelfColorChoice: Equatable, Sendable {
+    case plain
+    case followWidgets
+    case color(ShelfColor)
 
-    public static func isOn(_ raw: String) -> Bool { !raw.isEmpty }
+    public init(raw: String) {
+        if raw == ShelfColor.followWidgetsRaw {
+            self = .followWidgets
+        } else if let color = ShelfColor.parse(raw) {
+            self = .color(color)
+        } else {
+            self = .plain
+        }
+    }
 
-    public static func raw(on: Bool) -> String { on ? onRaw : "" }
+    public var raw: String {
+        switch self {
+        case .plain: ""
+        case .followWidgets: ShelfColor.followWidgetsRaw
+        case .color(let color): color.rawValue
+        }
+    }
+
+    /// 设置里标题旁的状态：无 / 跟随默认 / 颜色名。
+    public var statusTitle: String {
+        switch self {
+        case .plain: tr("无")
+        case .followWidgets: tr("跟随默认")
+        case .color(let color): color.title
+        }
+    }
 
     /// 底板最终用什么颜色。
     public enum Resolved: Equatable, Sendable {
@@ -63,17 +94,25 @@ public enum ShelfTint {
         case systemAccent
     }
 
-    /// 开着时的颜色，取通用小组件外观（`global`，即 `WidgetTint.global`）当前的颜色：
-    /// - 十五种预设、自定义取色：用那个颜色。自定义取色本身是 Pro，染色也只在
-    ///   解锁时生效，所以这里不再退回默认。
+    /// 落到具体颜色；“无”是 nil。
+    ///
+    /// 跟随小组件默认外观时读通用外观（`global`，即 `WidgetTint.global`）的颜色：
+    /// - 十五种预设、自定义取色：用那个颜色。
     /// - 跟随系统：系统强调色。
-    /// - 默认：每种小组件的默认颜色各不相同，没有一个“小组件外观的颜色”可取，
-    ///   也用系统强调色，和“跟随系统”一致，跟着用户在系统里选的颜色走。
-    public static func color(global: WidgetConfig) -> Resolved {
-        switch WidgetTint.Choice(raw: global.string(WidgetTint.key)) {
-        case .kindDefault, .system: return .systemAccent
-        case .preset(let preset): return .hex(preset.hex)
-        case .custom(let code): return .hex(code.hex)
+    /// - 默认：每种小组件用自己的主题色，没有一个统一的颜色可取，也用系统强调色，
+    ///   和“跟随系统”一致，跟着用户在系统里选的颜色走。
+    public func resolved(global: WidgetConfig) -> Resolved? {
+        switch self {
+        case .plain:
+            return nil
+        case .color(let color):
+            return .hex(color.hex)
+        case .followWidgets:
+            switch WidgetTint.Choice(raw: global.string(WidgetTint.key)) {
+            case .kindDefault, .system: return .systemAccent
+            case .preset(let preset): return .hex(preset.hex)
+            case .custom(let code): return .hex(code.hex)
+            }
         }
     }
 }

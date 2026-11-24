@@ -141,6 +141,16 @@ public enum WidgetTint {
         public var isChosen: Bool { self != .kindDefault }
     }
 
+    /// 设置里标题旁的状态（小组件默认外观 · 粉）：默认 / 跟随系统强调色 / 预设名 / 自定义。
+    public static func statusTitle(_ choice: Choice) -> String {
+        switch choice {
+        case .kindDefault: tr("默认")
+        case .system: tr("跟随系统强调色")
+        case .preset(let preset): preset.title
+        case .custom: tr("自定义")
+        }
+    }
+
     public static func choice(_ config: WidgetConfig) -> Choice {
         Choice(raw: lookSource(config).string(key))
     }

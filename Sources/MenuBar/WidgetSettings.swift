@@ -74,9 +74,21 @@ struct WidgetSettingsSections: View {
                     DivinationSettingsSection(instance: pair.instance) { change in write(pair.instance, change) }
                 }
                 if WidgetTint.offersColor(pair.instance.kind) || WidgetTint.offersBackground(pair.instance.kind) {
-                    Section("颜色与背景") {
+                    Section {
+                        Text("仅修改当前小组件的颜色和背景，不影响其他小组件。")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                         WidgetTintPicker(instance: pair.instance) { change in
                             write(pair.instance, change)
+                        }
+                    } header: {
+                        // 标题旁是当前状态：当前小组件外观 · 跟随默认 / · 独立设置。
+                        HStack(spacing: 6) {
+                            Text("当前小组件外观")
+                            Text(verbatim: "· " + (WidgetTint.followsGlobal(pair.instance.config)
+                                                   ? tr("跟随默认") : tr("独立设置")))
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }

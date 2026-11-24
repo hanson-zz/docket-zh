@@ -110,9 +110,9 @@ public enum ProFeatures {
         .battery, .system, .timer, .progress, .water, .aiUsage, .perfectDay, .slacker,
     ]
 
-    /// 原来的赞助者专属外观一共几种，付费墙和官网的“12 种专属外观”从这里数：
+    /// 原来的赞助者专属外观一共几种，付费墙和官网的“17 种专属外观”从这里数：
     /// 时钟的 Pro 表盘和 Pro 选项值（霓虹、实景、液晶，翻页的大号带时分秒卡片）、
-    /// 企鹅水獭章鱼三个角色、数字 Wi-Fi、三种电池外观、扩展栏底板染色（一个开关，算 1 项）。
+    /// 企鹅水獭章鱼三个角色、数字 Wi-Fi、三种电池外观、六种扩展栏底板配色。
     public static var exclusiveStyleCount: Int {
         let faces = ClockStyles.all.filter(\.isPro).count
             + ClockStyles.allOptions.reduce(0) { $0 + $1.proValues.count }
@@ -120,7 +120,7 @@ public enum ProFeatures {
         let wifi = WifiRingStyle.allCases.filter(\.isSupporterOnly).count
         // 霓虹灯管是后来加的 Pro 外观，不是原来的赞助者外观，不算进这个数。
         let battery = BatteryLook.allCases.filter { $0.isSupporterOnly && $0 != .neon }.count
-        return faces + characters + wifi + battery + 1
+        return faces + characters + wifi + battery + ShelfColor.allCases.count
     }
 
     /// 习惯打卡免费能用的习惯个数。第 4 个起和近七天报告是 Pro；已经有更多
