@@ -485,6 +485,17 @@ struct DockShelfView: View {
 
     // MARK: Body
 
+    /// 底板颜色：六色之一，或跟随 设置 ▸ 通用 ▸ 小组件外观 的颜色。读
+    /// `WidgetLook.shared.config` 让通用外观改色时底板跟着重画。
+    private var shelfPlateColor: Color? {
+        let global = WidgetLook.shared.config
+        switch ShelfColorChoice(raw: settings.shelfColor).resolved(global: global) {
+        case .hex(let hex)?: return Color(hex: hex)
+        case .systemAccent?: return Color(nsColor: .controlAccentColor)
+        case nil: return nil
+        }
+    }
+
     var body: some View {
         let solved = solve()
 
@@ -737,7 +748,7 @@ struct DockShelfView: View {
                                radius: chrome.radius,
                                tint: settings.glassTint,
                                opaque: settings.reduceTransparency,
-                               color: ProAccess.isUnlocked ? ShelfColor.parse(settings.shelfColor) : nil)
+                               color: ProAccess.isUnlocked ? shelfPlateColor : nil)
                 .overlay { blankAreaLayer }
         }
         .overlay {

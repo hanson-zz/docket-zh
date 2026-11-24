@@ -23,9 +23,9 @@ struct MaterialBackground: View {
     var tint: GlassTint = .automatic
     /// The shelf's own Reduce Transparency, on top of the system's.
     var opaque = false
-    /// A supporter colour, laid in as the glass's own tint or over the
-    /// other plates. See `ShelfColor`.
-    var color: ShelfColor?
+    /// 底板颜色（Pro），作为玻璃自己的 tint 或盖在其他底板上。六色之一、
+    /// 跟随小组件外观解析出的颜色或系统强调色都行，见 `ShelfColorChoice`。
+    var color: Color?
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceTransparency) private var systemReduceTransparency
@@ -42,7 +42,7 @@ struct MaterialBackground: View {
         surface
             .overlay {
                 if let color, material != .liquidGlass || reduceTransparency, material != .plateless {
-                    shape.fill(Color(hex: color.hex).opacity(solid || reduceTransparency ? 0.22 : 0.3))
+                    shape.fill(color.opacity(solid || reduceTransparency ? 0.22 : 0.3))
                 }
             }
             .overlay {
@@ -148,10 +148,10 @@ struct MaterialBackground: View {
     /// refraction and the specular edge that a scrim on top suppresses (see
     /// above), while still holding the plate light or dark over any wallpaper.
     /// The supporter colour, when there is one, replaces the light or dark lean.
-    static func glass(_ style: GlassStyle, tint: GlassTint, color: ShelfColor?) -> Glass {
+    static func glass(_ style: GlassStyle, tint: GlassTint, color: Color?) -> Glass {
         guard let color else { return glassValue(style, tint: tint) }
         let base: Glass = style == .clear ? .clear : .regular
-        return base.tint(Color(hex: color.hex).opacity(style == .clear ? 0.35 : 0.5))
+        return base.tint(color.opacity(style == .clear ? 0.35 : 0.5))
     }
 
     static func glassValue(_ style: GlassStyle, tint: GlassTint) -> Glass {

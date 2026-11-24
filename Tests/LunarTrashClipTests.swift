@@ -337,6 +337,33 @@ final class ShelfColorTests: XCTestCase {
         let old = try JSONDecoder().decode(CustomDockSettings.self, from: Data("{}".utf8))
         XCTAssertEqual(old.shelfColor, "")
     }
+
+    func testFollowWidgetsChoiceReadsOldValuesAndKeepsTheCount() {
+        XCTAssertEqual(ShelfColorChoice(raw: ""), .plain)
+        XCTAssertEqual(ShelfColorChoice(raw: "nope"), .plain)
+        XCTAssertEqual(ShelfColorChoice(raw: "mint"), .color(.mint))
+        XCTAssertEqual(ShelfColorChoice(raw: ShelfColor.followWidgetsRaw), .followWidgets)
+        for choice in [ShelfColorChoice.plain, .followWidgets, .color(.galaxy)] {
+            XCTAssertEqual(ShelfColorChoice(raw: choice.raw), choice)
+        }
+        // 跟随值不是 ShelfColor 的 case：六色不变，Pro 外观计数不变。
+        XCTAssertNil(ShelfColor.parse(ShelfColor.followWidgetsRaw))
+        XCTAssertEqual(ShelfColor.allCases.count, 6)
+    }
+
+    func testFollowWidgetsResolvesTheGlobalWidgetColour() {
+        var global = WidgetConfig()
+        XCTAssertNil(ShelfColorChoice.plain.resolved(global: global))
+        XCTAssertEqual(ShelfColorChoice.color(.ocean).resolved(global: global), .hex(ShelfColor.ocean.hex))
+        // 通用外观是默认：小熊猫橙。
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex(ShelfColor.redPanda.hex))
+        global.set(WidgetTint.key, .string(WidgetTint.Choice.systemRaw))
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .systemAccent)
+        global.set(WidgetTint.key, .string("purple"))
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex(WidgetTint.Preset.purple.hex))
+        global.set(WidgetTint.key, .string("#123456"))
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex("#123456"))
+    }
 }
 
 final class ChineseTimeTextTests: XCTestCase {

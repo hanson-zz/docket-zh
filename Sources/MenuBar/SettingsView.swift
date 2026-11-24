@@ -925,13 +925,13 @@ struct SettingsView: View {
 
             SupporterColorPicker(selection: $state.customDock.shelfColor)
 
-            Picker(selection: $state.customDock.widgetColor) {
-                Text("原色").tag(WidgetColorMode.original)
-                Text("单色").tag(WidgetColorMode.monochrome)
-            } label: {
-                subtitled(tr("小组件颜色"), tr("单色只把扩展栏上的小组件画成灰阶，应用图标不受影响。"))
+            // 只管扩展栏上的小组件：DockShelfView 的 TileContent 只给小组件加
+            // .saturation(0)，应用图标是它的身份，保持原色。
+            Toggle(isOn: Binding(
+                get: { state.customDock.widgetColor == .monochrome },
+                set: { state.customDock.widgetColor = $0 ? .monochrome : .original })) {
+                subtitled(tr("小组件单色"), tr("只把扩展栏上的小组件画成灰阶，应用图标保持原色。"))
             }
-            .pickerStyle(.segmented)
 
             Toggle(isOn: $state.customDock.reduceTransparency) {
                 subtitled(tr("降低透明度"),
@@ -1882,6 +1882,8 @@ final class ShortcutKeyRecorder {
 
 /// Pro 专属配色: swatches that tint the plate, locked until the sponsor
 /// window's thank-you button has been pressed on this Mac.
+/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板颜色（Pro）：无、跟随小组件外观、六色。
+/// 只染扩展栏底板，和 设置 ▸ 通用 ▸ 小组件外观（管小组件卡片）是两回事。
 private struct SupporterColorPicker: View {
     @Binding var selection: String
     @AppStorage(Supporter.key) private var supporter = false
@@ -1891,7 +1893,7 @@ private struct SupporterColorPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("专属配色")
+                Text("底板颜色")
                 if !unlocked {
                     Image(systemName: "lock.fill")
                         .font(.caption)
@@ -1904,30 +1906,64 @@ private struct SupporterColorPicker: View {
                 }
             }
             HStack(spacing: 10) {
-                swatch(nil)
-                ForEach(ShelfColor.allCases) { swatch($0) }
+                swatch(.plain)
+                swatch(.followWidgets)
+                ForEach(ShelfColor.allCases) { swatch(.color($0)) }
             }
             .disabled(!unlocked)
             .opacity(unlocked ? 1 : 0.45)
-            Text(unlocked ? tr("给扩展栏底板染一层颜色，“透明”外观下不生效。") : tr("Pro 专属：给扩展栏换上小熊猫橙、樱花粉等配色。"))
+            Text(unlocked ? tr("只给扩展栏底板染色，“透明”外观下不生效。") : tr("Pro 专属：给扩展栏换上小熊猫橙、樱花粉等配色。"))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
     }
 
-    private func swatch(_ color: ShelfColor?) -> some View {
-        let chosen = ShelfColor.parse(selection) == color
+    /// 跟随小组件外观时的预览色，和 DockShelfView 给底板取的颜色同一个解析。
+    private var followFill: Color {
+        switch ShelfColorChoice.followWidgets.resolved(global: WidgetLook.shared.config) {
+        case .hex(let hex)?: Color(hex: hex)
+        case .systemAccent?: Color(nsColor: .controlAccentColor)
+        case nil: Color.secondary.opacity(0.15)
+        }
+    }
+
+    private func fill(_ choice: ShelfColorChoice) -> Color {
+        switch choice {
+        case .plain: Color.secondary.opacity(0.15)
+        case .followWidgets: followFill
+        case .color(let color): Color(hex: color.hex)
+        }
+    }
+
+    private func title(_ choice: ShelfColorChoice) -> String {
+        switch choice {
+        case .plain: tr("无")
+        case .followWidgets: tr("跟随小组件外观")
+        case .color(let color): color.title
+        }
+    }
+
+    private func swatch(_ choice: ShelfColorChoice) -> some View {
+        let chosen = ShelfColorChoice(raw: selection) == choice
         return Button {
-            selection = color?.rawValue ?? ""
+            selection = choice.raw
         } label: {
             ZStack {
                 Circle()
-                    .fill(color.map { Color(hex: $0.hex) } ?? Color.secondary.opacity(0.15))
+                    .fill(fill(choice))
                     .frame(width: 26, height: 26)
-                if color == nil {
+                switch choice {
+                case .plain:
                     Image(systemName: "nosign")
-                        .font(.system(size: 12))
+                        .font(.system(size: 13))
                         .foregroundStyle(.secondary)
+                case .followWidgets:
+                    Image(systemName: "link")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.35), radius: 1)
+                case .color:
+                    EmptyView()
                 }
                 Circle()
                     .strokeBorder(Color.accentColor, lineWidth: 2)
@@ -1938,7 +1974,7 @@ private struct SupporterColorPicker: View {
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .help(color?.title ?? tr("无"))
-        .accessibilityLabel(color?.title ?? tr("无配色"))
+        .help(title(choice))
+        .accessibilityLabel(choice == .plain ? tr("无配色") : title(choice))
     }
 }

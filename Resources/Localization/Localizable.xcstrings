@@ -14589,6 +14589,28 @@
         }
       }
     },
+    "底板颜色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Base color"
+          }
+        }
+      }
+    },
+    "跟随小组件外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Match Widget Appearance"
+          }
+        }
+      }
+    },
     "专属配色和样式" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22923,6 +22945,17 @@
         }
       }
     },
+    "只把扩展栏上的小组件画成灰阶，应用图标保持原色。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draws only the shelf's widgets in grayscale. App icons keep their colors."
+          }
+        }
+      }
+    },
     "南" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29209,6 +29242,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Widget color"
+          }
+        }
+      }
+    },
+    "小组件单色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grayscale widgets"
           }
         }
       }
@@ -54120,6 +54164,17 @@
         }
       }
     },
+    "只给扩展栏底板染色，“透明”外观下不生效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tints only the shelf's base. Has no effect with the \"Clear\" look."
+          }
+        }
+      }
+    },
     "给提示词起个名字。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -64403,6 +64458,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Widget Appearance"
+          }
+        }
+      }
+    },
+    "扩展栏底板颜色在 设置 ▸ 扩展栏 ▸ 外观。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The shelf's base color is in Settings ▸ Shelf ▸ Look."
           }
         }
       }
