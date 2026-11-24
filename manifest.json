@@ -1,0 +1,74 @@
+[
+  {
+    "id": "heroVioletShadow",
+    "title": "紫影行者",
+    "resourceName": "AppIcon-VioletShadow",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_24-4.png"
+  },
+  {
+    "id": "heroShieldGuardian",
+    "title": "星盾守卫",
+    "resourceName": "AppIcon-ShieldGuardian",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_23-3.png"
+  },
+  {
+    "id": "heroAstralMage",
+    "title": "星环法师",
+    "resourceName": "AppIcon-AstralMage",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_22-2.png"
+  },
+  {
+    "id": "heroStormWielder",
+    "title": "雷霆勇士",
+    "resourceName": "AppIcon-StormWielder",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_21-1.png"
+  },
+  {
+    "id": "heroSkylineAcrobat",
+    "title": "飞跃小熊",
+    "resourceName": "AppIcon-SkylineAcrobat",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_17-4.png"
+  },
+  {
+    "id": "heroSkyGuardian",
+    "title": "晴空守护",
+    "resourceName": "AppIcon-SkyGuardian",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_14-3.png"
+  },
+  {
+    "id": "heroCrimsonArmor",
+    "title": "赤甲小熊",
+    "resourceName": "AppIcon-CrimsonArmor",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_12-2.png"
+  },
+  {
+    "id": "heroEmeraldGiant",
+    "title": "绿能巨熊",
+    "resourceName": "AppIcon-EmeraldGiant",
+    "source": "ChatGPT 图像 2026年11月24日 15_01_09-1.png"
+  },
+  {
+    "id": "heroNightSentinel",
+    "title": "暗夜披风",
+    "resourceName": "AppIcon-NightSentinel",
+    "source": "03_Night_Cloak_Panda(1).png"
+  },
+  {
+    "id": "heroSpeedRunner",
+    "title": "疾风跑者",
+    "resourceName": "AppIcon-SpeedRunner",
+    "source": "04_Lightning_Runner_Panda(1).png"
+  },
+  {
+    "id": "heroAmberClaws",
+    "title": "金蓝爪卫",
+    "resourceName": "AppIcon-AmberClaws",
+    "source": "02_Gold_Blue_Claw_Panda(1).png"
+  },
+  {
+    "id": "heroRedMischief",
+    "title": "红黑机灵",
+    "resourceName": "AppIcon-RedMischief",
+    "source": "01_Red_Black_Mischief_Panda(1).png"
+  }
+]
