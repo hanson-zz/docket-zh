@@ -220,17 +220,10 @@ struct MusicTile: View {
     /// 所以不能按 132 高画，否则上下被裁、圆角变直角。左边 44 的小唱盘（播放时转、
     /// 唱臂落下；暂停停转、唱臂抬回，点唱片也能播放 / 暂停），中间歌名和歌手，
     /// 右边固定上一首 / 实心圆播放键 / 下一首，底边和精简一样一条 2pt 进度线。
+    /// 左边是唱盘还是封面看面板样式（`disc`）。
     private func full(_ track: Playing) -> some View {
         HStack(spacing: 10) {
-            MusicMiniTurntable(artwork: track.artwork, fallback: sourceIcon(track), tint: track.tint,
-                               playing: track.isPlaying,
-                               spinning: track.isPlaying && !reduceMotion && !context.isPreview
-                                   && ShelfVisibility.shared.cardsOnScreen,
-                               dark: scheme == .dark || cover != nil)
-                .frame(width: 44, height: 44)
-                .contentShape(Circle())
-                .onTapGesture { toggle(track) }
-                .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+            disc(track)
             VStack(alignment: .leading, spacing: 1) {
                 title(track, size: 14)
                 HStack(spacing: 5) {
@@ -244,6 +237,28 @@ struct MusicTile: View {
                 .layoutPriority(1)
         }
         .overlay(alignment: .bottom) { progressLine(track) }
+    }
+
+    /// 完整卡片左边跟着面板样式走：黑胶面板画转着的小唱盘，精简面板只画封面，
+    /// 免得选了精简面板，扩展栏上还是一张唱片。点它都是播放 / 暂停。
+    @ViewBuilder
+    private func disc(_ track: Playing) -> some View {
+        if ProLicenseGate.musicPanelStyle(config: config, unlocked: true) == .vinyl {
+            MusicMiniTurntable(artwork: track.artwork, fallback: sourceIcon(track), tint: track.tint,
+                               playing: track.isPlaying,
+                               spinning: track.isPlaying && !reduceMotion && !context.isPreview
+                                   && ShelfVisibility.shared.cardsOnScreen,
+                               dark: scheme == .dark || cover != nil)
+                .frame(width: 44, height: 44)
+                .contentShape(Circle())
+                .onTapGesture { toggle(track) }
+                .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+        } else {
+            Artwork(image: track.artwork, fallback: sourceIcon(track), badge: badge(track), side: 42, corner: 9)
+                .contentShape(Rectangle())
+                .onTapGesture { toggle(track) }
+                .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+        }
     }
 
     /// 完整卡片的控制：播放 / 暂停是中间的实心圆，两边上一首、下一首（设置里开了快退快进时在最外侧）。
