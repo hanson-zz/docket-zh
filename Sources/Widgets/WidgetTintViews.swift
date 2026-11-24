@@ -279,7 +279,7 @@ struct WidgetTintPicker: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if !isGlobal {
-                Toggle(tr("跟随通用外观"), isOn: Binding(get: { follows }, set: setFollows))
+                Toggle(tr("跟随通用外观"), isOn: Binding(get: { follows }, set: { setFollows($0) }))
                 Text(follows ? tr("在 设置 ▸ 通用 ▸ 小组件外观 里统一调整。关掉后可以给这个小组件单独设颜色和背景。")
                              : tr("这个小组件用自己的颜色和背景。"))
                     .font(.system(size: 13))
