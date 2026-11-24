@@ -4742,6 +4742,28 @@
         }
       }
     },
+    "灵动表情" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lively expressions"
+          }
+        }
+      }
+    },
+    "小熊猫正面坐着时，眼睛跟着指针看；单击吃一惊，摸头会害羞，连点会晕乎乎。只用指针位置，不记录。系统打开「减弱动态效果」时不跟随指针，表情只换图不加动效。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While the red panda sits facing you, its eyes follow the pointer. A click surprises it, petting makes it shy, and rapid clicks make it dizzy. Only the pointer position is used, and nothing is recorded. With Reduce Motion on, it does not follow the pointer and expressions change without animation."
+          }
+        }
+      }
+    },
     "需安装助手" : {
       "extractionState" : "manual",
       "localizations" : {

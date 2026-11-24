@@ -34,11 +34,13 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
     public var pointerPeek: Bool = false
     /// 通话时藏起：麦克风在用（开会、通话、共享屏幕讲解）时桌宠和探头都先藏起来。默认开。
     public var quietInCalls: Bool = true
+    /// 灵动表情：小熊猫正面坐着时眼睛跟着指针看，被点、被摸时换表情（见 `DesktopPetFace`）。默认开。
+    public var livelyFace: Bool = true
 
     public init(enabled: Bool = false, trashRescue: Bool = false, anchor: DesktopPetAnchor = .dock,
                 size: DesktopPetSize = .medium, bubbles: Bool = true, hotKey: KeyCombo? = nil,
                 spot: DesktopPetSpot? = nil, stretchReminder: Bool = false, downloadNotice: Bool = true,
-                pointerPeek: Bool = false, quietInCalls: Bool = true) {
+                pointerPeek: Bool = false, quietInCalls: Bool = true, livelyFace: Bool = true) {
         self.enabled = enabled
         self.trashRescue = trashRescue
         self.anchor = anchor
@@ -50,6 +52,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         self.downloadNotice = downloadNotice
         self.pointerPeek = pointerPeek
         self.quietInCalls = quietInCalls
+        self.livelyFace = livelyFace
     }
 
     /// 救回真正在不在工作：总开关和子开关都开着。
@@ -57,7 +60,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case enabled, trashRescue, anchor, size, bubbles, hotKey, spot, stretchReminder, downloadNotice,
-             pointerPeek, quietInCalls
+             pointerPeek, quietInCalls, livelyFace
     }
 
     /// 宽松解码：老状态文件没有这一组或缺新加的键、以后多了认不出的键或值，都照常读。
@@ -76,6 +79,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         downloadNotice = (try? c.decodeIfPresent(Bool.self, forKey: .downloadNotice)) ?? true
         pointerPeek = (try? c.decodeIfPresent(Bool.self, forKey: .pointerPeek)) ?? false
         quietInCalls = (try? c.decodeIfPresent(Bool.self, forKey: .quietInCalls)) ?? true
+        livelyFace = (try? c.decodeIfPresent(Bool.self, forKey: .livelyFace)) ?? true
     }
 }
 

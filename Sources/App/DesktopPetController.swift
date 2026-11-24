@@ -122,6 +122,12 @@ final class DesktopPetController: NSObject {
     /// 上一帧是不是睡着、刚出现：每天第一次唤醒或出现时伸懒腰说「早」。
     private var wasAsleep = false
     private var justShown = false
+    /// 灵动小熊猫（见 `DesktopPetFace`）：看哪边、正在演的表情；上一帧大脑画的图（判断是不是正面坐着）；
+    /// 用户多久没操作、是不是夜里（快睡着前犯困）。都只在内存里。
+    private var face = DesktopPetFaceState()
+    private var faceBase = ""
+    private var lastIdle: TimeInterval = 0
+    private var lastNight = false
     private static let greetedKey = "DesktopPetGreetedDay"
 
     // 有用的三件事：活动提醒、下载完成、拖文件到身上暂存（见 DesktopPetWatchers.swift）。
@@ -159,6 +165,7 @@ final class DesktopPetController: NSObject {
         }
         updateDownloadWatch()
         if !next.stretchReminder { stretchClock = DesktopPetStretchClock() }
+        if !next.livelyFace { face.reset() }
     }
 
     /// 下载完成提示：总开关和子开关都开着才看下载文件夹。
@@ -453,7 +460,8 @@ final class DesktopPetController: NSObject {
         let style = track?.style ?? .stroll
         let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         // 发呆时转、跳的小动作要顺，也按显示刷新画；低电量时不开，用慢计时器凑合。
-        let fidgeting = !lowPower && DesktopPetLively.needsSmooth(state, now: now, style: style, motion: Self.motion)
+        let fidgeting = !lowPower && (DesktopPetLively.needsSmooth(state, now: now, style: style, motion: Self.motion)
+            || (livelyShown && DesktopPetFace.needsSmooth(face, now: now, motion: Self.motion)))
         let moving = dragging || transit != nil || DesktopPetBrain.isMoving(state, now: now) || fidgeting
         if moving {
             restingTimer?.invalidate()
@@ -483,6 +491,13 @@ final class DesktopPetController: NSObject {
     /// 系统「减弱动态效果」打开时只换姿势，不呼吸、不转不跳。
     private static var motion: DesktopPetMotion {
         NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? .reduced : .full
+    }
+
+    /// 这一刻在不在画灵动小熊猫：设置开着、是小熊猫、正面坐着（按上一帧大脑画的图）。
+    private var livelyShown: Bool {
+        guard let track, !dragging else { return false }
+        let mascot = FocusMascot.of(TimerStateProvider.shared.state, unlocked: ProAccess.isUnlocked)
+        return DesktopPetFace.applies(enabled: settings.livelyFace, mascot: mascot, style: track.style, image: faceBase)
     }
 
     private func stopClocks() {
@@ -738,6 +753,12 @@ final class DesktopPetController: NSObject {
             current = updated
         }
         let pointer = attention(track: track)
+        lastIdle = idle
+        lastNight = DesktopPetRhythm.isNight(hour: Calendar.current.component(.hour, from: now))
+        // 灵动小熊猫看向指针：复用这一帧读的指针位置，不另开刷新；减弱动态效果时不跟。
+        let following = livelyShown && Self.motion == .full
+        face.follow(pointer: following ? NSEvent.mouseLocation : nil, center: drawnCenter,
+                    scale: settings.size.scale, now: now)
         if pointer != nil || dragging || pressPoint != nil { lastTouch = now }
         if petHovering || barHovering || dragging || pressPoint != nil { lastPet = now }
         current = sense(current, track: track, now: now)
@@ -796,7 +817,9 @@ final class DesktopPetController: NSObject {
         if track.style == .side {
             return mood.neared(distance: distance, now: now) ? DesktopPetBrain.earFlicked(current, now: now) : current
         }
-        guard track.edge == .bottom, track.style != .sit, let last = lastPointer else { return current }
+        // 灵动小熊猫眼睛已经跟着指针，经过时不再举爪抬头。
+        guard track.edge == .bottom, track.style != .sit, !(livelyShown && Self.motion == .full),
+              let last = lastPointer else { return current }
         let span = now.timeIntervalSince(last.at)
         guard span > 0, span < 1 else { return current }
         let speed = Double(hypot(mouse.x - last.point.x, mouse.y - last.point.y)) / span
@@ -828,7 +851,12 @@ final class DesktopPetController: NSObject {
         if point != nil { lastPet = now }
         guard mood.rubbed(x: point.map { Double($0.x) }, pressed: pressed, now: now),
               let track, let current = state, !dragging else { return }
-        state = DesktopPetBrain.petted(current, style: track.style, now: now)
+        if livelyShown {
+            // 灵动小熊猫：摸头害羞，不跳不欢呼。
+            face.play(.shy, now: now)
+        } else {
+            state = DesktopPetBrain.petted(current, style: track.style, now: now)
+        }
         render(now: now)
         updateClock(now: now)
     }
@@ -848,14 +876,23 @@ final class DesktopPetController: NSObject {
 
     private func render(now: Date) {
         guard let track, let state, let panel, let view = spriteView else { return }
-        var pose = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style,
-                                        edge: track.edge)
+        let brain = DesktopPetBrain.pose(state, now: now, scale: settings.size.scale, style: track.style,
+                                         edge: track.edge)
+        var pose = brain
         // 呼吸、发呆时的张望歪头小跳（拖着时不叠）。
         if !dragging {
             pose = DesktopPetLively.decorate(pose, state: state, now: now, style: track.style, motion: Self.motion)
         }
         // 选了别的吉祥物（已解锁 Pro）：换成那只的图，缺图时照旧画小熊猫。
         let mascot = FocusMascot.of(TimerStateProvider.shared.state, unlocked: ProAccess.isUnlocked)
+        // 灵动小熊猫：正面坐着时换成看向、眨眼、表情那几张，缺图时照旧。
+        faceBase = dragging ? "" : brain.image
+        if !dragging, DesktopPetFace.applies(enabled: settings.livelyFace, mascot: mascot, style: track.style,
+                                             image: brain.image) {
+            pose = DesktopPetFace.overlay(pose, base: brain.image, state: state, face: face, now: now,
+                                          drowsy: DesktopPetFace.drowsy(userIdle: lastIdle, night: lastNight),
+                                          motion: Self.motion, exists: { DesktopPetArt.exists($0) })
+        }
         if mascot != .panda {
             let skinned = DesktopPetSkin.apply(pose, mascot: mascot)
             if DesktopPetArt.image(skinned.image) != nil { pose = skinned }
@@ -960,6 +997,7 @@ final class DesktopPetController: NSObject {
             let moved = hypot(point.x - press.x, point.y - press.y)
             guard Double(moved) >= DesktopPetSnap.dragThreshold else { return }
             dragging = true
+            face.reset()
             if case .rescue = current.activity { abandonRescue() }
             // 拖走了：叼着的这一趟、有待查看都算结束。
             endReview()
@@ -994,6 +1032,17 @@ final class DesktopPetController: NSObject {
     private func tapped() {
         let now = Date()
         lastPet = now
+        if livelyShown, review == nil, downloadReview == nil {
+            // 灵动小熊猫：单击吃一惊，连点 4 下晕乎乎（不跳、不耷拉耳朵）。
+            if face.tapped(now: now) == .dizzy {
+                hideBar()
+            } else {
+                showBar(for: DesktopPetQuickAction.shownAfterClick)
+            }
+            render(now: now)
+            updateClock(now: now)
+            return
+        }
         if mood.clicked(now: now), let current = state {
             // 10 秒内连戳 3 次：不高兴，耷拉耳朵约 3 秒。
             state = DesktopPetBrain.sulked(current, now: now)
@@ -2056,6 +2105,19 @@ enum DesktopPetArt {
         cache[name] = image
         return image
     }
+
+    /// 包里有没有这张图。缺图不记日志（灵动小熊猫的正视、闭眼以后才补）。
+    static func exists(_ name: String) -> Bool {
+        if cache[name] != nil { return true }
+        if absent.contains(name) { return false }
+        guard Bundle.main.url(forResource: name, withExtension: "png") != nil else {
+            absent.insert(name)
+            return false
+        }
+        return image(name) != nil
+    }
+
+    private static var absent: Set<String> = []
 
     static func cgImage(_ name: String) -> CGImage? {
         if let image = cgCache[name] { return image }

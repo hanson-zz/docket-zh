@@ -76,6 +76,15 @@ struct DesktopPetSettingsSection: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                Toggle(isOn: $settings.livelyFace) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("灵动表情")
+                        Text("小熊猫正面坐着时，眼睛跟着指针看；单击吃一惊，摸头会害羞，连点会晕乎乎。只用指针位置，不记录。系统打开「减弱动态效果」时不跟随指针，表情只换图不加动效。")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
                 Toggle(isOn: $settings.quietInCalls) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("通话时藏起")
