@@ -709,8 +709,10 @@ struct WidgetDetailChrome: View {
         Self.offersAppearance(instance, context)
     }
 
+    /// 11-24 起面板底部不再挂「外观」栏（用户觉得每个面板都拖着一块太臃肿）：
+    /// 颜色和背景在 设置 ▸ 小组件 里改；正在播放从面板右上角 ··· 进它自己的外观页。
     static func offersAppearance(_ instance: WidgetInstance, _ context: WidgetContext) -> Bool {
-        !context.isPreview && WidgetAppearance.offered(instance.kind)
+        false
     }
 
     /// Which side the tail sits on, which is the side facing the shelf.

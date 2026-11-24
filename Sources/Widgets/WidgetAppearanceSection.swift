@@ -13,6 +13,8 @@ struct WidgetAppearanceSection: View {
     var context: WidgetContext
     /// 面板内容区的宽度，算色块一排放几个。
     var width: CGFloat
+    /// 嵌在面板自己的「外观」页里（11-24 起从 ··· 菜单进）：不画入口行，内容直接展开。
+    var embedded = false
 
     @State private var open = false
     /// 没解锁时点了黑胶模式：显示一行 Pro 提示（付费墙同时弹出）。
@@ -25,6 +27,7 @@ struct WidgetAppearanceSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if !embedded {
             Button {
                 open.toggle()
             } label: {
@@ -58,10 +61,11 @@ struct WidgetAppearanceSection: View {
             .accessibilityLabel(tr("外观", context: "appearance"))
             .accessibilityValue(WidgetAppearance.summary(instance.config, kind: instance.kind))
             .accessibilityHint(open ? tr("收起外观") : tr("改这张卡片的主题色和背景"))
+            }
 
-            if open {
+            if open || embedded {
                 // 精简卡片只开精简面板，不给黑胶选项。
-                if WidgetAppearance.offersPanelStyle(instance.kind), MusicCard.size(instance.config) == .full {
+                if !embedded, WidgetAppearance.offersPanelStyle(instance.kind), MusicCard.size(instance.config) == .full {
                     panelStyleRow
                 }
                 WidgetTintPicker(instance: instance,

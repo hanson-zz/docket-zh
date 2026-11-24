@@ -74578,6 +74578,39 @@
           }
         }
       }
+    },
+    "外观…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance…"
+          }
+        }
+      }
+    },
+    "播放队列" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up Next"
+          }
+        }
+      }
+    },
+    "最近播放" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Played"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

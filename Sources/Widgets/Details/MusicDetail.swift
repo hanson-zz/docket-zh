@@ -26,7 +26,7 @@ struct MusicDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    private enum Page { case player, sources, list }
+    private enum Page { case player, sources, list, appearance }
 
     @State private var page: Page = .player
     /// Where a drag is holding the playhead, 0…1, or nil when the bar is
@@ -124,6 +124,8 @@ struct MusicDetail: View {
             case .list where expandedBlock != nil:
                 topRow(playing)
                 expandedPage(playing!, expandedBlock!)
+            case .appearance:
+                appearancePage
             default:
                 if let track = playing {
                     topRow(track)
@@ -199,6 +201,75 @@ struct MusicDetail: View {
         context.isPreview ? nil : AppCatalog.shared.icon(forBundleID: bundleID)
     }
 
+    // MARK: ··· 菜单、外观页
+
+    /// 右上角 ··· ：中频功能都收在这里（播放队列、面板样式、外观），主面板只留播放本身。
+    /// 系统原生菜单，点空白就关。面板样式只给完整卡片，精简卡片没有黑胶选项。
+    private func moreMenu(_ track: Playing?) -> some View {
+        Menu {
+            if let track, let block = queueBlock(track), block.allCount != nil {
+                Button(block.kind == .recent ? tr("最近播放") : tr("播放队列")) { setExpanded(true) }
+            }
+            if MusicCard.size(config) == .full {
+                Picker(tr("面板样式"), selection: Binding(
+                    get: { style },
+                    set: { chosen in
+                        guard !context.isPreview else { return }
+                        let latest = WidgetWriter.current(instance.id) ?? instance
+                        WidgetWriter.write(latest) { $0 = MusicPanelStyle.choosing(chosen, in: $0) }
+                    })) {
+                    ForEach(MusicPanelStyle.allCases) { item in
+                        Text(item.title).tag(item)
+                    }
+                }
+                .pickerStyle(.inline)
+            }
+            Divider()
+            Button(tr("外观…")) {
+                withAnimation(.snappy(duration: 0.2)) { page = .appearance }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 14, weight: .semibold))
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(.panelFill))
+                .overlay(Circle().strokeBorder(.panelStroke, lineWidth: 0.6))
+                .contentShape(Circle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(tr("更多"))
+        .accessibilityLabel(tr("更多"))
+    }
+
+    /// 外观页：左上角返回，下面是颜色与背景（和 设置 ▸ 小组件 同一块）。
+    /// 只换面板里显示的内容，不碰播放。
+    private var appearancePage: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.snappy(duration: 0.2)) { page = .player }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text(tr("外观", context: "appearance"))
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .frame(height: 32)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(tr("返回"))
+            WidgetAppearanceSection(
+                instance: current, context: context,
+                width: DetailPanelWidth.content(panel: WidgetDetail.width(current),
+                                                tailDepth: PanelShape.arrowDepth, tailOnSide: false),
+                embedded: true)
+        }
+    }
+
     // MARK: 顶部
 
     private func topRow(_ track: Playing?) -> some View {
@@ -264,6 +335,8 @@ struct MusicDetail: View {
                 .help(tr("在 App 中打开"))
                 .accessibilityLabel(tr("在 App 中打开"))
             }
+            moreMenu(track)
+                .padding(.leading, 8)
         }
         if let idlePin {
             // 固定的来源没在播（没开或暂停），显示的是正在播的那个：一行提示加取消固定。
