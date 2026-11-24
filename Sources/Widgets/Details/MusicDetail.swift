@@ -208,6 +208,15 @@ struct MusicDetail: View {
             if let track, let block = queueBlock(track), block.allCount != nil {
                 Button(block.kind == .recent ? tr("最近播放") : tr("播放队列")) { setExpanded(true) }
             }
+            if let track, let level = volumeLevel(track) {
+                Picker(tr("音量"), selection: Binding(
+                    get: { Self.volumeSteps.min(by: { abs($0 - level) < abs($1 - level) }) ?? 50 },
+                    set: { setVolumeLevel(track, $0) })) {
+                    ForEach(Self.volumeSteps, id: \.self) { step in
+                        Text(step == 0 ? tr("静音") : "\(Int(step))%").tag(step)
+                    }
+                }
+            }
             if MusicCard.size(config) == .full {
                 Picker(tr("面板样式"), selection: Binding(
                     get: { style },
@@ -503,13 +512,14 @@ struct MusicDetail: View {
         }
     }
 
-    /// 黑胶模式（11-24 横排版，按用户效果图）：面板 420 宽，左边唱台 196 宽（唱片、中心封面
-    /// 标签、金属唱臂，播放时转），右边歌名、歌手 · 专辑、上一首 / 实心圆播放键 / 下一首和带
-    /// 两端时间的进度条；下面一行歌单摘要（点了进列表页，音量在那页）。和竖排的精简面板拉开差别。
+    /// 黑胶模式（11-24 第二版，按用户「优化后完整版」效果图）：面板 420 宽。上半左边唱台
+    /// （唱片、封面标签、金属唱臂、听歌小熊猫，播放时转），右边歌名、歌手 · 专辑、喜欢和律动条、
+    /// 带两端时间的进度条；下面一整排 随机 / 上一首 / 实心圆播放 / 下一首 / 循环，间距均分。
+    /// 播放队列、最近播放、音量都进右上角 ··· （`moreMenu`），主面板不再挂歌单摘要和音量。
     /// 控制键和精简面板同一套判断，系统控制不了的键不画。高度交给面板容器。
     private func vinylPlayer(_ track: Playing) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 14) {
                 VinylStageView(artwork: track.artwork, tint: track.tint, playing: track.isPlaying,
                                progress: track.duration > 0 ? track.progress : nil,
                                ended: VinylMotion.ended(playing: track.isPlaying, elapsed: track.elapsed,
@@ -517,24 +527,75 @@ struct MusicDetail: View {
                                track: [track.sourceBundleID, track.title, track.artist].joined(separator: "\u{1}"))
                     .frame(width: CGFloat(MusicVinyl.sideStageWidth))
                 VStack(alignment: .leading, spacing: 0) {
-                    titles(track, big: 18)
-                    transport(track, play: 46, height: 50, gap: 14, glyph: 16, glass: true)
-                        .padding(.top, 8)
+                    Text(track.title)
+                        .font(.system(size: 20, weight: .bold))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text(subtitle(track))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .padding(.top, 4)
+                    HStack(spacing: 12) {
+                        if track.source?.hasFavorite == true, let native = track.native {
+                            heart(native.favorited ?? false, source: track.source, size: 30)
+                        }
+                        PlayingBarsView(playing: track.isPlaying, tint: accent(track.source),
+                                        height: 14, visible: true)
+                    }
+                    .padding(.top, 12)
                     if track.duration > 0 || !track.isBrowser {
                         scrubber(track, inline: true)
-                            .padding(.top, 8)
+                            .padding(.top, 14)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.top, 6)
-            // 唱片是主角：音量和整张歌单放到二级（点摘要进列表页，音量在那页顶上）。
-            if let block = queueBlock(track) {
-                queueSummary(track, block)
-                    .padding(.top, 12)
-            } else {
-                volume(track, top: 10)
+            vinylTransport(track)
+                .padding(.top, 14)
+        }
+    }
+
+    /// 黑胶面板底下一整排控制键：两边随机、循环（播放器支持时），中间上一首、播放、下一首，
+    /// 五个键等距铺满一行。浏览器标签页只有播放 / 暂停。
+    @ViewBuilder
+    private func vinylTransport(_ track: Playing) -> some View {
+        if track.isBrowser {
+            playButton(track.isPlaying, size: 50) { BrowserMedia.shared.playPause() }
+                .frame(maxWidth: .infinity)
+        } else {
+            let native = track.native
+            let extras = track.source?.hasShuffleAndRepeat == true
+            HStack(spacing: 0) {
+                if extras {
+                    toggleGlyph("shuffle", on: native?.shuffle == true, source: track.source,
+                                glass: true, label: tr("随机播放")) {
+                        MusicService.shared.setShuffle(!(native?.shuffle ?? false))
+                    }
+                    Spacer(minLength: 8)
+                }
+                glyphButton("backward.end.fill", 16, hit: 44, glass: true,
+                            label: tr("上一首")) { MusicService.shared.previous() }
+                Spacer(minLength: 8)
+                playButton(track.isPlaying, size: 50) { MusicService.shared.playPause() }
+                Spacer(minLength: 8)
+                glyphButton("forward.end.fill", 16, hit: 44, glass: true,
+                            label: tr("下一首")) { MusicService.shared.next() }
+                if extras {
+                    Spacer(minLength: 8)
+                    let mode = native?.repeatMode ?? .off
+                    toggleGlyph(mode == .one ? "repeat.1" : "repeat", on: mode != .off,
+                                source: track.source, glass: true, label: mode.label) {
+                        MusicService.shared.cycleRepeat()
+                    }
+                }
             }
+            .padding(.horizontal, extras ? 6 : 40)
+            .frame(maxWidth: .infinity)
+            .frame(height: 54)
+            controlHint(track)
         }
     }
 
@@ -802,6 +863,28 @@ struct MusicDetail: View {
     }
 
     // MARK: 音量
+
+    /// ··· 菜单里的音量档位（菜单放不下滑块；要细调在播放队列页顶上）。
+    private static let volumeSteps: [Double] = [0, 25, 50, 75, 100]
+
+    /// 当前音量 0 到 100；这个来源调不了音量时是 nil。
+    private func volumeLevel(_ track: Playing) -> Double? {
+        guard let source = track.source, !track.isBrowser else { return nil }
+        switch MusicVolumeRoute.route(for: source, recordingGranted: AppVolumeService.recordingGranted) {
+        case .player: return track.native?.volume
+        case .appVolume: return min(100, AppVolumeService.shared.setting(for: source.bundleID).percent)
+        case .none: return nil
+        }
+    }
+
+    private func setVolumeLevel(_ track: Playing, _ level: Double) {
+        guard !context.isPreview, let source = track.source else { return }
+        switch MusicVolumeRoute.route(for: source, recordingGranted: AppVolumeService.recordingGranted) {
+        case .player: MusicService.shared.setVolume(level)
+        case .appVolume: AppVolumeService.shared.setPercent(level, for: source.bundleID)
+        case .none: break
+        }
+    }
 
     @ViewBuilder
     private func volume(_ track: Playing, top: CGFloat = 14) -> some View {
