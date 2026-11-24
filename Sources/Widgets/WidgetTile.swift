@@ -29,6 +29,8 @@ public struct WidgetTile: View {
     }
 
     public var body: some View {
+        // 订阅通用外观：设置里一改，所有跟通用走的卡片立刻重画。
+        let _ = WidgetLook.shared.config
         let item = resolved
         let size = WidgetCatalog.contentSize(item, position: context.position)
         content(item)

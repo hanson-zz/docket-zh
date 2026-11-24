@@ -81,6 +81,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         //
         // 到点弹出的卡片和后台调度要动的小组件可能在文件夹里或别的布局里，
         // 所以读写都先找当前布局、再找其余的（见 WidgetLookup.swift）。
+        // 通用的小组件外观要在第一张卡片画出来之前读进来。
+        WidgetLook.shared.load()
         WidgetWriter.update = { [state] instance in
             state.writeWidgetAnywhere(instance)
             WidgetDetailWindow.shared.refresh(instance)

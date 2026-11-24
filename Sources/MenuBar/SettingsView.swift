@@ -562,6 +562,8 @@ struct SettingsView: View {
 
             AppIconSection()
 
+            WidgetLookSection()
+
             Section("菜单栏") {
                 // Refused when there is no shelf, because the icon is then the
                 // only way into an app with no Dock tile and no window of its

@@ -64286,6 +64286,61 @@
         }
       }
     },
+    "小组件外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Widget Appearance"
+          }
+        }
+      }
+    },
+    "跟随通用外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follow General Appearance"
+          }
+        }
+      }
+    },
+    "在 设置 ▸ 通用 ▸ 小组件外观 里统一调整。关掉后可以给这个小组件单独设颜色和背景。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust it for all widgets in Settings ▸ General ▸ Widget Appearance. Turn this off to give this widget its own color and background."
+          }
+        }
+      }
+    },
+    "这个小组件用自己的颜色和背景。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This widget uses its own color and background."
+          }
+        }
+      }
+    },
+    "默认：每种小组件用自己的颜色" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default: each widget uses its own color"
+          }
+        }
+      }
+    },
     "黛紫" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -252,6 +252,8 @@ struct WidgetTintPicker: View {
     var columns = 9
     /// 浅色和深色两张预览卡片。详情面板里不画：扩展栏上那张真卡片就在旁边。
     var showsPreview = true
+    /// 设置 ▸ 通用 ▸ 小组件外观 里那份通用的：没有「跟随通用」开关，文案按所有小组件说。
+    var isGlobal = false
     var write: ((inout WidgetConfig) -> Void) -> Void
 
     /// 一个色块连同选中描边占的宽度，和格子间距，详情面板按它们算一排几个。
@@ -271,7 +273,49 @@ struct WidgetTintPicker: View {
     @AppStorage(Supporter.key) private var supporter = false
     private var unlocked: Bool { licenseUnlocked || supporter }
 
+    /// 单个小组件跟通用外观走（默认）。
+    private var follows: Bool { !isGlobal && WidgetTint.followsGlobal(instance.config) }
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if !isGlobal {
+                Toggle(tr("跟随通用外观"), isOn: Binding(get: { follows }, set: setFollows))
+                Text(follows ? tr("在 设置 ▸ 通用 ▸ 小组件外观 里统一调整。关掉后可以给这个小组件单独设颜色和背景。")
+                             : tr("这个小组件用自己的颜色和背景。"))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if !follows {
+                choices
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// 打开：删掉这张卡片自己的外观，跟通用走。关掉：从通用那份开始单独调。
+    private func setFollows(_ on: Bool) {
+        write { config in
+            for key in WidgetTint.lookKeys + [WidgetTint.ownKey] { config.set(key, nil) }
+            if !on {
+                for key in WidgetTint.lookKeys {
+                    let value = WidgetTint.global.string(key)
+                    if !value.isEmpty { config.set(key, .string(value)) }
+                }
+                config.set(WidgetTint.ownKey, .string("1"))
+            }
+        }
+    }
+
+    /// 写回时标记「单独设置」，免得都选回默认后又被当成跟随通用。
+    private func save(_ change: (inout WidgetConfig) -> Void) {
+        write { config in
+            change(&config)
+            if !isGlobal { config.set(WidgetTint.ownKey, .string("1")) }
+        }
+    }
+
+    private var choices: some View {
         VStack(alignment: .leading, spacing: 10) {
             if WidgetTint.offersColor(instance.kind) {
                 Text("颜色")
@@ -340,7 +384,6 @@ struct WidgetTintPicker: View {
                 preview
             }
         }
-        .padding(.vertical, 4)
     }
 
     // MARK: 强度和文字颜色
@@ -398,7 +441,7 @@ struct WidgetTintPicker: View {
 
     private var caption: String {
         switch choice {
-        case .kindDefault: tr("默认：这种小组件自己的颜色")
+        case .kindDefault: isGlobal ? tr("默认：每种小组件用自己的颜色") : tr("默认：这种小组件自己的颜色")
         case .system: tr("跟随系统强调色")
         case .preset(let preset): preset.title
         case .custom(let code): tr("自定义 \(code.hex)")
@@ -577,7 +620,7 @@ struct WidgetTintPicker: View {
             PaywallWindow.shared.show()
             return
         }
-        write { config in
+        save { config in
             let raw = choice.raw
             config.set(WidgetTint.key, raw.isEmpty ? nil : .string(raw))
         }
@@ -585,7 +628,7 @@ struct WidgetTintPicker: View {
 
     /// 默认的「中」写回时删掉键，读回来一样是「中」。
     private func pickStrength(_ value: WidgetTint.Strength) {
-        write { config in
+        save { config in
             adoptSystemTintIfDefault(&config)
             config.set(WidgetTint.strengthKey, value.raw.isEmpty ? nil : .string(value.raw))
         }
@@ -593,7 +636,7 @@ struct WidgetTintPicker: View {
 
     /// 默认的「自动」写回时删掉键。
     private func pickInk(_ value: WidgetTint.TextInk) {
-        write { config in
+        save { config in
             adoptSystemTintIfDefault(&config)
             config.set(WidgetTint.inkKey, value.raw.isEmpty ? nil : .string(value.raw))
         }
@@ -604,7 +647,7 @@ struct WidgetTintPicker: View {
             PaywallWindow.shared.show()
             return
         }
-        write { config in
+        save { config in
             config.set(WidgetTint.backgroundKey, option == .plain ? nil : .string(option.rawValue))
         }
     }

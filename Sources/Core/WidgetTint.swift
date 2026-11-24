@@ -142,7 +142,29 @@ public enum WidgetTint {
     }
 
     public static func choice(_ config: WidgetConfig) -> Choice {
-        Choice(raw: config.string(key))
+        Choice(raw: lookSource(config).string(key))
+    }
+
+    // MARK: 通用外观（11-24）
+
+    /// 设置 ▸ 通用 ▸ 小组件外观：所有小组件默认跟它走。App 启动和改动时由 `WidgetLook` 写进来，
+    /// 只在主线程写。
+    nonisolated(unsafe) public static var global = WidgetConfig()
+
+    /// 这张卡片自己设了外观、不跟通用走。
+    public static let ownKey = "tintOwn"
+    /// 外观相关的四个键：颜色、背景、色调强度、文字颜色。
+    public static let lookKeys = [key, backgroundKey, strengthKey, inkKey]
+
+    /// 跟通用走：没标记自己设，也没有旧版留下的单独颜色。旧版单独选过颜色的卡片保持原样。
+    public static func followsGlobal(_ config: WidgetConfig) -> Bool {
+        if config.string(ownKey) == "1" { return false }
+        return lookKeys.allSatisfy { config.string($0).isEmpty }
+    }
+
+    /// 读外观用的配置：跟通用走时读通用的，否则读卡片自己的。
+    public static func lookSource(_ config: WidgetConfig) -> WidgetConfig {
+        followsGlobal(config) ? global : config
     }
 
     // MARK: Pro
@@ -343,7 +365,7 @@ public enum WidgetTint {
 
     /// 读不出的值（包括已去掉的 `frosted`、`dots`、`lines`）一律当无背景。
     public static func background(_ config: WidgetConfig) -> Background {
-        Background(rawValue: config.string(backgroundKey)) ?? .plain
+        Background(rawValue: lookSource(config).string(backgroundKey)) ?? .plain
     }
 
     // MARK: 对比度

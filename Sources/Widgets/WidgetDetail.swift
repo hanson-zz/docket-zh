@@ -543,6 +543,8 @@ struct WidgetDetailChrome: View {
     }
 
     var body: some View {
+        // 订阅通用外观，见 `WidgetLook`。
+        let _ = WidgetLook.shared.config
         scrolling
             // 各面板里表示本小组件主题色的地方从这里取，见 `PanelTint`。
             .environment(\.panelTint, panelTint)

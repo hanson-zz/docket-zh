@@ -46,7 +46,7 @@ public extension WidgetTint {
     }
 
     static func strength(_ config: WidgetConfig) -> Strength {
-        Strength(raw: config.string(strengthKey))
+        Strength(raw: lookSource(config).string(strengthKey))
     }
 
     /// 一档强度落到具体数值：光晕顶边的不透明度、细描边的不透明度，以及
@@ -113,7 +113,7 @@ public extension WidgetTint {
     }
 
     static func textInk(_ config: WidgetConfig) -> TextInk {
-        TextInk(raw: config.string(inkKey))
+        TextInk(raw: lookSource(config).string(inkKey))
     }
 
     /// 文字和底色的最低对比度（WCAG 正文 AA）。手选的字色不到这个数就退回「自动」。

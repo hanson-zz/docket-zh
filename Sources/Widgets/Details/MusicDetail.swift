@@ -8,9 +8,9 @@ import SwiftUI
 /// （白色实心钮、深色字形；Apple 音乐和 Spotify 两侧加随机、循环），音量条，再往下是
 /// Apple 音乐的「接下来」或 Spotify 的「刚才听过」3 首（方案 A，design/music-queue-2.png：
 /// 有这块时封面 128、控制键收紧，内容底约 520，不再落进底部渐隐带；点「全部 N 首」
-/// 延展成迷你播放条吸顶加整张列表，判断在 Core `MusicQueue`）。底部「外观」行由面板外框画。
+/// 延展成迷你播放条吸顶加整张列表，判断在 Core `MusicQueue`）。颜色在 设置 ▸ 通用 ▸ 小组件外观。
 /// 卡带外观搬成了单独的「复古卡带」小组件，面板里不再有「卡带外观」选择条。
-/// 外观里的「面板样式」选了黑胶模式时，播放页换成唱台（`vinylPlayer`、`VinylStageView`，
+/// ··· 里的「面板样式」选了黑胶模式时，播放页换成唱台（`vinylPlayer`、`VinylStageView`，
 /// 数学在 Core `MusicVinyl`），其余功能一样。
 ///
 /// 原来是一张铺满封面的卡片，往外多画 10pt（`bleed`），超出面板内边距，右边贴着面板
@@ -26,7 +26,7 @@ struct MusicDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
 
-    private enum Page { case player, sources, list, appearance }
+    private enum Page { case player, sources, list }
 
     @State private var page: Page = .player
     /// Where a drag is holding the playhead, 0…1, or nil when the bar is
@@ -124,8 +124,6 @@ struct MusicDetail: View {
             case .list where expandedBlock != nil:
                 topRow(playing)
                 expandedPage(playing!, expandedBlock!)
-            case .appearance:
-                appearancePage
             default:
                 if let track = playing {
                     topRow(track)
@@ -201,9 +199,9 @@ struct MusicDetail: View {
         context.isPreview ? nil : AppCatalog.shared.icon(forBundleID: bundleID)
     }
 
-    // MARK: ··· 菜单、外观页
+    // MARK: ··· 菜单
 
-    /// 右上角 ··· ：中频功能都收在这里（播放队列、面板样式、外观），主面板只留播放本身。
+    /// 右上角 ··· ：中频功能都收在这里（播放队列、面板样式），主面板只留播放本身。颜色在 设置 ▸ 通用 ▸ 小组件外观。
     /// 系统原生菜单，点空白就关。面板样式只给完整卡片，精简卡片没有黑胶选项。
     private func moreMenu(_ track: Playing?) -> some View {
         Menu {
@@ -224,10 +222,6 @@ struct MusicDetail: View {
                 }
                 .pickerStyle(.inline)
             }
-            Divider()
-            Button(tr("外观…")) {
-                withAnimation(.snappy(duration: 0.2)) { page = .appearance }
-            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 14, weight: .semibold))
@@ -242,32 +236,6 @@ struct MusicDetail: View {
         .fixedSize()
         .help(tr("更多"))
         .accessibilityLabel(tr("更多"))
-    }
-
-    /// 外观页：左上角返回，下面是颜色与背景（和 设置 ▸ 小组件 同一块）。
-    /// 只换面板里显示的内容，不碰播放。
-    private var appearancePage: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button {
-                withAnimation(.snappy(duration: 0.2)) { page = .player }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text(tr("外观", context: "appearance"))
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .frame(height: 32)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(tr("返回"))
-            WidgetAppearanceSection(
-                instance: current, context: context,
-                width: DetailPanelWidth.content(panel: WidgetDetail.width(current),
-                                                tailDepth: PanelShape.arrowDepth, tailOnSide: false),
-                embedded: true)
-        }
     }
 
     // MARK: 顶部
