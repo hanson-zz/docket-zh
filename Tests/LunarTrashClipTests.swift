@@ -338,23 +338,36 @@ final class ShelfColorTests: XCTestCase {
         XCTAssertEqual(old.shelfColor, "")
     }
 
-    func testFollowWidgetsChoiceReadsOldValuesAndKeepsTheCount() {
+    func testShelfColorChoiceReadsNewAndOldValues() {
         XCTAssertEqual(ShelfColorChoice(raw: ""), .plain)
         XCTAssertEqual(ShelfColorChoice(raw: "nope"), .plain)
-        XCTAssertEqual(ShelfColorChoice(raw: "mint"), .color(.mint))
         XCTAssertEqual(ShelfColorChoice(raw: ShelfColor.followWidgetsRaw), .followWidgets)
-        for choice in [ShelfColorChoice.plain, .followWidgets, .color(.galaxy)] {
+        XCTAssertEqual(ShelfColorChoice(raw: "lavender"), .preset(.lavender))
+        for preset in WidgetTint.Preset.allCases {
+            XCTAssertEqual(ShelfColorChoice(raw: preset.rawValue), .preset(preset))
+        }
+        for choice in [ShelfColorChoice.plain, .followWidgets, .preset(.sky)] {
             XCTAssertEqual(ShelfColorChoice(raw: choice.raw), choice)
         }
-        // 跟随值不是 ShelfColor 的 case：六色不变，Pro 外观计数不变。
+        // 旧的六色值映射到最接近的预设。
+        let legacy: [String: WidgetTint.Preset] = [
+            "redPanda": .orange, "sakura": .blush, "mint": .mint,
+            "ocean": .blue, "galaxy": .purple, "amber": .amber,
+        ]
+        XCTAssertEqual(legacy.count, ShelfColor.allCases.count)
+        for (raw, preset) in legacy {
+            XCTAssertEqual(ShelfColorChoice(raw: raw), .preset(preset), raw)
+            XCTAssertEqual(ShelfColorChoice(raw: raw).raw, preset.rawValue, raw)
+        }
+        // 跟随值不是旧六色之一；品牌强调色色值不变。
         XCTAssertNil(ShelfColor.parse(ShelfColor.followWidgetsRaw))
-        XCTAssertEqual(ShelfColor.allCases.count, 6)
+        XCTAssertEqual(ShelfColor.redPanda.hex, "#E8743B")
     }
 
     func testFollowWidgetsResolvesTheGlobalWidgetColour() {
         var global = WidgetConfig()
         XCTAssertNil(ShelfColorChoice.plain.resolved(global: global))
-        XCTAssertEqual(ShelfColorChoice.color(.ocean).resolved(global: global), .hex(ShelfColor.ocean.hex))
+        XCTAssertEqual(ShelfColorChoice.preset(.cyan).resolved(global: global), .hex(WidgetTint.Preset.cyan.hex))
         // 通用外观是默认：小熊猫橙。
         XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex(ShelfColor.redPanda.hex))
         global.set(WidgetTint.key, .string(WidgetTint.Choice.systemRaw))

@@ -485,7 +485,7 @@ struct DockShelfView: View {
 
     // MARK: Body
 
-    /// 底板颜色：六色之一，或跟随 设置 ▸ 通用 ▸ 小组件外观 的颜色。读
+    /// 底板颜色：15 种预设之一，或跟随 设置 ▸ 通用 ▸ 小组件外观 的颜色。读
     /// `WidgetLook.shared.config` 让通用外观改色时底板跟着重画。
     private var shelfPlateColor: Color? {
         let global = WidgetLook.shared.config

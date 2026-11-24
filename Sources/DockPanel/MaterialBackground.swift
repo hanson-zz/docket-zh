@@ -23,7 +23,7 @@ struct MaterialBackground: View {
     var tint: GlassTint = .automatic
     /// The shelf's own Reduce Transparency, on top of the system's.
     var opaque = false
-    /// 底板颜色（Pro），作为玻璃自己的 tint 或盖在其他底板上。六色之一、
+    /// 底板颜色（Pro），作为玻璃自己的 tint 或盖在其他底板上。15 种预设之一、
     /// 跟随小组件外观解析出的颜色或系统强调色都行，见 `ShelfColorChoice`。
     var color: Color?
 

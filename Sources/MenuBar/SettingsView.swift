@@ -1882,7 +1882,7 @@ final class ShortcutKeyRecorder {
 
 /// Pro 专属配色: swatches that tint the plate, locked until the sponsor
 /// window's thank-you button has been pressed on this Mac.
-/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板颜色（Pro）：无、跟随小组件外观、六色。
+/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板颜色（Pro）：无、跟随小组件外观、小组件同一套 15 种预设。
 /// 只染扩展栏底板，和 设置 ▸ 通用 ▸ 小组件外观（管小组件卡片）是两回事。
 private struct SupporterColorPicker: View {
     @Binding var selection: String
@@ -1905,14 +1905,16 @@ private struct SupporterColorPicker: View {
                         .controlSize(.small)
                 }
             }
-            HStack(spacing: 10) {
+            // 无、跟随、15 种预设一共 17 个，一行放不下，九个一行排两行。
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 8), count: 9),
+                      alignment: .leading, spacing: 6) {
                 swatch(.plain)
                 swatch(.followWidgets)
-                ForEach(ShelfColor.allCases) { swatch(.color($0)) }
+                ForEach(WidgetTint.Preset.allCases) { swatch(.preset($0)) }
             }
             .disabled(!unlocked)
             .opacity(unlocked ? 1 : 0.45)
-            Text(unlocked ? tr("只给扩展栏底板染色，“透明”外观下不生效。") : tr("Pro 专属：给扩展栏换上小熊猫橙、樱花粉等配色。"))
+            Text(unlocked ? tr("只给扩展栏底板染色，“透明”外观下不生效。") : tr("Pro 专属：给扩展栏底板换上和小组件同一套 15 种颜色。"))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
@@ -1931,7 +1933,7 @@ private struct SupporterColorPicker: View {
         switch choice {
         case .plain: Color.secondary.opacity(0.15)
         case .followWidgets: followFill
-        case .color(let color): Color(hex: color.hex)
+        case .preset(let preset): Color(hex: preset.hex)
         }
     }
 
@@ -1939,7 +1941,7 @@ private struct SupporterColorPicker: View {
         switch choice {
         case .plain: tr("无")
         case .followWidgets: tr("跟随小组件外观")
-        case .color(let color): color.title
+        case .preset(let preset): preset.title
         }
     }
 
@@ -1962,7 +1964,7 @@ private struct SupporterColorPicker: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                         .shadow(color: .black.opacity(0.35), radius: 1)
-                case .color:
+                case .preset:
                     EmptyView()
                 }
                 Circle()

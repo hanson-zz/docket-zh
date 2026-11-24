@@ -1,15 +1,11 @@
 import Foundation
 
-/// 扩展栏底板颜色（Pro）：给扩展栏底板染一层颜色。
+/// 原来的六种扩展栏底板配色（11-24 之前）。
 ///
-/// A thank-you for supporting Docket, unlocked from the sponsor window. It
-/// is on the honour system on purpose: Docket is open source and has no
-/// server, so any check could be built around, and pretending otherwise
-/// would only inconvenience the people who did pay. Stored as a raw value in
-/// `CustomDockSettings.shelfColor`, empty for none, or `followWidgetsRaw`
-/// to take the colour from 设置 ▸ 通用 ▸ 小组件外观 (see `ShelfColorChoice`).
-/// The follow value is deliberately not a case, so `allCases` stays the six
-/// colours and the Pro style count does not move.
+/// 底板颜色现在用小组件同一套 15 种预设（`WidgetTint.Preset`，见
+/// `ShelfColorChoice`）。这里只留两件事：旧配置里存的六色值读回时映射到最接近
+/// 的预设（`legacyPreset`），以及 `redPanda.hex` 这些色值被各处当品牌强调色用，
+/// 色值保持不变。
 public enum ShelfColor: String, CaseIterable, Sendable, Identifiable {
     case redPanda, sakura, mint, ocean, galaxy, amber
 
@@ -37,6 +33,18 @@ public enum ShelfColor: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
+    /// 旧的六色值换成最接近的小组件预设。
+    public var legacyPreset: WidgetTint.Preset {
+        switch self {
+        case .redPanda: .orange
+        case .sakura: .blush
+        case .mint: .mint
+        case .ocean: .blue
+        case .galaxy: .purple
+        case .amber: .amber
+        }
+    }
+
     /// 存储值“跟随小组件外观”。
     public static let followWidgetsRaw = "followWidgets"
 
@@ -46,18 +54,26 @@ public enum ShelfColor: String, CaseIterable, Sendable, Identifiable {
     }
 }
 
-/// 底板颜色这一项选了什么：无、跟随小组件外观、或六色之一。
-/// 旧存储值（空串、六色的 rawValue）原样读回；认不出的当“无”。
+/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板颜色（Pro）选了什么：无、跟随小组件外观、或小组件
+/// 同一套 15 种预设之一。存在 `CustomDockSettings.shelfColor`：空串是无，
+/// `followWidgetsRaw` 是跟随，预设存它的 rawValue。
+///
+/// 旧存储值兼容：原来六色的 rawValue 读回时映射到最接近的预设
+/// （`ShelfColor.legacyPreset`）；`mint`、`amber` 两边同名，映射结果一样。认不出的当“无”。
+///
+/// Pro 是诚信制：码头开源、没有服务器，任何校验都能绕过，解锁判断在界面层。
 public enum ShelfColorChoice: Equatable, Sendable {
     case plain
     case followWidgets
-    case color(ShelfColor)
+    case preset(WidgetTint.Preset)
 
     public init(raw: String) {
         if raw == ShelfColor.followWidgetsRaw {
             self = .followWidgets
-        } else if let color = ShelfColor.parse(raw) {
-            self = .color(color)
+        } else if let preset = WidgetTint.Preset(rawValue: raw) {
+            self = .preset(preset)
+        } else if let legacy = ShelfColor.parse(raw) {
+            self = .preset(legacy.legacyPreset)
         } else {
             self = .plain
         }
@@ -67,7 +83,7 @@ public enum ShelfColorChoice: Equatable, Sendable {
         switch self {
         case .plain: ""
         case .followWidgets: ShelfColor.followWidgetsRaw
-        case .color(let color): color.rawValue
+        case .preset(let preset): preset.rawValue
         }
     }
 
@@ -86,13 +102,13 @@ public enum ShelfColorChoice: Equatable, Sendable {
     ///   只在解锁时生效，所以这里不再退回默认。
     /// - 跟随系统：用系统强调色，和小组件一样。
     /// - 默认：每种小组件的默认颜色各不相同，没有一个“小组件外观的颜色”可取，
-    ///   这时用码头的品牌色小熊猫橙，和六色里的第一种一样。
+    ///   这时用码头的品牌色小熊猫橙（`ShelfColor.redPanda`）。
     public func resolved(global: WidgetConfig) -> Resolved? {
         switch self {
         case .plain:
             return nil
-        case .color(let color):
-            return .hex(color.hex)
+        case .preset(let preset):
+            return .hex(preset.hex)
         case .followWidgets:
             switch WidgetTint.Choice(raw: global.string(WidgetTint.key)) {
             case .kindDefault: return .hex(ShelfColor.redPanda.hex)
