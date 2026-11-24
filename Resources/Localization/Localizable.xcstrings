@@ -29279,13 +29279,13 @@
         }
       }
     },
-    "图标单色" : {
+    "小组件单色" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Monochrome icons"
+            "value" : "Monochrome widgets"
           }
         }
       }

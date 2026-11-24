@@ -932,7 +932,7 @@ struct SettingsView: View {
             } label: {
                 // 实际只给扩展栏上的小组件加 .saturation(0)（DockShelfView 的 TileContent），
                 // 应用图标不变，说明照这个写。
-                subtitled(tr("图标单色"), tr("选单色时只把扩展栏上的小组件画成灰阶，应用图标保持原色。"))
+                subtitled(tr("小组件单色"), tr("选单色时只把扩展栏上的小组件画成灰阶，应用图标保持原色。"))
             }
             .pickerStyle(.segmented)
 
