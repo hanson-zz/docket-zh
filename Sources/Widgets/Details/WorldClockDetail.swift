@@ -78,6 +78,7 @@ struct WorldClockDetail: View {
             .minimumScaleFactor(0.8)
             Spacer(minLength: 0)
             headerButton
+            if mode == .browse { PanelMoreButton() }
         }
     }
 

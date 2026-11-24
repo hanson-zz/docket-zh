@@ -90,6 +90,7 @@ struct CountdownDetail: View {
                     .frame(height: 22)
                     .background(Capsule().fill(accent.opacity(0.16)))
             }
+            PanelMoreButton()
         }
     }
 
