@@ -51,8 +51,8 @@ struct WidgetLookSection: View {
                              isGlobal: true) { change in
                 look.update(change)
             }
-            // 扩展栏底板不归这里管，说清楚在哪，免得以为和底板颜色重复。
-            Text("扩展栏底板颜色在 设置 ▸ 扩展栏 ▸ 外观。")
+            // 扩展栏底板染色的开关不在这里，说清楚在哪；开了以后用的就是这里的颜色。
+            Text("扩展栏底板可在 设置 ▸ 扩展栏 ▸ 外观 打开染色。")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }

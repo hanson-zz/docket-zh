@@ -338,44 +338,34 @@ final class ShelfColorTests: XCTestCase {
         XCTAssertEqual(old.shelfColor, "")
     }
 
-    func testShelfColorChoiceReadsNewAndOldValues() {
-        XCTAssertEqual(ShelfColorChoice(raw: ""), .plain)
-        XCTAssertEqual(ShelfColorChoice(raw: "nope"), .plain)
-        XCTAssertEqual(ShelfColorChoice(raw: ShelfColor.followWidgetsRaw), .followWidgets)
-        XCTAssertEqual(ShelfColorChoice(raw: "lavender"), .preset(.lavender))
-        for preset in WidgetTint.Preset.allCases {
-            XCTAssertEqual(ShelfColorChoice(raw: preset.rawValue), .preset(preset))
+    func testShelfTintSwitchReadsOldValues() throws {
+        XCTAssertFalse(ShelfTint.isOn(""))
+        XCTAssertTrue(ShelfTint.isOn(ShelfTint.onRaw))
+        XCTAssertEqual(ShelfTint.raw(on: true), ShelfTint.onRaw)
+        XCTAssertEqual(ShelfTint.raw(on: false), "")
+        // 旧版存的六色值都读作开。
+        for color in ShelfColor.allCases {
+            XCTAssertTrue(ShelfTint.isOn(color.rawValue), color.rawValue)
         }
-        for choice in [ShelfColorChoice.plain, .followWidgets, .preset(.sky)] {
-            XCTAssertEqual(ShelfColorChoice(raw: choice.raw), choice)
-        }
-        // 旧的六色值映射到最接近的预设。
-        let legacy: [String: WidgetTint.Preset] = [
-            "redPanda": .orange, "sakura": .blush, "mint": .mint,
-            "ocean": .blue, "galaxy": .purple, "amber": .amber,
-        ]
-        XCTAssertEqual(legacy.count, ShelfColor.allCases.count)
-        for (raw, preset) in legacy {
-            XCTAssertEqual(ShelfColorChoice(raw: raw), .preset(preset), raw)
-            XCTAssertEqual(ShelfColorChoice(raw: raw).raw, preset.rawValue, raw)
-        }
-        // 跟随值不是旧六色之一；品牌强调色色值不变。
-        XCTAssertNil(ShelfColor.parse(ShelfColor.followWidgetsRaw))
+        // 旧文件里存着配色：解码后仍是开；没有这个键：关。
+        let old = try JSONDecoder().decode(CustomDockSettings.self, from: Data(#"{"shelfColor":"sakura"}"#.utf8))
+        XCTAssertTrue(ShelfTint.isOn(old.shelfColor))
+        let missing = try JSONDecoder().decode(CustomDockSettings.self, from: Data("{}".utf8))
+        XCTAssertFalse(ShelfTint.isOn(missing.shelfColor))
+        // 品牌强调色色值不变。
         XCTAssertEqual(ShelfColor.redPanda.hex, "#E8743B")
     }
 
-    func testFollowWidgetsResolvesTheGlobalWidgetColour() {
+    func testShelfTintTakesTheGlobalWidgetColour() {
         var global = WidgetConfig()
-        XCTAssertNil(ShelfColorChoice.plain.resolved(global: global))
-        XCTAssertEqual(ShelfColorChoice.preset(.cyan).resolved(global: global), .hex(WidgetTint.Preset.cyan.hex))
-        // 通用外观是默认：小熊猫橙。
-        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex(ShelfColor.redPanda.hex))
+        // 默认和跟随系统：系统强调色。
+        XCTAssertEqual(ShelfTint.color(global: global), .systemAccent)
         global.set(WidgetTint.key, .string(WidgetTint.Choice.systemRaw))
-        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .systemAccent)
+        XCTAssertEqual(ShelfTint.color(global: global), .systemAccent)
         global.set(WidgetTint.key, .string("purple"))
-        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex(WidgetTint.Preset.purple.hex))
+        XCTAssertEqual(ShelfTint.color(global: global), .hex(WidgetTint.Preset.purple.hex))
         global.set(WidgetTint.key, .string("#123456"))
-        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex("#123456"))
+        XCTAssertEqual(ShelfTint.color(global: global), .hex("#123456"))
     }
 }
 

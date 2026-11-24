@@ -923,7 +923,7 @@ struct SettingsView: View {
             .padding(.vertical, 2)
             .help("“透明”不绘制底板，每个小组件保留自己的卡片。")
 
-            SupporterColorPicker(selection: $state.customDock.shelfColor)
+            ShelfTintToggle(raw: $state.customDock.shelfColor)
 
             // 只管扩展栏上的小组件：DockShelfView 的 TileContent 只给小组件加
             // .saturation(0)，应用图标是它的身份，保持原色。
@@ -1882,101 +1882,38 @@ final class ShortcutKeyRecorder {
 
 /// Pro 专属配色: swatches that tint the plate, locked until the sponsor
 /// window's thank-you button has been pressed on this Mac.
-/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板颜色（Pro）：无、跟随小组件外观、小组件同一套 15 种预设。
-/// 只染扩展栏底板，和 设置 ▸ 通用 ▸ 小组件外观（管小组件卡片）是两回事。
-private struct SupporterColorPicker: View {
-    @Binding var selection: String
+/// 设置 ▸ 扩展栏 ▸ 外观 ▸ 底板染色（Pro）：一个开关，颜色取 设置 ▸ 通用 ▸ 小组件外观，
+/// 扩展栏自己不再单独选颜色。存储和旧数据兼容见 `ShelfTint`。
+private struct ShelfTintToggle: View {
+    @Binding var raw: String
     @AppStorage(Supporter.key) private var supporter = false
     @AppStorage(ProAccess.licenseKey) private var licenseUnlocked = false
     private var unlocked: Bool { supporter || licenseUnlocked }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("底板颜色")
+                Text("底板染色")
                 if !unlocked {
                     Image(systemName: "lock.fill")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if !unlocked {
+                if unlocked {
+                    Toggle("底板染色", isOn: Binding(
+                        get: { ShelfTint.isOn(raw) },
+                        set: { raw = ShelfTint.raw(on: $0) }))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                } else {
                     Button("解锁码头 Pro…") { PaywallWindow.shared.show() }
                         .controlSize(.small)
                 }
             }
-            // 无、跟随、15 种预设一共 17 个，一行放不下，九个一行排两行。
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(34), spacing: 8), count: 9),
-                      alignment: .leading, spacing: 6) {
-                swatch(.plain)
-                swatch(.followWidgets)
-                ForEach(WidgetTint.Preset.allCases) { swatch(.preset($0)) }
-            }
-            .disabled(!unlocked)
-            .opacity(unlocked ? 1 : 0.45)
-            Text(unlocked ? tr("只给扩展栏底板染色，“透明”外观下不生效。") : tr("Pro 专属：给扩展栏底板换上和小组件同一套 15 种颜色。"))
+            Text("用 设置 ▸ 通用 ▸ 小组件外观 的颜色给扩展栏底板染一层，“透明”外观下不生效。")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
-    }
-
-    /// 跟随小组件外观时的预览色，和 DockShelfView 给底板取的颜色同一个解析。
-    private var followFill: Color {
-        switch ShelfColorChoice.followWidgets.resolved(global: WidgetLook.shared.config) {
-        case .hex(let hex)?: Color(hex: hex)
-        case .systemAccent?: Color(nsColor: .controlAccentColor)
-        case nil: Color.secondary.opacity(0.15)
-        }
-    }
-
-    private func fill(_ choice: ShelfColorChoice) -> Color {
-        switch choice {
-        case .plain: Color.secondary.opacity(0.15)
-        case .followWidgets: followFill
-        case .preset(let preset): Color(hex: preset.hex)
-        }
-    }
-
-    private func title(_ choice: ShelfColorChoice) -> String {
-        switch choice {
-        case .plain: tr("无")
-        case .followWidgets: tr("跟随小组件外观")
-        case .preset(let preset): preset.title
-        }
-    }
-
-    private func swatch(_ choice: ShelfColorChoice) -> some View {
-        let chosen = ShelfColorChoice(raw: selection) == choice
-        return Button {
-            selection = choice.raw
-        } label: {
-            ZStack {
-                Circle()
-                    .fill(fill(choice))
-                    .frame(width: 26, height: 26)
-                switch choice {
-                case .plain:
-                    Image(systemName: "nosign")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                case .followWidgets:
-                    Image(systemName: "link")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.35), radius: 1)
-                case .preset:
-                    EmptyView()
-                }
-                Circle()
-                    .strokeBorder(Color.accentColor, lineWidth: 2)
-                    .frame(width: 32, height: 32)
-                    .opacity(chosen ? 1 : 0)
-            }
-            .frame(width: 34, height: 34)
-            .contentShape(.circle)
-        }
-        .buttonStyle(.plain)
-        .help(title(choice))
-        .accessibilityLabel(choice == .plain ? tr("无配色") : title(choice))
     }
 }
