@@ -30,6 +30,10 @@ struct MusicTile: View {
     /// The artwork, when there is one to stand on.
     private var cover: NSImage? {
         guard !context.isPreview else { return nil }
+        // 完整卡片选了黑胶面板时，唱盘已经带着封面在转，背后再铺一层封面会和唱片打架、
+        // 歌名难读，这时卡片只用普通玻璃底。
+        if !context.position.isVertical, size != .compact,
+           ProLicenseGate.musicPanelStyle(config: config, unlocked: true) == .vinyl { return nil }
         return playing?.artwork
     }
 

@@ -462,7 +462,7 @@ struct MusicDetail: View {
         }
     }
 
-    /// 黑胶模式（11-24 横排版，按用户效果图）：面板 360 宽，左边唱台 156 宽（唱片、中心封面
+    /// 黑胶模式（11-24 横排版，按用户效果图）：面板 420 宽，左边唱台 196 宽（唱片、中心封面
     /// 标签、金属唱臂，播放时转），右边歌名、歌手 · 专辑、上一首 / 实心圆播放键 / 下一首和带
     /// 两端时间的进度条；下面一行歌单摘要（点了进列表页，音量在那页）。和竖排的精简面板拉开差别。
     /// 控制键和精简面板同一套判断，系统控制不了的键不画。高度交给面板容器。
@@ -476,8 +476,8 @@ struct MusicDetail: View {
                                track: [track.sourceBundleID, track.title, track.artist].joined(separator: "\u{1}"))
                     .frame(width: CGFloat(MusicVinyl.sideStageWidth))
                 VStack(alignment: .leading, spacing: 0) {
-                    titles(track, big: 17)
-                    transport(track, play: 42, height: 46, gap: 12, glyph: 15, glass: true)
+                    titles(track, big: 18)
+                    transport(track, play: 46, height: 50, gap: 14, glyph: 16, glass: true)
                         .padding(.top, 8)
                     if track.duration > 0 || !track.isBrowser {
                         scrubber(track, inline: true)

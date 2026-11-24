@@ -61,10 +61,10 @@ final class MusicVinylTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(full.height, 240, "唱台约 240 到 260 高")
         XCTAssertLessThanOrEqual(full.height, 260)
         XCTAssertGreaterThanOrEqual(full.radius, 100, "唱片放大")
-        XCTAssertEqual(MusicVinyl.panelWidth, 360)
+        XCTAssertEqual(MusicVinyl.panelWidth, 420)
         let side = MusicVinyl.stage(width: MusicVinyl.sideStageWidth)
-        XCTAssertGreaterThanOrEqual(side.radius * 2, 100, "横排面板里唱片直径不小于 100")
-        XCTAssertLessThanOrEqual(side.height, 140, "唱台不把面板撑太高")
+        XCTAssertGreaterThanOrEqual(side.radius * 2, 120, "横排面板里唱片直径不小于 120")
+        XCTAssertLessThanOrEqual(side.height, 170, "唱台不把面板撑太高")
     }
 
     func testStickerStaysClearOfTheStylusPath() {
