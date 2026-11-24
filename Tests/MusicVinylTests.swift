@@ -17,7 +17,10 @@ final class MusicVinylTests: XCTestCase {
         XCTAssertEqual(MusicPanelStyle.of(vinyl), .vinyl)
         let back = MusicPanelStyle.choosing(.standard, in: vinyl)
         XCTAssertEqual(MusicPanelStyle.of(back), .standard)
-        XCTAssertEqual(back, WidgetConfig(), "选回标准时键去掉，和没选过一样")
+        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: back, unlocked: true), .standard,
+                       "选了精简要记住，不被 Pro 默认黑胶盖掉")
+        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: WidgetConfig(), unlocked: true), .vinyl,
+                       "没选过的卡片 Pro 默认黑胶")
     }
 
     func testSummaryMentionsVinylOnlyForMusic() {
@@ -53,7 +56,9 @@ final class MusicVinylTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(full.height, 240, "唱台约 240 到 260 高")
         XCTAssertLessThanOrEqual(full.height, 260)
         XCTAssertGreaterThanOrEqual(full.radius, 100, "唱片放大")
-        XCTAssertEqual(MusicVinyl.panelWidth - 32, MusicVinyl.designWidth, "340 面板的内容区正好放下唱台")
+        XCTAssertEqual(MusicVinyl.panelWidth, 320)
+        XCTAssertGreaterThanOrEqual(MusicVinyl.stage(width: MusicVinyl.panelWidth - 32).scale, 0.9,
+                                    "320 面板里唱片不缩太小")
     }
 
     func testStickerStaysClearOfTheStylusPath() {

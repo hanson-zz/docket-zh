@@ -55,9 +55,6 @@ struct MusicDetail: View {
                                        unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
     }
 
-    /// 扩展栏上是精简卡片：点开是 300 宽的精简面板（封面和歌名横排、「刚才听过」收成一行摘要），
-    /// 不管外观里选的是标准还是黑胶；完整卡片照旧开标准或黑胶面板。
-    private var compact: Bool { MusicCard.size(config) == .compact }
 
     private static let base = Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
     private let ink = Color.panelPrimary
@@ -130,12 +127,11 @@ struct MusicDetail: View {
             default:
                 if let track = playing {
                     topRow(track)
-                    if compact {
-                        compactPlayer(track)
-                    } else if style == .vinyl {
+                    // 黑胶（Pro 默认）或精简面板；原来的大封面标准面板不再用。
+                    if style == .vinyl {
                         vinylPlayer(track)
                     } else {
-                        player(track)
+                        compactPlayer(track)
                     }
                 } else if needsPermission {
                     connect
@@ -484,10 +480,12 @@ struct MusicDetail: View {
             }
             transport(track, play: 54, height: 58, gap: 18, glyph: 18, glass: true)
                 .padding(.top, 10)
-            volume(track, top: 8)
+            // 唱片是主角：音量和整张歌单放到二级（点摘要进列表页，音量在那页顶上）。
             if let block = queueBlock(track) {
-                queueCollapsed(track, block)
+                queueSummary(track, block)
                     .padding(.top, 12)
+            } else {
+                volume(track, top: 8)
             }
         }
     }
@@ -643,10 +641,10 @@ struct MusicDetail: View {
 
     private func time(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 13, weight: .medium))
+            .font(.system(size: 13, weight: .regular))
             .monospacedDigit()
             // 不做数字滚动：已播时间每秒都变，滚到一半的那一帧像「3:2」被切掉一半（11-24 截图）。
-            .foregroundStyle(.panelSecondary)
+            .foregroundStyle(Color.panelSecondary.opacity(0.8))
             .lineLimit(1)
             .fixedSize()
     }
@@ -1139,6 +1137,7 @@ struct MusicDetail: View {
         VStack(alignment: .leading, spacing: 0) {
             miniBar(track)
                 .padding(.top, 12)
+            if style == .vinyl { volume(track, top: 8) }
             queueHeader(queueTitle(block.title, expanded: true), pill: tr("收起"), symbol: "chevron.up") {
                 setExpanded(false)
             }

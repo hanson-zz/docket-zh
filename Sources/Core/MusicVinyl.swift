@@ -1,7 +1,7 @@
 import Foundation
 
-/// 正在播放面板的样式：标准（原来的大封面）或黑胶模式。存在卡片配置里，
-/// 默认标准，没选过的卡片外观不变。入口在面板底部「外观」里。
+/// 正在播放面板的样式：标准（11-24 起是精简面板）或黑胶模式。存在卡片配置里，
+/// 入口在面板底部「外观」里。没选过的卡片 Pro 画黑胶、免费画精简（见 `ProLicenseGate`）。
 public enum MusicPanelStyle: String, CaseIterable, Sendable, Identifiable {
     case standard
     case vinyl
@@ -16,16 +16,16 @@ public enum MusicPanelStyle: String, CaseIterable, Sendable, Identifiable {
         MusicPanelStyle(rawValue: config.string(key, default: MusicPanelStyle.standard.rawValue)) ?? .standard
     }
 
-    /// 选一个样式。选回标准时把键去掉，配置和从没选过一样。
+    /// 选一个样式，明写进配置（没写过的 Pro 默认黑胶，选精简得记住）。
     public static func choosing(_ style: MusicPanelStyle, in config: WidgetConfig) -> WidgetConfig {
         var copy = config
-        copy.set(key, style == .standard ? nil : .string(style.rawValue))
+        copy.set(key, .string(style.rawValue))
         return copy
     }
 
     public var title: String {
         switch self {
-        case .standard: tr("标准")
+        case .standard: tr("精简")
         case .vinyl: tr("黑胶模式")
         }
     }
@@ -42,11 +42,11 @@ public enum MusicPanelStyle: String, CaseIterable, Sendable, Identifiable {
 public enum MusicVinyl {
     // MARK: 唱台布局
 
-    /// 设计稿宽度（340 面板的内容区）和唱台高度。窄于设计宽度时整体等比缩小。
+    /// 设计稿宽度（原 340 面板的内容区）和唱台高度；11-24 面板收到 320，唱台按 288 内容区等比缩到约 0.94。窄于设计宽度时整体等比缩小。
     /// V2 去掉左边的大封面卡，唱片放大居左，唱臂在右上，唱台约 250 高。
     public static let designWidth: Double = 308
-    /// 黑胶模式的面板宽（标准样式 320）。内容区正好是设计宽度。
-    public static let panelWidth: Double = 340
+    /// 黑胶模式的面板宽（精简面板 300）。
+    public static let panelWidth: Double = 320
     public static let designHeight: Double = 250
 
     public struct Point: Equatable, Sendable {

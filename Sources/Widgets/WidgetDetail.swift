@@ -852,14 +852,11 @@ enum WidgetDetail {
         if instance.kind == .anniversary {
             return CGFloat(Anniversary.panelWidth(layout: instance.config.string("layout", default: "single")))
         }
-        // 正在播放的精简卡片点开是 300 宽的精简面板，不看面板样式。
-        if instance.kind == .music, MusicCard.size(instance.config) == .compact {
-            return CGFloat(MusicCard.compactPanelWidth)
-        }
-        // 正在播放的黑胶模式（Pro）340 宽，唱片放得下又不被裁；标准样式照旧 320。
-        if instance.kind == .music,
-           ProLicenseGate.musicPanelStyle(config: instance.config, unlocked: ProAccess.isUnlocked) == .vinyl {
-            return CGFloat(MusicVinyl.panelWidth)
+        // 正在播放：黑胶面板（Pro 默认）320 宽，精简面板 300 宽。
+        if instance.kind == .music {
+            let vinyl = ProLicenseGate.musicPanelStyle(config: instance.config,
+                                                       unlocked: ProAccess.isUnlocked) == .vinyl
+            return CGFloat(vinyl ? MusicVinyl.panelWidth : MusicCard.compactPanelWidth)
         }
         return width(instance.kind)
     }

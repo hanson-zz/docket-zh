@@ -172,9 +172,11 @@ public enum ProLicenseGate {
         return .classic
     }
 
-    /// 正在播放面板实际画哪种样式：黑胶模式是 Pro，没解锁时画标准样式；配置照旧存着
-    /// 黑胶模式，解锁或试用时自动回来。
+    /// 正在播放面板实际画哪种样式：黑胶模式是 Pro，没解锁时画精简（标准）面板；配置照旧存着
+    /// 黑胶模式，解锁或试用时自动回来。11-24 起没选过的卡片，解锁后默认黑胶，
+    /// 选了精简会明写 standard（`MusicPanelStyle.choosing`）。
     public static func musicPanelStyle(config: WidgetConfig, unlocked: Bool) -> MusicPanelStyle {
+        if config.values[MusicPanelStyle.key] == nil { return unlocked ? .vinyl : .standard }
         let style = MusicPanelStyle.of(config)
         guard !unlocked, style.isPro else { return style }
         return .standard

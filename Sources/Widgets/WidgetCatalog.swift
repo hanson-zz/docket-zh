@@ -179,12 +179,11 @@ public enum WidgetCatalog {
                            // Falls back to video playing in a scriptable
                            // browser tab when no native player has anything.
                            "browsers": .bool(true),
-                           // 卡片两档：精简、完整（MusicCard），只在「样式」里选，设置页不再列「紧凑布局」开关。
-                           // 没存 layout 的老卡片按完整读；旧迷你、旧中卡启动时迁成精简。
+                           // 卡片只留精简一档（MusicCard），更多内容在面板里（Pro 默认黑胶）。
+                           // 旧迷你、旧中卡、旧完整启动时都迁成精简。
                            // 卡带外观搬成了单独的「复古卡带」，旧的 cassette 键由 CassetteMigration 迁走。
-                           MusicCard.layoutKey: .string(MusicCard.wide)]),
-              variants: [(tr("精简"), [MusicCard.layoutKey: .string(MusicCard.compact)]),
-                         (tr("完整"), [MusicCard.layoutKey: .string(MusicCard.wide)])],
+                           MusicCard.layoutKey: .string(MusicCard.compact)]),
+              variants: [],
               supportsCompact: false, selfContained: true),
 
         // 复古卡带（Pro）：磁带、随身听、收录机三种机型，库里各占一格（model 键）。
@@ -778,10 +777,9 @@ public enum WidgetCatalog {
             false
         case (.system, "chart"):
             config.string("layout", default: "numbers") == "numbers"
-        // 精简和完整都有上一首、下一首；快退快进和跳几秒只画在完整卡片上，
-        // 精简里这三项改了也没变化，就不列。
+        // 快退快进和跳几秒原来只画在完整卡片上；卡片只剩精简，这三项改了没变化，不列。
         case (.music, "backward"), (.music, "forward"), (.music, "skip"):
-            MusicCard.size(config) == .full
+            false
         // 固定的来源在面板的来源列表里点选，设置页不给文字框。
         case (.music, MusicSourceSwitch.pinnedKey):
             false
@@ -1043,7 +1041,7 @@ public enum WidgetCatalog {
             }
         case .notes: return CGSize(width: 160, height: 100)
         case .music:
-            // 精简 232×62，完整 312×132（小唱盘撑满高度）；旧迷你、旧中卡按精简量。
+            // 只剩精简 232×62，旧迷你、旧中卡、旧完整都按精简量。
             return MusicCard.cardSize(cfg)
         // 复古卡带：中卡 404，磁带开紧凑时 216；宽度只看机型和紧凑，不看解锁。
         case .cassette:
