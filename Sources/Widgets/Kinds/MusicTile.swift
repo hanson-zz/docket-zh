@@ -183,7 +183,7 @@ struct MusicTile: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             // 控制固定在右边，歌名再长也只省略自己，按钮不跟着跳。
-            transport(track, size: 14, spacing: 9)
+            transport(track, size: 14, spacing: 12, softPlay: true)
                 .fixedSize()
                 .layoutPriority(1)
         }
@@ -401,7 +401,7 @@ struct MusicTile: View {
     /// side by side otherwise, twice in the same row.
     @ViewBuilder
     private func transport(_ track: Playing, size: CGFloat, spacing: CGFloat,
-                           playPause: Bool = true) -> some View {
+                           playPause: Bool = true, softPlay: Bool = false) -> some View {
         if track.isBrowser {
             button(track.isPlaying ? "pause.fill" : "play.fill", size) { toggle(track) }
         } else {
@@ -416,7 +416,16 @@ struct MusicTile: View {
                     }
                 }
                 if playPause {
+                    // 精简卡片：播放键垫一个淡灰圆底，和两边的上一首、下一首分出主次。
                     button(track.isPlaying ? "pause.fill" : "play.fill", size) { toggle(track) }
+                        .background {
+                            if softPlay {
+                                Circle()
+                                    .fill(cover == nil ? WidgetStyle.secondary.opacity(0.16) : .white.opacity(0.22))
+                                    .frame(width: 28, height: 28)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                 }
                 if config.bool("next", default: true) {
                     button("forward.end.fill", size) {
