@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Now Playing: two sizes on a bottom shelf (`MusicCard`): 精简 232×62, a
 /// horizontal strip with artwork, track and previous / play / next; 完整
-/// 264×132, a small turntable with the record spinning, the tone arm, the
+/// 312×132, a small turntable with the record spinning, the tone arm, the
 /// controls and a scrubber. A side shelf draws the 76pt column for both.
 ///
 /// 正在播放只管这首歌：封面、曲目、上一首 / 暂停 / 下一首、进度。不放音量，
@@ -216,35 +216,76 @@ struct MusicTile: View {
         }
     }
 
-    /// 完整：左边小唱盘（唱片带封面标签，播放时转，唱臂落下；暂停停转、唱臂抬回），
-    /// 右边歌名、歌手和控制，底下一条进度。点唱片也能播放 / 暂停。
+    /// 完整（312×132，按 11-24 效果图）：左边小唱盘撑满卡片高度（唱片带封面标签，播放时转、
+    /// 唱臂落下；暂停停转、唱臂抬回，点唱片也能播放 / 暂停），右边一栏歌名、歌手、
+    /// 上一首 / 实心圆播放键 / 下一首和一条进度，唱臂不压到文字。
     private func full(_ track: Playing) -> some View {
-        VStack(spacing: 7) {
-            HStack(spacing: 12) {
-                MusicMiniTurntable(artwork: track.artwork, fallback: sourceIcon(track), tint: track.tint,
-                                   playing: track.isPlaying,
-                                   spinning: track.isPlaying && !reduceMotion && !context.isPreview
-                                       && ShelfVisibility.shared.cardsOnScreen,
-                                   dark: scheme == .dark || cover != nil)
-                    .frame(width: 80, height: 80)
-                    .contentShape(Circle())
-                    .onTapGesture { toggle(track) }
-                    .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
-                VStack(alignment: .leading, spacing: 0) {
-                    title(track, size: 15)
-                    HStack(spacing: 5) {
-                        bars(track, height: 10)
-                        artist(track, size: 12)
-                    }
-                    Spacer(minLength: 6)
-                    transport(track, size: 16, spacing: 14)
+        HStack(spacing: 14) {
+            MusicMiniTurntable(artwork: track.artwork, fallback: sourceIcon(track), tint: track.tint,
+                               playing: track.isPlaying,
+                               spinning: track.isPlaying && !reduceMotion && !context.isPreview
+                                   && ShelfVisibility.shared.cardsOnScreen,
+                               dark: scheme == .dark || cover != nil)
+                .frame(width: 108, height: 108)
+                .contentShape(Circle())
+                .onTapGesture { toggle(track) }
+                .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+            VStack(alignment: .leading, spacing: 0) {
+                title(track, size: 15)
+                HStack(spacing: 5) {
+                    bars(track, height: 10)
+                    artist(track, size: 12)
                 }
-                .frame(maxWidth: .infinity, maxHeight: 80, alignment: .leading)
+                Spacer(minLength: 4)
+                fullTransport(track)
+                    .frame(maxWidth: .infinity)
+                Spacer(minLength: 4)
+                // 读不到时长的视频（直播等）不画两个 0:00 夹着空条。
+                if track.duration > 0 || !track.isBrowser { scrubber(track) }
             }
-            // 读不到时长的视频（直播等）不画两个 0:00 夹着空条。
-            if track.duration > 0 || !track.isBrowser { scrubber(track) }
+            .frame(maxWidth: .infinity, maxHeight: 108, alignment: .leading)
         }
-        .padding(.vertical, 2)
+    }
+
+    /// 完整卡片的控制：播放 / 暂停是中间的实心圆，两边上一首、下一首（设置里开了快退快进时在最外侧）。
+    /// 浏览器视频只有播放键。
+    @ViewBuilder
+    private func fullTransport(_ track: Playing) -> some View {
+        let play = Button(action: { toggle(track) }) {
+            Image(systemName: track.isPlaying ? "pause.fill" : "play.fill")
+                .playPauseMorph(track.isPlaying ? "pause.fill" : "play.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(cover == nil ? (scheme == .dark ? Color.black : Color.white) : Color.black)
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(cover == nil ? ink : .white))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+        if track.isBrowser {
+            play
+        } else {
+            let skip = max(1, config.int("skip", default: 15))
+            HStack(spacing: 12) {
+                if config.bool("backward"), track.canSeek {
+                    button(skipSymbol("gobackward", skip), 13) { skipBy(track, -Double(skip)) }
+                }
+                if config.bool("previous", default: true) {
+                    button("backward.end.fill", 15) {
+                        if let source = track.source { MusicService.shared.previous(on: source) }
+                    }
+                }
+                play
+                if config.bool("next", default: true) {
+                    button("forward.end.fill", 15) {
+                        if let source = track.source { MusicService.shared.next(on: source) }
+                    }
+                }
+                if config.bool("forward"), track.canSeek {
+                    button(skipSymbol("goforward", skip), 13) { skipBy(track, Double(skip)) }
+                }
+            }
+        }
     }
 
     private func scrubber(_ track: Playing) -> some View {
