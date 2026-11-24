@@ -397,6 +397,11 @@ final class DesktopPetEdgeTests: XCTestCase {
         // 放大时步子跟着放大：同样的距离，两倍大只换了一半的帧。
         XCTAssertEqual(DesktopPetBrain.walkFrame(x: step * 10 + 0.01, scale: 1), 10)
         XCTAssertEqual(DesktopPetBrain.walkFrame(x: step * 10 + 0.01, scale: 2), 5)
+        // 往左走（坐标变小）时帧号照样往前推，不倒着播。
+        let leftward = (0..<5).map { DesktopPetBrain.walkFrame(x: step * 20 - Double($0) * step + step / 2, facingLeft: true) }
+        for (a, b) in zip(leftward, leftward.dropFirst()) {
+            XCTAssertEqual(b, (a + 1) % DesktopPetStrip.walk.frameCount)
+        }
         // 站着不动（时间在走、位置没变）就不换帧；身体起伏画在帧里，不另外颠。
         let state = DesktopPetState(x: 300, activity: .walk(to: 500), since: t0)
         let early = DesktopPetBrain.pose(state, now: t0)

@@ -323,9 +323,12 @@ public enum DesktopPetBrain {
     public static let walkStep: Double = 0.46
 
     /// 走到横坐标 x 时该放第几张走路帧（从 0 数）；`scale` 是设置里的大小。
-    public static func walkFrame(x: Double, scale: Double = 1) -> Int {
+    /// 往左走时坐标在变小，按坐标取帧会倒着播（原地太空步），所以朝左时把帧序反过来，腿照样往前迈。
+    public static func walkFrame(x: Double, scale: Double = 1, facingLeft: Bool = false) -> Int {
         let step = Int((abs(x) / (walkStep * max(scale, 0.1))).rounded(.down))
-        return step % DesktopPetStrip.walk.frameCount
+        let count = DesktopPetStrip.walk.frameCount
+        let index = step % count
+        return facingLeft ? count - 1 - index : index
     }
 
     /// 刚出现：在可走范围中间偏左一点发呆。
@@ -632,7 +635,7 @@ public enum DesktopPetBrain {
         case .curl:
             pose = DesktopPetPose(image: DesktopPetStrip.lie.imageName(Int(elapsed * 4)), facingLeft: left)
         case .walk:
-            pose = DesktopPetPose(image: DesktopPetStrip.walk.imageName(walkFrame(x: state.x, scale: scale)),
+            pose = DesktopPetPose(image: DesktopPetStrip.walk.imageName(walkFrame(x: state.x, scale: scale, facingLeft: left)),
                                   facingLeft: left)
         case .jump:
             // 8 帧：坐、蹲、蓄力、蹬起、腾空、落地蹲、起身、坐。离地高度只在中间那段。
