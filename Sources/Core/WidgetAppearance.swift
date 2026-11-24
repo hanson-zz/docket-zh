@@ -20,13 +20,14 @@ public enum WidgetAppearance {
     public static func isCustomized(_ config: WidgetConfig, kind: WidgetKind) -> Bool {
         let color = WidgetTint.offersColor(kind) && WidgetTint.choice(config) != .kindDefault
         let background = WidgetTint.offersBackground(kind) && WidgetTint.background(config) != .plain
-        return color || background || offersPanelStyle(kind) && MusicPanelStyle.of(config) != .standard
+        return color || background || offersPanelStyle(kind) && MusicCard.size(config) == .full
+            && MusicPanelStyle.of(config) != .standard
     }
 
     /// 入口右边的一行摘要：选过的面板样式、颜色和背景，用“ · ”连起来；都没调过是“默认”。
     public static func summary(_ config: WidgetConfig, kind: WidgetKind) -> String {
         var parts: [String] = []
-        if offersPanelStyle(kind), MusicPanelStyle.of(config) != .standard {
+        if offersPanelStyle(kind), MusicCard.size(config) == .full, MusicPanelStyle.of(config) != .standard {
             parts.append(MusicPanelStyle.of(config).title)
         }
         if WidgetTint.offersColor(kind) {

@@ -21,6 +21,11 @@ final class MusicVinylTests: XCTestCase {
                        "选了精简要记住，不被 Pro 默认黑胶盖掉")
         XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: WidgetConfig(), unlocked: false), .vinyl,
                        "没选过的卡片默认黑胶，免费也是")
+        var compact = MusicPanelStyle.choosing(.vinyl, in: WidgetConfig())
+        compact.set(MusicCard.layoutKey, .string(MusicCard.compact))
+        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: compact, unlocked: true), .standard,
+                       "精简卡片只开精简面板，没有黑胶")
+        XCTAssertEqual(WidgetAppearance.summary(compact, kind: .music), WidgetAppearance.summary(WidgetConfig(), kind: .music))
     }
 
     func testSummaryMentionsVinylOnlyForMusic() {

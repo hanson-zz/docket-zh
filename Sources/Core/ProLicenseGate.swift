@@ -174,7 +174,9 @@ public enum ProLicenseGate {
 
     /// 正在播放面板实际画哪种样式。11-24 起黑胶免费，没选过的卡片默认黑胶，
     /// 选了精简会明写 standard（`MusicPanelStyle.choosing`）。`unlocked` 留着给调用方，不再影响结果。
+    /// 精简卡片只开精简面板，没有黑胶可选（用户 11-24）；黑胶只给完整卡片。
     public static func musicPanelStyle(config: WidgetConfig, unlocked: Bool) -> MusicPanelStyle {
+        if MusicCard.size(config) == .compact { return .standard }
         if config.values[MusicPanelStyle.key] == nil { return .vinyl }
         let style = MusicPanelStyle.of(config)
         guard !unlocked, style.isPro else { return style }

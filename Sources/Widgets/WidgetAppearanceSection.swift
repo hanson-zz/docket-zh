@@ -60,7 +60,8 @@ struct WidgetAppearanceSection: View {
             .accessibilityHint(open ? tr("收起外观") : tr("改这张卡片的主题色和背景"))
 
             if open {
-                if WidgetAppearance.offersPanelStyle(instance.kind) {
+                // 精简卡片只开精简面板，不给黑胶选项。
+                if WidgetAppearance.offersPanelStyle(instance.kind), MusicCard.size(instance.config) == .full {
                     panelStyleRow
                 }
                 WidgetTintPicker(instance: instance,
