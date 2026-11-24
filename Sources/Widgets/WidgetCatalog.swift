@@ -169,7 +169,7 @@ public enum WidgetCatalog {
               supportsCompact: false, selfContained: true),
 
         Entry(kind: .music, name: tr("正在播放"), category: .media,
-              defaults: c(["mini": .bool(false), "previous": .bool(true), "next": .bool(true),
+              defaults: c(["previous": .bool(true), "next": .bool(true),
                            "backward": .bool(false), "forward": .bool(false), "skip": .number(15),
                            "spotify": .bool(true), "apple": .bool(true), "netease": .bool(true), "xiaoyuzhou": .bool(true),
                            // QQ 音乐和网易云走同一路：系统「正在播放」加媒体键。
@@ -179,12 +179,12 @@ public enum WidgetCatalog {
                            // Falls back to video playing in a scriptable
                            // browser tab when no native player has anything.
                            "browsers": .bool(true),
-                           // 卡片三档：完整、迷你、中卡（MusicCard）。没存 layout 的老卡片按完整读。
+                           // 卡片两档：精简、完整（MusicCard），只在「样式」里选，设置页不再列「紧凑布局」开关。
+                           // 没存 layout 的老卡片按完整读；旧迷你、旧中卡启动时迁成精简。
                            // 卡带外观搬成了单独的「复古卡带」，旧的 cassette 键由 CassetteMigration 迁走。
                            MusicCard.layoutKey: .string(MusicCard.wide)]),
-              variants: [(tr("完整"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.wide)]),
-                         (tr("迷你"), ["mini": .bool(true), MusicCard.layoutKey: .string(MusicCard.wide)]),
-                         (tr("中"), ["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.medium)])],
+              variants: [(tr("精简"), [MusicCard.layoutKey: .string(MusicCard.compact)]),
+                         (tr("完整"), [MusicCard.layoutKey: .string(MusicCard.wide)])],
               supportsCompact: false, selfContained: true),
 
         // 复古卡带（Pro）：磁带、随身听、收录机三种机型，库里各占一格（model 键）。
@@ -778,14 +778,10 @@ public enum WidgetCatalog {
             false
         case (.system, "chart"):
             config.string("layout", default: "numbers") == "numbers"
-        // Mini is a 64pt chip: artwork and one glyph, which is play and
-        // pause. Skipping, seeking and the seek distance are drawn by the
-        // wide layout only, so in mini these were five controls that
-        // accepted a change and produced none. Offering an option that does
-        // nothing is the same defect as offering one nothing reads.
-        case (.music, "previous"), (.music, "next"), (.music, "backward"),
-             (.music, "forward"), (.music, "skip"):
-            !config.bool("mini")
+        // 精简和完整都有上一首、下一首；快退快进和跳几秒只画在完整卡片上，
+        // 精简里这三项改了也没变化，就不列。
+        case (.music, "backward"), (.music, "forward"), (.music, "skip"):
+            MusicCard.size(config) == .full
         // 固定的来源在面板的来源列表里点选，设置页不给文字框。
         case (.music, MusicSourceSwitch.pinnedKey):
             false
@@ -899,8 +895,8 @@ public enum WidgetCatalog {
     /// matching on layout alone made them indistinguishable - the style
     /// picker could neither tell them apart nor show the right one.
     ///
-    /// 正在播放的卡片在有中卡之前没存 `layout`，按完整读（`MusicCard.legacyResolved`），
-    /// 样式菜单才认得出是完整还是迷你。别的键不补默认值，空配置照旧谁都不匹配。
+    /// 正在播放的旧卡片（没存 `layout`、存着旧迷你或旧中卡）先换成新写法（`MusicCard.legacyResolved`），
+    /// 样式菜单才认得出是精简还是完整。别的键不补默认值，空配置照旧谁都不匹配。
     public static func variantTitle(matching config: WidgetConfig,
                                     kind: WidgetKind) -> String? {
         guard let entry = entry(kind) else { return nil }
@@ -1047,9 +1043,8 @@ public enum WidgetCatalog {
             }
         case .notes: return CGSize(width: 160, height: 100)
         case .music:
-            if cfg.bool("mini") { return CGSize(width: 64, height: 62) }
-            // 中卡和 Codex 用量的中卡一样宽（404）。
-            return MusicCard.isMedium(cfg) ? CGSize(width: 404, height: 104) : CGSize(width: 264, height: 132)
+            // 精简 232×62，完整 264×132；旧迷你、旧中卡按精简量。
+            return MusicCard.cardSize(cfg)
         // 复古卡带：中卡 404，磁带开紧凑时 216；宽度只看机型和紧凑，不看解锁。
         case .cassette:
             return CGSize(width: CassetteWidget.width(cfg), height: CassetteWidget.cardHeight)

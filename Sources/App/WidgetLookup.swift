@@ -39,6 +39,16 @@ extension AppState {
         }
     }
 
+    /// 正在播放的旧尺寸（迷你、中卡）写成精简，`mini` 去掉（`MusicCard.migrated`）。
+    /// 要在卡带迁移之后跑，卡带迁移还看 medium。
+    func migrateMusicCardSizes() {
+        for index in state.profiles.indices {
+            if let items = MusicCard.migrated(state.profiles[index].items) {
+                state.profiles[index].items = items
+            }
+        }
+    }
+
     /// 写回一个小组件：当前布局里有就写那里，否则写到它所在的布局。
     func writeWidgetAnywhere(_ instance: WidgetInstance) {
         let active = state.customDock.profileID

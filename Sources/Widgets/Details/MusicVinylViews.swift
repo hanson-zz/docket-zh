@@ -244,7 +244,7 @@ enum VinylArt {
 
 /// 唱片本身：黑色底、一圈圈细纹路和压纹、两道分轨的空白、中心圆形封面标签。
 /// 整张画好后只转不重画。
-private struct VinylDisc: View {
+struct VinylDisc: View {
     var radius: CGFloat
     var label: CGFloat
     var artwork: NSImage?
@@ -367,7 +367,7 @@ enum VinylGrooves {
 
 /// 唱片的反光，不转：光打在音轨亮线上（右下、左上两道），外加一层很淡的光和唇边的立体光，
 /// 不铺大片白雾。
-private struct VinylSheen: View {
+struct VinylSheen: View {
     var radius: CGFloat
     var label: CGFloat
     var scale: CGFloat

@@ -1,30 +1,91 @@
+import CoreGraphics
 import Foundation
 
-/// 「正在播放」的三档卡片：完整（264 宽）、迷你（64 宽）和中卡（404 宽，`layout` 为 medium）。
+/// 「正在播放」卡片的两档尺寸：精简（横排小条 232×62：封面、歌名、歌手、上一首 / 播放 / 下一首）
+/// 和完整（264×132：小唱盘转着的唱片、唱臂、控制和进度条）。只管扩展栏卡片，
+/// 展开面板（标准 / 黑胶）和刘海音乐卡片不读这个设置。
 ///
-/// 没存 `layout` 的老卡片按完整读，`mini` 照旧优先。卡带外观（磁带、随身听、收录机）
-/// 2026-10-23 起搬出正在播放，成了单独的 Pro 小组件「复古卡带」（`CassetteWidget`）；
-/// 正在播放的中卡只画默认的封面样式，免费。原来存的 `cassette`、`cassetteCompact`
-/// 由 `CassetteMigration` 在启动时迁走。
+/// 2026-11-24 起由三档（完整、迷你 64 宽、中卡 404 宽）收成两档：旧的迷你（`mini` 为真）
+/// 和中卡（`layout` 为 medium）都按精简读，启动时 `migrated` 把它们写成精简并去掉 `mini`；
+/// 旧的完整不变。卡带外观的迁移（`CassetteMigration`）要先跑，它还要看 medium。
 public enum MusicCard {
     public static let layoutKey = "layout"
     /// 完整（原来的宽卡片）。
     public static let wide = "wide"
-    /// 中卡：404 宽的默认样式。
+    /// 精简：横排小条。
+    public static let compact = "compact"
+    /// 旧的中卡（404 宽），只剩迁移和卡带迁移在读。
     public static let medium = "medium"
+    /// 旧的迷你开关，只剩迁移在读。
+    public static let legacyMiniKey = "mini"
 
-    /// 中卡之前存的卡片：存过 `mini` 却没有 `layout` 的，补上完整，好让样式菜单认出来。
+    public enum Size: Sendable, Equatable { case compact, full }
+
+    public static let compactSize = CGSize(width: 232, height: 62)
+    public static let fullSize = CGSize(width: 264, height: 132)
+
+    /// 存着的尺寸：迷你、中卡、精简都算精简，其余（含没存的老卡片）是完整。
+    public static func size(_ config: WidgetConfig) -> Size {
+        if config.bool(legacyMiniKey) { return .compact }
+        switch config.string(layoutKey, default: wide) {
+        case compact, medium: return .compact
+        default: return .full
+        }
+    }
+
+    public static func cardSize(_ config: WidgetConfig) -> CGSize {
+        size(config) == .compact ? compactSize : fullSize
+    }
+
+    /// 样式菜单认卡片用：存过 `mini` 或 `layout` 的，换成新写法（去掉 `mini`、`layout` 写精简或完整）。
     /// 什么都没存的空配置不补。
     public static func legacyResolved(_ config: WidgetConfig) -> WidgetConfig {
-        guard config.values[layoutKey] == nil, config.values["mini"] != nil else { return config }
+        guard config.values[layoutKey] != nil || config.values[legacyMiniKey] != nil else { return config }
         var copy = config
-        copy.set(layoutKey, .string(wide))
+        copy.set(layoutKey, .string(size(config) == .compact ? compact : wide))
+        copy.set(legacyMiniKey, nil)
         return copy
     }
 
-    /// 中卡：不是迷你，且 `layout` 为 medium。
+    /// 旧中卡：不是迷你，且 `layout` 为 medium（卡带迁移看它决定换不换成复古卡带）。
     public static func isMedium(_ config: WidgetConfig) -> Bool {
-        !config.bool("mini") && config.string(layoutKey, default: wide) == medium
+        !config.bool(legacyMiniKey) && config.string(layoutKey, default: wide) == medium
+    }
+
+    /// 这张卡片还存着旧写法（`mini` 键或 medium）。
+    public static func needsMigration(_ instance: WidgetInstance) -> Bool {
+        instance.kind == .music
+            && (instance.config.values[legacyMiniKey] != nil || instance.config.string(layoutKey) == medium)
+    }
+
+    /// 迁移一张卡片：旧迷你、旧中卡写成精简，旧完整写成完整，`mini` 去掉；其余设置不动。
+    public static func migrated(_ instance: WidgetInstance) -> WidgetInstance {
+        guard needsMigration(instance) else { return instance }
+        var copy = instance
+        copy.config = legacyResolved(instance.config)
+        return copy
+    }
+
+    /// 迁移一串扩展栏项目（文件夹里的也算）；什么都没变时是 nil，不用写回。
+    public static func migrated(_ items: [DockItem]) -> [DockItem]? {
+        var changed = false
+        let result = items.map { item -> DockItem in
+            switch item {
+            case .widget(let widget) where needsMigration(widget):
+                changed = true
+                return .widget(migrated(widget))
+            case .group(var group):
+                if let inner = migrated(group.items) {
+                    changed = true
+                    group.items = inner
+                    return .group(group)
+                }
+                return item
+            default:
+                return item
+            }
+        }
+        return changed ? result : nil
     }
 }
 

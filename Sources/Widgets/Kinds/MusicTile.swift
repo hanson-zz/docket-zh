@@ -1,9 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Now Playing: artwork, track, transport and a scrubber (264×62 on a bottom
-/// shelf, a stacked 76pt column on a side one, or a 64pt chip with the play
-/// key and the bouncing bars).
+/// Now Playing: two sizes on a bottom shelf (`MusicCard`): 精简 232×62, a
+/// horizontal strip with artwork, track and previous / play / next; 完整
+/// 264×132, a small turntable with the record spinning, the tone arm, the
+/// controls and a scrubber. A side shelf draws the 76pt column for both.
 ///
 /// 正在播放只管这首歌：封面、曲目、上一首 / 暂停 / 下一首、进度。不放音量，
 /// 总音量和输出设备在“音量”，每个应用的音量在“应用音量”。
@@ -17,7 +18,8 @@ struct MusicTile: View {
     var instance: WidgetInstance
     var context: WidgetContext
     private var config: WidgetConfig { instance.config }
-    private var isMini: Bool { config.bool("mini") }
+    private var size: MusicCard.Size { MusicCard.size(config) }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Sources the user allows, in preference order. 加了 QQ 音乐；顺序和读法在
     /// Core 的 `MusicSource.enabled`，面板读同一份。
@@ -27,8 +29,7 @@ struct MusicTile: View {
 
     /// The artwork, when there is one to stand on.
     private var cover: NSImage? {
-        // 迷你只有播放键和小竖条，不铺封面。
-        guard !context.isPreview, !isMini else { return nil }
+        guard !context.isPreview else { return nil }
         return playing?.artwork
     }
 
@@ -143,59 +144,18 @@ struct MusicTile: View {
 
     @ViewBuilder
     private var content: some View {
-        if isMini {
-            // 迷你：一个播放键加一排跳动的小竖条（`PlayingBars`）。
-            //
-            // Mini is a 64pt chip and artwork there is a thumbnail cropped to
-            // a square: an album cover survives it, a video thumbnail becomes
-            // two faces and half a word of somebody's title. At that size it
-            // is texture rather than information, so the chip keeps the
-            // control and the bars, which say "this is playing" at a glance
-            // and stop (a low still row) when it is paused. With Reduce
-            // Motion they hold still.
-            //
-            // Still a glyph rather than the whole card, so the rest of the
-            // chip keeps the shelf's click and the panel stays reachable.
-            mini
-        } else if needsPermission, playing == nil {
+        if needsPermission, playing == nil {
             connect
         } else if let playing {
-            if context.position.isVertical { column(playing) } else { strip(playing) }
+            if context.position.isVertical { column(playing) }
+            else if size == .compact { strip(playing) }
+            else { full(playing) }
         } else {
             idle
         }
     }
 
-    // MARK: Mini, 64×62
-
-    @ViewBuilder
-    private var mini: some View {
-        let vertical = context.position.isVertical
-        // 64pt 宽、左右各 10 的内边距，剩 44：22 的圆键、4 的间距、约 17 的四根竖条。
-        let side: CGFloat = vertical ? 13 : 11
-        let track = playing
-        if let track {
-            let layout = vertical ? AnyLayout(VStackLayout(spacing: 5)) : AnyLayout(HStackLayout(spacing: 4))
-            let tap: (() -> Void)? = context.isPreview ? nil : { toggle(track) }
-            layout {
-                TileGlyph(symbol: track.isPlaying ? "pause.fill" : "play.fill", size: side, morphs: true,
-                          action: tap)
-                    .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
-                PlayingBarsView(playing: track.isPlaying,
-                                tint: theme.chosen(or: Color(hex: PaletteColor.green.hex), dark: scheme == .dark),
-                                height: vertical ? 12 : 14,
-                                visible: !context.isPreview && ShelfVisibility.shared.cardsOnScreen)
-            }
-        } else {
-            // Nothing playing is nothing to toggle, so the chip shows what
-            // it is and the whole of it opens the panel.
-            Image(systemName: "music.note")
-                .font(.system(size: side * 1.4, weight: .medium))
-                .foregroundStyle(subInk)
-        }
-    }
-
-    // MARK: Wide, 264×62
+    // MARK: 精简 232×62 / 完整 264×132
 
     /// Whichever service actually owns what is on screen. Firing both meant
     /// pausing a YouTube tab also started Spotify, and the tile then jumped to
@@ -209,38 +169,54 @@ struct MusicTile: View {
         else { MusicService.shared.playPause() }
     }
 
+    /// 精简：横排一条，封面、歌名和歌手、上一首 / 播放 / 下一首，不画进度条。
+    /// 封面不再兼做播放键，播放键就在控制里，免得同一排出现两个。
     private func strip(_ track: Playing) -> some View {
-        HStack(spacing: 11) {
-            Artwork(image: track.artwork, fallback: sourceIcon(track), badge: badge(track), side: 38, corner: 8,
-                    isPlaying: track.isPlaying) { toggle(track) }
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        title(track, size: 15)
-                        HStack(spacing: 5) {
-                            bars(track, height: 10)
-                            artist(track, size: 12)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    // Play/pause is on the artwork in this layout, so the row
-                    // carries only what the artwork cannot - and is dropped
-                    // entirely when there is nothing else to carry.
-                    if track.hasSkipControls {
-                        transport(track, size: 14, spacing: 10, playPause: false)
-                    }
+        HStack(spacing: 10) {
+            Artwork(image: track.artwork, fallback: sourceIcon(track), badge: badge(track), side: 38, corner: 8)
+            VStack(alignment: .leading, spacing: 1) {
+                title(track, size: 14)
+                HStack(spacing: 5) {
+                    bars(track, height: 10)
+                    artist(track, size: 12)
                 }
-                // A video with no readable duration (a live stream, or a site
-                // that reports none) would draw two 0:00 clocks around an
-                // empty bar, so it gets no scrubber at all.
-                if track.duration > 0 || !track.isBrowser { scrubber(track) }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            transport(track, size: 14, spacing: 9)
         }
-        // 52pt of content, so this must satisfy 52 + 2*padding <= the
-        // catalog's card height or the surface overflows its frame and
-        // `.clipped()` shaves the 14pt corner radius flat. At 7 it painted
-        // 66pt inside a 62pt box, which is the "1-2px too tall" card.
+        // 38pt 封面加上下各 3，装进 62 高的卡片不顶边（见 WidgetSurface 的内边距）。
         .padding(.vertical, 3)
+    }
+
+    /// 完整：左边小唱盘（唱片带封面标签，播放时转，唱臂落下；暂停停转、唱臂抬回），
+    /// 右边歌名、歌手和控制，底下一条进度。点唱片也能播放 / 暂停。
+    private func full(_ track: Playing) -> some View {
+        VStack(spacing: 7) {
+            HStack(spacing: 12) {
+                MusicMiniTurntable(artwork: track.artwork, fallback: sourceIcon(track), tint: track.tint,
+                                   playing: track.isPlaying,
+                                   spinning: track.isPlaying && !reduceMotion && !context.isPreview
+                                       && ShelfVisibility.shared.cardsOnScreen,
+                                   dark: scheme == .dark || cover != nil)
+                    .frame(width: 80, height: 80)
+                    .contentShape(Circle())
+                    .onTapGesture { toggle(track) }
+                    .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
+                VStack(alignment: .leading, spacing: 0) {
+                    title(track, size: 15)
+                    HStack(spacing: 5) {
+                        bars(track, height: 10)
+                        artist(track, size: 12)
+                    }
+                    Spacer(minLength: 6)
+                    transport(track, size: 16, spacing: 14)
+                }
+                .frame(maxWidth: .infinity, maxHeight: 80, alignment: .leading)
+            }
+            // 读不到时长的视频（直播等）不画两个 0:00 夹着空条。
+            if track.duration > 0 || !track.isBrowser { scrubber(track) }
+        }
+        .padding(.vertical, 2)
     }
 
     private func scrubber(_ track: Playing) -> some View {

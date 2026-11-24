@@ -78,7 +78,7 @@ final class WidgetOptionTests: XCTestCase {
             .calendar: ["allDay", "calendars", "eventDots", "eventDotsColor", "highlightDays", "monthOutline", "weekNumbers"],
             .reminders: ["list"],
             .notes: ["text", "color", "font", "fontSize"],
-            .music: ["mini", "previous", "next", "backward", "forward",
+            .music: ["previous", "next", "backward", "forward",
                      "skip", "spotify", "apple", "netease", "xiaoyuzhou", "browsers",
                      "qqmusic", "autoSwitch", "pinned"],
             // 复古卡带：来源这几项和正在播放一样，机型和紧凑是自己的（CassetteWidget）。
@@ -252,16 +252,19 @@ final class OptionApplicabilityTests: XCTestCase {
         return config
     }
 
-    /// Mini Now Playing is a 64pt chip: artwork and one glyph, which is play
-    /// and pause. The wide layout is the only one that draws skipping and
-    /// seeking, so in mini those five controls accepted a change and drew
-    /// nothing.
-    func testTheTransportOptionsApplyToTheWideLayoutOnly() {
-        for key in ["previous", "next", "backward", "forward", "skip"] {
+    /// 精简和完整都画上一首、下一首；快退快进和跳几秒只画在完整卡片上。
+    /// 旧迷你按精简读。
+    func testTheTransportOptionsFollowTheCardSize() {
+        let compact = WidgetConfig([MusicCard.layoutKey: .string(MusicCard.compact)])
+        for key in ["previous", "next"] {
+            XCTAssertTrue(WidgetCatalog.applies(key, to: compact, kind: .music), key)
+            XCTAssertTrue(WidgetCatalog.applies(key, to: music(mini: false), kind: .music), key)
+        }
+        for key in ["backward", "forward", "skip"] {
             XCTAssertTrue(WidgetCatalog.applies(key, to: music(mini: false), kind: .music),
-                          "\(key) is drawn by the wide layout")
-            XCTAssertFalse(WidgetCatalog.applies(key, to: music(mini: true), kind: .music),
-                           "\(key) draws nothing in mini, so it must not be offered")
+                          "\(key) is drawn by the full card")
+            XCTAssertFalse(WidgetCatalog.applies(key, to: compact, kind: .music), key)
+            XCTAssertFalse(WidgetCatalog.applies(key, to: music(mini: true), kind: .music), key)
         }
     }
 

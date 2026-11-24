@@ -175,8 +175,9 @@ final class MediaSplitTests: XCTestCase {
     // MARK: 旧卡片不变样
 
     func testPlacedCardsKeepTheirStylesAndSizes() {
+        // 旧迷你按精简量（232），三档收成两档以后不会撑出异常宽度。
         let mini = WidgetCatalog.make(.music, overrides: ["mini": .bool(true)])!
-        XCTAssertEqual(WidgetCatalog.naturalSize(mini).width, 64)
+        XCTAssertEqual(WidgetCatalog.naturalSize(mini).width, 232)
         let wide = WidgetCatalog.make(.photos, overrides: ["layout": .string("wide")])!
         XCTAssertEqual(WidgetCatalog.naturalSize(wide).width, 196)
         XCTAssertEqual(WidgetCatalog.naturalSize(WidgetCatalog.make(.volume)!).width, 200)

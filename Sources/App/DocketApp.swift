@@ -337,6 +337,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 卡带外观搬出正在播放：授权状态算好后跑一遍，已解锁的换成复古卡带对应机型，
         // 没解锁的回到默认样式，卡片都不丢（CassetteMigration，跑过一次再跑不变）。
         state.migrateCassetteLooks(unlocked: ProAccess.isUnlocked)
+        // 正在播放三档收成两档：旧迷你、旧中卡变精简，旧完整不变（必须在卡带迁移之后）。
+        state.migrateMusicCardSizes()
 
         SystemDockSettings.shared.start()
         // Reads the wallpaper, not the screen, so it needs no permission.

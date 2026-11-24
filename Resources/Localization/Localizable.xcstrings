@@ -28392,6 +28392,17 @@
         }
       }
     },
+    "精简" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compact"
+          }
+        }
+      }
+    },
     "官方接口" : {
       "extractionState" : "manual",
       "localizations" : {
