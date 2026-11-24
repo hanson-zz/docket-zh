@@ -353,7 +353,7 @@ struct MusicDetail: View {
     private func compactPlayer(_ track: Playing) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 12) {
-                cover(track, side: 72, glow: false)
+                cover(track, side: 80, glow: false)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(track.title)
                         .font(.system(size: 17, weight: .bold))
@@ -374,7 +374,8 @@ struct MusicDetail: View {
                 scrubber(track, inline: true)
                     .padding(.top, 12)
             }
-            transport(track, play: 44, height: 46, gap: 22, glyph: 18)
+            // 播放键是主操作：比两边大一号，上一首、下一首退后。
+            transport(track, play: 48, height: 50, gap: 24, glyph: 18)
                 .padding(.top, 6)
             volume(track, top: 4)
             if let block = queueBlock(track) {
