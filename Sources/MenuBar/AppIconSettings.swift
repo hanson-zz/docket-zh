@@ -14,7 +14,8 @@ struct AppIconSection: View {
             // 十款图标排不下一行：按设置窗口宽度自动换行，卡片保持 112pt 方正。
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 112, maximum: 112), spacing: 10, alignment: .leading)],
                       alignment: .leading, spacing: 10) {
-                ForEach(AppIconCatalog.all) { option in
+                // 隐藏系列只在解锁后出现，且只列 bundle 里已经有图的那几款。
+                ForEach(AppIconCatalog.visible(unlocked: unlocked).filter { $0.isBundleIcon || AppIconSwitcher.image(for: $0) != nil }) { option in
                     let locked = option.isSupporterOnly && !unlocked
                     AppIconCard(option: option,
                                 selected: AppIconCatalog.shown(choice, unlocked: unlocked) == option,

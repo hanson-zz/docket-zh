@@ -38,6 +38,7 @@ Dockling is an unofficial fork of [Docket](https://github.com/nparashar150/docks
 
 ## In development (next version)
 
+- 🦸 **Hidden members-only icons, Red Panda Heroes**: after unlocking Pro, Settings ▸ General ▸ App Icon shows an extra set of original hero red pandas at the end (Bamboo Blade, Forge Smith, Cloud Courier, Midnight Patrol, Storm Runner, Star Mage, Dock Captain, Shadow Ninja). The whole set stays hidden until unlocked, and each icon appears once its art is added. Not yet verified on a physical Mac.
 - 🧹 **No more Appearance bar at the bottom of every panel**: the row is gone so panels are shorter. The Now Playing panel gets a ··· menu in its top-right corner with Up Next / Recently Played, volume steps and Panel style (vinyl / compact, Full card only). The vinyl panel is relaid out: title, artist · album, like and level bars and the progress bar on the right, with shuffle / previous / play / next / repeat in one row underneath. Not yet verified on a physical Mac.
 - 💿 **Vinyl record styles**: in vinyl mode, the ··· menu offers Classic Vinyl, Clear and Glow. The record texture spins; the glass reflection and the glow ring stay still, and Glow only lights a thin outer ring. Not yet verified on a physical Mac.
 - 🧹 **App icon changes**: removed Red Panda Dock and Red Panda Night; Classic is now called Light; only Light and Dark are free, the four crowns plus Halloween and Christmas are Pro. Removed icons, or Pro icons without a license, show Light. Not yet verified on a physical Mac.

@@ -65,6 +65,18 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertTrue(AppIconCatalog.classicChristmas.isSupporterOnly)
     }
 
+    func testHiddenHeroSeriesOnlyWhenUnlocked() {
+        XCTAssertEqual(AppIconCatalog.hidden.count, 8)
+        XCTAssertTrue(AppIconCatalog.hidden.allSatisfy(\.isSupporterOnly))
+        XCTAssertEqual(AppIconCatalog.visible(unlocked: false), AppIconCatalog.all)
+        XCTAssertEqual(AppIconCatalog.visible(unlocked: true).count, 16)
+        XCTAssertEqual(AppIconCatalog.option("heroNinja"), AppIconCatalog.heroNinja)
+        XCTAssertEqual(AppIconCatalog.shown("heroNinja", unlocked: false), AppIconCatalog.classic)
+        XCTAssertEqual(AppIconCatalog.shown("heroNinja", unlocked: true), AppIconCatalog.heroNinja)
+        let ids = AppIconCatalog.visible(unlocked: true).map(\.id)
+        XCTAssertEqual(Set(ids).count, ids.count)
+    }
+
     func testLicenseChangeSwapsProIconOnlyWhenNeeded() {
         // 试用到期：选的皇冠图标换回经典。
         XCTAssertEqual(AppIconCatalog.relicensed("classicGold", unlocked: false, applied: "classicGold"),

@@ -48119,6 +48119,94 @@
         }
       }
     },
+    "竹叶剑客" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bamboo Blade"
+          }
+        }
+      }
+    },
+    "熔岩工匠" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forge Smith"
+          }
+        }
+      }
+    },
+    "云端信使" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud Courier"
+          }
+        }
+      }
+    },
+    "午夜巡航" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Midnight Patrol"
+          }
+        }
+      }
+    },
+    "雷云跑者" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storm Runner"
+          }
+        }
+      }
+    },
+    "星图法师" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Star Mage"
+          }
+        }
+      }
+    },
+    "码头船长" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dock Captain"
+          }
+        }
+      }
+    },
+    "暗影忍者" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shadow Ninja"
+          }
+        }
+      }
+    },
     "深色模式" : {
       "extractionState" : "manual",
       "localizations" : {

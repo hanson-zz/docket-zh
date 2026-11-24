@@ -62,12 +62,42 @@ public enum AppIconCatalog {
         classicHalloween, classicChristmas,
     ]
 
+    /// 会员隐藏系列「小熊猫英雄」（11-24 用户定）：原创造型，不用任何现有超级英雄的形象和名字。
+    /// 只有 Pro 解锁后才在设置里出现，没解锁时整组不显示（不是显示成带锁的卡片）；
+    /// 图还没进 bundle 的那款也不显示，所以先上代码、等图到了直接放进 Resources/AppIcons。
+    public static let heroBamboo = AppIconOption(
+        id: "heroBamboo", title: tr("竹叶剑客"), resourceName: "AppIcon-HeroBamboo", isSupporterOnly: true)
+    public static let heroForge = AppIconOption(
+        id: "heroForge", title: tr("熔岩工匠"), resourceName: "AppIcon-HeroForge", isSupporterOnly: true)
+    public static let heroCourier = AppIconOption(
+        id: "heroCourier", title: tr("云端信使"), resourceName: "AppIcon-HeroCourier", isSupporterOnly: true)
+    public static let heroLantern = AppIconOption(
+        id: "heroLantern", title: tr("午夜巡航"), resourceName: "AppIcon-HeroLantern", isSupporterOnly: true)
+    public static let heroRunner = AppIconOption(
+        id: "heroRunner", title: tr("雷云跑者"), resourceName: "AppIcon-HeroRunner", isSupporterOnly: true)
+    public static let heroStargazer = AppIconOption(
+        id: "heroStargazer", title: tr("星图法师"), resourceName: "AppIcon-HeroStargazer", isSupporterOnly: true)
+    public static let heroCaptain = AppIconOption(
+        id: "heroCaptain", title: tr("码头船长"), resourceName: "AppIcon-HeroCaptain", isSupporterOnly: true)
+    public static let heroNinja = AppIconOption(
+        id: "heroNinja", title: tr("暗影忍者"), resourceName: "AppIcon-HeroNinja", isSupporterOnly: true)
+
+    /// 隐藏系列，按这个顺序排在 `all` 后面。
+    public static let hidden: [AppIconOption] = [
+        heroBamboo, heroForge, heroCourier, heroLantern, heroRunner, heroStargazer, heroCaptain, heroNinja,
+    ]
+
     public static var defaultOption: AppIconOption { classic }
+
+    /// 设置里要列出的图标：解锁后在 `all` 后面接上隐藏系列。
+    public static func visible(unlocked: Bool) -> [AppIconOption] {
+        unlocked ? all + hidden : all
+    }
 
     /// id 对应的图标；没存过、已删除或拼错的 id 一律回退经典。
     public static func option(_ id: String?) -> AppIconOption {
         guard let id else { return defaultOption }
-        return all.first { $0.id == id } ?? defaultOption
+        return (all + hidden).first { $0.id == id } ?? defaultOption
     }
 
     /// 实际使用的图标：Pro 专属而未解锁时回退经典。
