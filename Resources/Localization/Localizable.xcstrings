@@ -36468,6 +36468,39 @@
         }
       }
     },
+    "已喜欢" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liked"
+          }
+        }
+      }
+    },
+    "放过的歌会记在这里" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Played songs show up here"
+          }
+        }
+      }
+    },
+    "%@ 首" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ songs"
+          }
+        }
+      }
+    },
     "收起小键盘" : {
       "extractionState" : "manual",
       "localizations" : {

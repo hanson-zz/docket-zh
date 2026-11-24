@@ -182,10 +182,38 @@ struct MusicTile: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            // 控制固定在右边，歌名再长也只省略自己，按钮不跟着跳。
             transport(track, size: 14, spacing: 9)
+                .fixedSize()
+                .layoutPriority(1)
         }
         // 38pt 封面加上下各 3，装进 62 高的卡片不顶边（见 WidgetSurface 的内边距）。
         .padding(.vertical, 3)
+        .overlay(alignment: .bottom) { progressLine(track) }
+    }
+
+    /// 精简卡片底边 2pt 进度线：不占高度，离卡片底边和左右都留一点，不像裁切线；
+    /// 浅色深色、铺了封面底时都换对比色。读不到时长（直播等）不画。
+    @ViewBuilder
+    private func progressLine(_ track: Playing) -> some View {
+        if track.duration > 0 {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(cover == nil ? WidgetStyle.secondary.opacity(0.28) : .white.opacity(0.32))
+                    Capsule()
+                        .fill(cover == nil ? ink.opacity(0.85) : .white.opacity(0.9))
+                        .frame(width: max(2, geo.size.width * track.progress))
+                        .animation(track.isPlaying ? .linear(duration: MusicTile.pollInterval) : nil,
+                                   value: track.progress)
+                }
+            }
+            .frame(height: 2)
+            .padding(.horizontal, 4)
+            // 卡片 62 高，内容 44：往下挪到离卡片底边约 4pt。
+            .offset(y: 5)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
     }
 
     /// 完整：左边小唱盘（唱片带封面标签，播放时转，唱臂落下；暂停停转、唱臂抬回），

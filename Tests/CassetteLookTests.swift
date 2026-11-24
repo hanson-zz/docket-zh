@@ -243,6 +243,7 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertEqual(WidgetCatalog.entry(.music)?.variants.map(\.title), ["精简", "完整"])
         XCTAssertEqual(WidgetCatalog.contentSize(compact, position: .left).width, WidgetCatalog.columnWidth)
         XCTAssertNil(full.config.values["mini"], "新卡片不再存迷你开关")
+        XCTAssertEqual(MusicCard.compactPanelWidth, 300, "精简卡片点开是 300 宽的精简面板")
         // 旧迷你、旧中卡都按精简量，紧凑的旧中卡也一样。
         let mini = WidgetCatalog.make(.music, overrides: ["mini": .bool(true)])!
         let mid = WidgetCatalog.make(.music, overrides: [MusicCard.layoutKey: .string(MusicCard.medium)])!

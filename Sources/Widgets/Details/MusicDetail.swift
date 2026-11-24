@@ -55,6 +55,10 @@ struct MusicDetail: View {
                                        unlocked: licenseUnlocked || supporterUnlocked || context.isPreview)
     }
 
+    /// 扩展栏上是精简卡片：点开是 300 宽的精简面板（封面和歌名横排、「刚才听过」收成一行摘要），
+    /// 不管外观里选的是标准还是黑胶；完整卡片照旧开标准或黑胶面板。
+    private var compact: Bool { MusicCard.size(config) == .compact }
+
     private static let base = Color(.sRGB, red: 0.11, green: 0.11, blue: 0.125, opacity: 1)
     private let ink = Color.panelPrimary
 
@@ -126,7 +130,9 @@ struct MusicDetail: View {
             default:
                 if let track = playing {
                     topRow(track)
-                    if style == .vinyl {
+                    if compact {
+                        compactPlayer(track)
+                    } else if style == .vinyl {
                         vinylPlayer(track)
                     } else {
                         player(track)
@@ -346,6 +352,119 @@ struct MusicDetail: View {
         }
     }
 
+    /// 精简面板：封面 72 和歌名、歌手 · 专辑、喜欢横排，一条进度、一行控制、一行音量，
+    /// 歌单只留一行摘要（点它进列表页），间距比标准样式收紧，像轻量弹层而不是缩小的完整播放器。
+    private func compactPlayer(_ track: Playing) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                cover(track, side: 72, glow: false)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(track.title)
+                        .font(.system(size: 17, weight: .bold))
+                    Text(subtitle(track))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.panelSecondary)
+                    if track.source?.hasFavorite == true, let native = track.native {
+                        likeChip(native.favorited ?? false, source: track.source)
+                            .padding(.top, 4)
+                    }
+                }
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.top, 10)
+            if track.duration > 0 || !track.isBrowser {
+                scrubber(track, inline: true)
+                    .padding(.top, 12)
+            }
+            transport(track, play: 44, height: 46, gap: 22, glyph: 18)
+                .padding(.top, 6)
+            volume(track, top: 4)
+            if let block = queueBlock(track) {
+                queueSummary(track, block)
+                    .padding(.top, 10)
+            }
+        }
+    }
+
+    /// 精简面板的「喜欢」：心形加字的小胶囊。
+    private func likeChip(_ on: Bool, source: MusicSource?) -> some View {
+        Button {
+            guard !context.isPreview else { return }
+            MusicService.shared.toggleFavorite()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: on ? "heart.fill" : "heart")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(on ? accent(source).panelReadable : .panelSecondary)
+                Text(on ? tr("已喜欢") : tr("喜欢"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 26)
+            .background(Capsule().fill(.panelFill))
+            .overlay(Capsule().strokeBorder(.panelStroke, lineWidth: 0.6))
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .fixedSize()
+        .accessibilityLabel(on ? tr("取消喜欢") : tr("喜欢"))
+    }
+
+    /// 精简面板的歌单摘要：一行写标题、前两首歌名和「N 首 ›」，点了进列表页，不在面板里直接展开。
+    @ViewBuilder
+    private func queueSummary(_ track: Playing, _ block: MusicQueue.Block) -> some View {
+        let row = HStack(spacing: 8) {
+            Image(systemName: block.kind == .recent ? "clock" : "list.bullet")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.panelSecondary)
+            Text(queueTitle(block.title, expanded: false))
+                .font(.system(size: 14, weight: .bold))
+                .lineLimit(1)
+                .fixedSize()
+            Text(summaryText(track, block))
+                .font(.system(size: 13))
+                .foregroundStyle(.panelSecondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let all = block.allCount {
+                HStack(spacing: 3) {
+                    Text(tr("\(all) 首"))
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                }
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.panelSecondary)
+                .fixedSize()
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 38)
+        .readableGlass(in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        if block.allCount != nil {
+            Button { setExpanded(true) } label: { row.contentShape(Rectangle()) }
+                .buttonStyle(.plain)
+        } else {
+            row
+        }
+    }
+
+    private func summaryText(_ track: Playing, _ block: MusicQueue.Block) -> String {
+        switch block.content {
+        case .rows:
+            let titles = block.kind == .recent
+                ? recentEntries(track).prefix(2).map(\.title)
+                : (MusicService.shared.upNext?.items ?? []).prefix(2).map(\.title)
+            return titles.joined(separator: " · ")
+        case .loading: return tr("正在读取歌单")
+        case .shuffle: return tr("随机播放中")
+        case .end: return tr("后面没有歌了")
+        case .empty: return tr("放过的歌会记在这里")
+        }
+    }
+
     /// 黑胶模式（V2）：上面唱台（大唱片、中心封面标签、唱臂、水面、听歌小熊猫），下面
     /// 歌名（19pt）、歌手 · 专辑、进度两端时间、控制键和音量，有歌单入口时再接「接下来」
     /// 或「刚才听过」。控制键和标准样式同一套判断，系统控制不了的键不画。高度交给面板容器。
@@ -526,7 +645,7 @@ struct MusicDetail: View {
         Text(text)
             .font(.system(size: 13, weight: .medium))
             .monospacedDigit()
-            .rollingValue(text)
+            // 不做数字滚动：已播时间每秒都变，滚到一半的那一帧像「3:2」被切掉一半（11-24 截图）。
             .foregroundStyle(.panelSecondary)
             .lineLimit(1)
             .fixedSize()

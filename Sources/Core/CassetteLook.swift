@@ -23,6 +23,8 @@ public enum MusicCard {
 
     public static let compactSize = CGSize(width: 232, height: 62)
     public static let fullSize = CGSize(width: 264, height: 132)
+    /// 精简卡片点开的精简面板宽度。
+    public static let compactPanelWidth = 300.0
 
     /// 存着的尺寸：迷你、中卡、精简都算精简，其余（含没存的老卡片）是完整。
     public static func size(_ config: WidgetConfig) -> Size {
