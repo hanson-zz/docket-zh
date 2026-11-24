@@ -223,6 +223,7 @@ struct VinylStageView: View {
 }
 
 /// 黑胶模式的写实素材（Resources/Vinyl，用户按效果图用 ChatGPT 画的透明 PNG）。缺哪张就回退那一部分的代码画法。
+/// 唱片和反光素材真机上纹路看不出、反光发雾（11-24 用户反馈），已撤掉，用代码画法；唱盘、唱臂保留素材。
 @MainActor
 enum VinylArt {
     static var disc: NSImage? { PandaStateArt.image("vinyl-disc") }
@@ -380,9 +381,9 @@ private struct VinylWater: View {
                 // 亮线在上，暗线往下错一点，像水面一道起伏。
                 context.stroke(Path(ellipseIn: rect),
                                with: .color(.white.opacity(ring.opacity * (dark ? 0.7 : 1))),
-                               lineWidth: 1.1 * stage.scale)
-                context.stroke(Path(ellipseIn: rect.offsetBy(dx: 0, dy: 1.4 * stage.scale)),
-                               with: .color(tone.opacity(ring.opacity)), lineWidth: 0.9 * stage.scale)
+                               lineWidth: 1.4 * stage.scale)
+                context.stroke(Path(ellipseIn: rect.offsetBy(dx: 0, dy: 1.6 * stage.scale)),
+                               with: .color(tone.opacity(ring.opacity)), lineWidth: 1.2 * stage.scale)
             }
         }
         .frame(width: CGFloat(stage.width), height: CGFloat(stage.height))

@@ -191,7 +191,7 @@ public enum MusicVinyl {
     /// 一圈从唱片边扩散到最大要几秒。
     public static let ripplePeriod = 6.0
     /// 最大透明度，刚出现那圈也很淡。
-    public static let rippleOpacity = 0.22
+    public static let rippleOpacity = 0.34
     /// 最大扩到唱片半径的几倍（V2 唱片放大后两边只剩这么多水面）。
     public static let rippleReach = 0.2
     /// 水面在唱片中心下面多远（按唱片半径），和水波纹椭圆的扁度（竖半径 / 横半径）。
