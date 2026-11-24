@@ -9,7 +9,7 @@ import Foundation
 //   脚底贴图底、左右居中，九张按同一个裁切框和同一个缩放出图，换帧时大小位置不跳。
 //   look-left / look-right / look-up / look-down 是看向四个方向（左右按屏幕方向），
 //   emote-surprise / shy / dizzy / happy / sleepy 是五个表情。
-//   正视 `lively-center` 和闭眼 `lively-blink` 以后补：缺正视时正视就画原来的 front-sit 帧（原样眨眼），
+//   正视 `lively-center` 和闭眼 `lively-blink` 已补齐（若缺图仍回退）：缺正视时正视就画原来的 front-sit 帧（原样眨眼），
 //   缺闭眼时不另外眨眼；缺任何一张都退回原来的样子，不崩。
 // - 看向：按指针相对桌宠中心的方向挑一张，带死区和滞回，换了方向至少停一小会儿，免得抖；
 //   指针静止一阵或离得很远时回正视。只用这一刻的指针位置，不记录、不存盘。
