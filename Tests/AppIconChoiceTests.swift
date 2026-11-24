@@ -15,28 +15,19 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(AppIconCatalog.shown("nonsense", unlocked: true), AppIconCatalog.classic)
     }
 
-    func testPandaIsFreeAndResolves() {
-        let panda = AppIconCatalog.option("panda")
-        XCTAssertEqual(panda.title, "小熊猫码头")
-        XCTAssertEqual(panda.resourceName, "AppIcon-Panda")
-        XCTAssertFalse(panda.isSupporterOnly)
-        XCTAssertFalse(panda.isBundleIcon)
-        XCTAssertEqual(AppIconCatalog.shown("panda", unlocked: false), panda)
-    }
-
-    func testPandaDarkIsFreeAndResolves() {
-        let dark = AppIconCatalog.option("pandaDark")
-        XCTAssertEqual(dark, AppIconCatalog.pandaDark)
-        XCTAssertEqual(dark.resourceName, "AppIcon-PandaDark")
-        XCTAssertFalse(dark.isSupporterOnly)
+    func testRetiredPandaIconsFallBackToClassic() {
+        XCTAssertEqual(AppIconCatalog.option("panda"), AppIconCatalog.classic)
+        XCTAssertEqual(AppIconCatalog.option("pandaDark"), AppIconCatalog.classic)
         XCTAssertEqual(AppIconCatalog.all.map(\.id), ["classic", "classicDark", "classicBlue", "classicRed", "classicGold",
-                                                   "classicRainbow", "classicHalloween", "classicChristmas", "panda", "pandaDark"])
+                                                   "classicRainbow", "classicHalloween", "classicChristmas"])
     }
 
     func testFinderPlan() {
-        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.panda, hasCustomIcon: false), .set)
-        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.panda, hasCustomIcon: true, lastApplied: "panda"), .none)
-        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.pandaDark, hasCustomIcon: true, lastApplied: "panda"), .set)
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.classicDark, hasCustomIcon: false), .set)
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.classicDark, hasCustomIcon: true,
+                                                   lastApplied: "classicDark"), .none)
+        XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.classicHalloween, hasCustomIcon: true,
+                                                   lastApplied: "classicDark"), .set)
         XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.classic, hasCustomIcon: true), .clear)
         XCTAssertEqual(AppIconCatalog.finderAction(for: AppIconCatalog.classic, hasCustomIcon: false), .none)
     }
@@ -77,7 +68,9 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(AppIconCatalog.relicensed("classicGold", unlocked: true, applied: "classic"),
                        AppIconCatalog.classicGold)
         // 免费图标和授权无关。
-        XCTAssertNil(AppIconCatalog.relicensed("panda", unlocked: false, applied: "panda"))
+        XCTAssertNil(AppIconCatalog.relicensed("classicDark", unlocked: false, applied: "classicDark"))
+        // 下架的小熊猫图标：贴着的换回经典。
+        XCTAssertEqual(AppIconCatalog.relicensed("panda", unlocked: true, applied: "panda"), AppIconCatalog.classic)
         XCTAssertNil(AppIconCatalog.relicensed(nil, unlocked: true, applied: "classic"))
     }
 }

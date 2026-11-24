@@ -36,13 +36,7 @@ public enum AppIconCatalog {
     public static let classic = AppIconOption(
         id: "classic", title: tr("经典"), resourceName: nil, isSupporterOnly: false)
 
-    /// 小熊猫是码头的品牌形象，所以这一款免费。
-    public static let panda = AppIconOption(
-        id: "panda", title: tr("小熊猫码头"), resourceName: "AppIcon-Panda", isSupporterOnly: false)
-
-    /// 小熊猫码头的夜景版：深蓝夜空、暗色水面，同样免费。
-    public static let pandaDark = AppIconOption(
-        id: "pandaDark", title: tr("小熊猫夜色"), resourceName: "AppIcon-PandaDark", isSupporterOnly: false)
+    // 「小熊猫码头」「小熊猫夜色」两款 11-24 按用户要求下架；选过的人回退经典（`option` 找不到 id）。
 
     // 经典扩展栏小熊猫的一套配色（用户 10-28 给的图）：深色和两款节日免费，
     // 戴皇冠、带 Pro 角标的四款是 Pro 专属。
@@ -65,7 +59,7 @@ public enum AppIconCatalog {
     /// 设置里按这个顺序排列，第一项是默认。
     public static let all: [AppIconOption] = [
         classic, classicDark, classicBlue, classicRed, classicGold, classicRainbow,
-        classicHalloween, classicChristmas, panda, pandaDark,
+        classicHalloween, classicChristmas,
     ]
 
     public static var defaultOption: AppIconOption { classic }
