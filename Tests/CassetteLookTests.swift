@@ -238,7 +238,7 @@ final class CassetteLookTests: XCTestCase {
     func testNowPlayingHasTwoSizes() {
         let full = WidgetCatalog.make(.music)!
         let compact = WidgetCatalog.make(.music, overrides: [MusicCard.layoutKey: .string(MusicCard.compact)])!
-        XCTAssertEqual(WidgetCatalog.naturalSize(full), CGSize(width: 312, height: 132))
+        XCTAssertEqual(WidgetCatalog.naturalSize(full), CGSize(width: 312, height: 62))
         XCTAssertEqual(WidgetCatalog.naturalSize(compact), CGSize(width: 232, height: 62))
         XCTAssertEqual(WidgetCatalog.entry(.music)?.variants.map(\.title), ["精简", "完整"])
         XCTAssertEqual(WidgetCatalog.contentSize(compact, position: .left).width, WidgetCatalog.columnWidth)

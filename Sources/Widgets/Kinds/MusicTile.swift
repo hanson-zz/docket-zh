@@ -155,7 +155,7 @@ struct MusicTile: View {
         }
     }
 
-    // MARK: 精简 232×62 / 完整 264×132
+    // MARK: 精简 232×62 / 完整 312×62
 
     /// Whichever service actually owns what is on screen. Firing both meant
     /// pausing a YouTube tab also started Spotify, and the tile then jumped to
@@ -216,35 +216,34 @@ struct MusicTile: View {
         }
     }
 
-    /// 完整（312×132，按 11-24 效果图）：左边小唱盘撑满卡片高度（唱片带封面标签，播放时转、
-    /// 唱臂落下；暂停停转、唱臂抬回，点唱片也能播放 / 暂停），右边一栏歌名、歌手、
-    /// 上一首 / 实心圆播放键 / 下一首和一条进度，唱臂不压到文字。
+    /// 完整（312×62）：扩展栏横向一排只有 58pt 高（WidgetCatalog.contentSize），
+    /// 所以不能按 132 高画，否则上下被裁、圆角变直角。左边 44 的小唱盘（播放时转、
+    /// 唱臂落下；暂停停转、唱臂抬回，点唱片也能播放 / 暂停），中间歌名和歌手，
+    /// 右边固定上一首 / 实心圆播放键 / 下一首，底边和精简一样一条 2pt 进度线。
     private func full(_ track: Playing) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 10) {
             MusicMiniTurntable(artwork: track.artwork, fallback: sourceIcon(track), tint: track.tint,
                                playing: track.isPlaying,
                                spinning: track.isPlaying && !reduceMotion && !context.isPreview
                                    && ShelfVisibility.shared.cardsOnScreen,
                                dark: scheme == .dark || cover != nil)
-                .frame(width: 108, height: 108)
+                .frame(width: 44, height: 44)
                 .contentShape(Circle())
                 .onTapGesture { toggle(track) }
                 .accessibilityLabel(track.isPlaying ? tr("暂停") : tr("播放"))
-            VStack(alignment: .leading, spacing: 0) {
-                title(track, size: 15)
+            VStack(alignment: .leading, spacing: 1) {
+                title(track, size: 14)
                 HStack(spacing: 5) {
                     bars(track, height: 10)
                     artist(track, size: 12)
                 }
-                Spacer(minLength: 4)
-                fullTransport(track)
-                    .frame(maxWidth: .infinity)
-                Spacer(minLength: 4)
-                // 读不到时长的视频（直播等）不画两个 0:00 夹着空条。
-                if track.duration > 0 || !track.isBrowser { scrubber(track) }
             }
-            .frame(maxWidth: .infinity, maxHeight: 108, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            fullTransport(track)
+                .fixedSize()
+                .layoutPriority(1)
         }
+        .overlay(alignment: .bottom) { progressLine(track) }
     }
 
     /// 完整卡片的控制：播放 / 暂停是中间的实心圆，两边上一首、下一首（设置里开了快退快进时在最外侧）。
@@ -254,9 +253,9 @@ struct MusicTile: View {
         let play = Button(action: { toggle(track) }) {
             Image(systemName: track.isPlaying ? "pause.fill" : "play.fill")
                 .playPauseMorph(track.isPlaying ? "pause.fill" : "play.fill")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(cover == nil ? (scheme == .dark ? Color.black : Color.white) : Color.black)
-                .frame(width: 34, height: 34)
+                .frame(width: 30, height: 30)
                 .background(Circle().fill(cover == nil ? ink : .white))
                 .contentShape(Circle())
         }
@@ -266,7 +265,7 @@ struct MusicTile: View {
             play
         } else {
             let skip = max(1, config.int("skip", default: 15))
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 if config.bool("backward"), track.canSeek {
                     button(skipSymbol("gobackward", skip), 13) { skipBy(track, -Double(skip)) }
                 }

@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 
 /// 「正在播放」卡片的两档尺寸：精简（横排小条 232×62：封面、歌名、歌手、上一首 / 播放 / 下一首）
-/// 和完整（312×132：小唱盘转着的唱片、唱臂、控制和进度条）。只管扩展栏卡片，
+/// 和完整（312×62：扩展栏一排只有 58 高，小唱盘、歌名歌手、实心圆播放键和底边进度线）。只管扩展栏卡片，
 /// 展开面板（标准 / 黑胶）和刘海音乐卡片不读这个设置。
 ///
 /// 2026-11-24 起由三档（完整、迷你 64 宽、中卡 404 宽）收成两档：旧的迷你（`mini` 为真）
@@ -22,7 +22,7 @@ public enum MusicCard {
     public enum Size: Sendable, Equatable { case compact, full }
 
     public static let compactSize = CGSize(width: 232, height: 62)
-    public static let fullSize = CGSize(width: 312, height: 132)
+    public static let fullSize = CGSize(width: 312, height: 62)
     /// 精简卡片点开的精简面板宽度。
     public static let compactPanelWidth = 300.0
 

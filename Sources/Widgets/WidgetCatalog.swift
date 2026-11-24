@@ -1043,7 +1043,7 @@ public enum WidgetCatalog {
             }
         case .notes: return CGSize(width: 160, height: 100)
         case .music:
-            // 精简 232×62，完整 312×132（小唱盘撑满高度）；旧迷你、旧中卡按精简量。
+            // 精简 232×62，完整 312×62（扩展栏一排 58 高）；旧迷你、旧中卡按精简量。
             return MusicCard.cardSize(cfg)
         // 复古卡带：中卡 404，磁带开紧凑时 216；宽度只看机型和紧凑，不看解锁。
         case .cassette:
