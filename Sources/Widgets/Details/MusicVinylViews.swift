@@ -158,6 +158,12 @@ struct VinylStageView: View {
                 }
                 .frame(width: platter * 2, height: platter * 2)
                 .position(center)
+                // 唱片压在唱盘上的一圈细影，不转。
+                Circle()
+                    .fill(.black.opacity(dark ? 0.6 : 0.35))
+                    .frame(width: r * 2, height: r * 2)
+                    .blur(radius: 2.5 * s)
+                    .position(x: center.x, y: center.y + 1.5 * s)
                 VinylDisc(radius: r, label: CGFloat(stage.label), artwork: artwork,
                           labelColor: labelColor, scale: s, texture: VinylArt.disc)
                     .frame(width: r * 2, height: r * 2)
@@ -172,7 +178,7 @@ struct VinylStageView: View {
                             .opacity(dark ? 0.85 : 0.7)
                             .allowsHitTesting(false)
                     } else {
-                        VinylSheen(radius: r, label: CGFloat(stage.label), dark: dark)
+                        VinylSheen(radius: r, label: CGFloat(stage.label), scale: s, dark: dark)
                     }
                 }
                 .frame(width: r * 2, height: r * 2)
@@ -272,27 +278,27 @@ private struct VinylDisc: View {
                     Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
                 }
                 context.fill(ring(radius), with: .radialGradient(
-                    Gradient(colors: [Color(white: 0.14), Color(white: 0.05)]),
+                    Gradient(colors: [Color(white: 0.13), Color(white: 0.045)]),
                     center: c, startRadius: label, endRadius: radius))
-                // 细纹路：间距 1.4pt，明暗交替。
-                var r = label * 1.1
-                var index = 0
-                while r < radius * 0.96 {
-                    context.stroke(ring(r), with: .color(.white.opacity(index.isMultiple(of: 2) ? 0.055 : 0.022)),
-                                   lineWidth: 0.5)
-                    r += 1.4 * scale
-                    index += 1
+                // 音轨：每道一条细亮线加紧挨着的暗槽，明暗交替，像压出来的沟槽；
+                // 亮度随半径轻轻起伏，看得出一首首歌。反光打在这些亮线上（VinylSheen）。
+                let line = VinylGrooves.lineWidth(scale: scale)
+                for groove in VinylGrooves.rings(label: label, radius: radius, scale: scale) {
+                    context.stroke(ring(groove.radius), with: .color(.white.opacity(groove.opacity)), lineWidth: line)
+                    context.stroke(ring(groove.radius + VinylGrooves.spacing(scale: scale) * 0.45),
+                                   with: .color(.black.opacity(0.35)), lineWidth: line)
                 }
-                // 两道分轨的空白，稍亮一点。
-                for ratio: CGFloat in [0.6, 0.78] {
-                    context.stroke(ring(radius * ratio), with: .color(.white.opacity(0.08)), lineWidth: 1.6 * scale)
+                // 两道分轨的空白：光滑一圈，外沿一道细亮边。
+                for ratio: CGFloat in VinylGrooves.gaps {
+                    context.stroke(ring(radius * ratio), with: .color(Color(white: 0.09)), lineWidth: 1.8 * scale)
+                    context.stroke(ring(radius * ratio + 0.95 * scale), with: .color(.white.opacity(0.1)), lineWidth: 0.4)
                 }
-                // 外缘：一圈不带纹路的光边，再一道细高光。
-                context.stroke(ring(radius - 2 * scale), with: .color(.black.opacity(0.5)), lineWidth: 3 * scale)
-                context.stroke(ring(radius - 0.5), with: .color(.white.opacity(0.16)), lineWidth: 1)
-                // 标签外一圈压纹。
-                context.stroke(ring(label + 3 * scale), with: .color(.black.opacity(0.65)), lineWidth: 3 * scale)
-                context.stroke(ring(label + 4.8 * scale), with: .color(.white.opacity(0.07)), lineWidth: 0.6)
+                // 外缘：3pt 不带纹路的光滑唇边，内侧一道暗线分开，左上亮右下暗的光在 VinylSheen。
+                context.stroke(ring(radius - 1.6 * scale), with: .color(Color(white: 0.08)), lineWidth: 3.2 * scale)
+                context.stroke(ring(radius - 3.3 * scale), with: .color(.black.opacity(0.6)), lineWidth: 0.5)
+                // 标签外一圈压纹，再一圈光滑的 dead wax。
+                context.stroke(ring(label + 3 * scale), with: .color(.black.opacity(0.7)), lineWidth: 3 * scale)
+                context.stroke(ring(label + 4.8 * scale), with: .color(.white.opacity(0.08)), lineWidth: 0.6)
             }
     }
 
@@ -326,29 +332,91 @@ private struct VinylDisc: View {
     }
 }
 
-/// 唱片上两道斜光，不转。
+/// 唱片纹路的几何：唱片层画沟槽，反光层在同样的半径上画亮线，两层对得上。
+/// 纹路是同心圆，反光层不转也和转着的唱片吻合。
+enum VinylGrooves {
+    struct Ring { var radius: CGFloat; var opacity: Double }
+
+    /// 两道分轨空白的位置（占半径的比例）。
+    static let gaps: [CGFloat] = [0.6, 0.78]
+
+    /// 音轨间距：1.2pt，小尺寸下不低于 1pt，避免细线挤成一片灰或出摩尔纹。
+    static func spacing(scale: CGFloat) -> CGFloat { max(1.0, 1.2 * scale) }
+
+    /// 线宽 0.45pt，最细 0.5pt 免得 1x 屏上看不见。
+    static func lineWidth(scale: CGFloat) -> CGFloat { max(0.5, 0.45 * scale) }
+
+    static func rings(label: CGFloat, radius: CGFloat, scale: CGFloat) -> [Ring] {
+        var out: [Ring] = []
+        var r = label * 1.1
+        var index = 0
+        let step = spacing(scale: scale)
+        let end = radius * 0.955
+        while r < end {
+            let unit = Double(r / max(scale, 0.01))
+            let band = 1 + 0.25 * sin(unit * 0.9) * sin(unit * 0.23)
+            let base = index.isMultiple(of: 2) ? 0.065 : 0.035
+            let inGap = gaps.contains { abs(r - radius * $0) < 1.4 * scale }
+            if !inGap { out.append(Ring(radius: r, opacity: base * band)) }
+            r += step
+            index += 1
+        }
+        return out
+    }
+}
+
+/// 唱片的反光，不转：光打在音轨亮线上（右下、左上两道），外加一层很淡的光和唇边的立体光，
+/// 不铺大片白雾。
 private struct VinylSheen: View {
     var radius: CGFloat
     var label: CGFloat
+    var scale: CGFloat
     var dark: Bool
 
+    /// 两道灯光的位置，和旧版斜光一致。
+    private func lightStops(_ peak: Double) -> [Gradient.Stop] {
+        [.init(color: .white.opacity(0), location: 0),
+         .init(color: .white.opacity(peak), location: 0.11),
+         .init(color: .white.opacity(0), location: 0.22),
+         .init(color: .white.opacity(0), location: 0.5),
+         .init(color: .white.opacity(peak * 0.7), location: 0.61),
+         .init(color: .white.opacity(0), location: 0.72),
+         .init(color: .white.opacity(0), location: 1)]
+    }
+
     var body: some View {
-        let strong = dark ? 0.13 : 0.11
-        Circle()
-            .fill(AngularGradient(stops: [
-                .init(color: .white.opacity(0), location: 0),
-                .init(color: .white.opacity(strong), location: 0.11),
-                .init(color: .white.opacity(0), location: 0.22),
-                .init(color: .white.opacity(0), location: 0.5),
-                .init(color: .white.opacity(strong * 0.7), location: 0.61),
-                .init(color: .white.opacity(0), location: 0.72),
-                .init(color: .white.opacity(0), location: 1),
-            ], center: .center, angle: .degrees(-20)))
-            .mask {
-                Circle()
-                    .strokeBorder(.black, lineWidth: radius - label - 4)
+        ZStack {
+            // 沟槽上的高光：同样半径的细亮线，按灯光扇区显出来。
+            Canvas { context, size in
+                let c = CGPoint(x: size.width / 2, y: size.height / 2)
+                let line = VinylGrooves.lineWidth(scale: scale)
+                for groove in VinylGrooves.rings(label: label, radius: radius, scale: scale) {
+                    let r = groove.radius
+                    context.stroke(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)),
+                                   with: .color(.white.opacity(0.3 + groove.opacity)), lineWidth: line)
+                }
             }
-            .allowsHitTesting(false)
+            .mask(Circle().fill(AngularGradient(stops: lightStops(1), center: .center, angle: .degrees(-20))))
+            // 很淡的一层光，主要的亮已经在纹路上。
+            Circle()
+                .fill(AngularGradient(stops: lightStops(dark ? 0.09 : 0.08), center: .center, angle: .degrees(-20)))
+                .mask { Circle().strokeBorder(.black, lineWidth: radius - label - 4 * scale).padding(3.5 * scale) }
+            // 唇边：左上亮、右下暗，看得出唱片的厚度。
+            Circle()
+                .inset(by: 1.6 * scale)
+                .stroke(AngularGradient(colors: [.white.opacity(0.14), .white.opacity(0.05), .white.opacity(0.01),
+                                                 .white.opacity(0.05), .white.opacity(0.14)],
+                                        center: .center, angle: .degrees(225)),
+                        lineWidth: 3.2 * scale)
+            Circle()
+                .inset(by: 0.4)
+                .stroke(AngularGradient(colors: [.white.opacity(0.55), .white.opacity(0.3), .white.opacity(0.18),
+                                                 .white.opacity(0.3), .white.opacity(0.55)],
+                                        center: .center, angle: .degrees(225)),
+                        lineWidth: 0.8)
+        }
+        .drawingGroup()
+        .allowsHitTesting(false)
     }
 }
 
