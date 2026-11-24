@@ -425,11 +425,12 @@ final class ColorSettingsScopeTests: XCTestCase {
         }
     }
 
+    /// 测试包里没有字符串表，tr 原样返回中文。
     func testStatusTitles() {
-        XCTAssertEqual(ShelfColorChoice.plain.statusTitle, tr("无"))
-        XCTAssertEqual(ShelfColorChoice.followWidgets.statusTitle, tr("跟随默认"))
+        XCTAssertEqual(ShelfColorChoice.plain.statusTitle, "无")
+        XCTAssertEqual(ShelfColorChoice.followWidgets.statusTitle, "跟随默认")
         XCTAssertEqual(ShelfColorChoice.color(.redPanda).statusTitle, ShelfColor.redPanda.title)
-        XCTAssertEqual(WidgetTint.statusTitle(.kindDefault), tr("默认"))
+        XCTAssertEqual(WidgetTint.statusTitle(.kindDefault), "默认")
         XCTAssertEqual(WidgetTint.statusTitle(.preset(.pink)), WidgetTint.Preset.pink.title)
     }
 }
