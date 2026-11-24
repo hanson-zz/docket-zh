@@ -42,7 +42,7 @@ final class AppIconChoiceTests: XCTestCase {
         let locked = AppIconOption(id: "x", title: "X", resourceName: "X", isSupporterOnly: true)
         XCTAssertTrue(locked.isSupporterOnly)
         // shown 只认 catalog 里的项，所以这里只校验 catalog 内每一项的规则。
-        for option in AppIconCatalog.all {
+        for option in AppIconCatalog.all + AppIconCatalog.hidden {
             let shownLocked = AppIconCatalog.shown(option.id, unlocked: false)
             XCTAssertEqual(shownLocked, option.isSupporterOnly ? AppIconCatalog.classic : option)
             XCTAssertEqual(AppIconCatalog.shown(option.id, unlocked: true), option)
@@ -66,10 +66,10 @@ final class AppIconChoiceTests: XCTestCase {
     }
 
     func testHiddenHeroSeriesOnlyWhenUnlocked() {
-        XCTAssertEqual(AppIconCatalog.hidden.count, 8)
+        XCTAssertEqual(AppIconCatalog.hidden.count, 20)
         XCTAssertTrue(AppIconCatalog.hidden.allSatisfy(\.isSupporterOnly))
         XCTAssertEqual(AppIconCatalog.visible(unlocked: false), AppIconCatalog.all)
-        XCTAssertEqual(AppIconCatalog.visible(unlocked: true).count, 16)
+        XCTAssertEqual(AppIconCatalog.visible(unlocked: true).count, 28)
         XCTAssertEqual(AppIconCatalog.option("heroNinja"), AppIconCatalog.heroNinja)
         XCTAssertEqual(AppIconCatalog.shown("heroNinja", unlocked: false), AppIconCatalog.classic)
         XCTAssertEqual(AppIconCatalog.shown("heroNinja", unlocked: true), AppIconCatalog.heroNinja)
