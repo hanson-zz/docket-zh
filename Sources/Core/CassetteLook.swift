@@ -1,10 +1,9 @@
 import CoreGraphics
 import Foundation
 
-/// 「正在播放」扩展栏卡片：2026-11-24 起只留精简一档（横排小条 232×62：封面、歌名、歌手、
-/// 上一首 / 播放 / 下一首，底边细进度线）。更多内容点开看面板：Pro 默认黑胶面板，
-/// 免费是精简面板（`ProLicenseGate.musicPanelStyle`）。完整（312×132 小唱盘）不再提供，
-/// 存着完整的老卡片启动时也迁成精简。
+/// 「正在播放」卡片的两档尺寸：精简（横排小条 232×62：封面、歌名、歌手、上一首 / 播放 / 下一首）
+/// 和完整（312×132：小唱盘转着的唱片、唱臂、控制和进度条）。只管扩展栏卡片，
+/// 展开面板（标准 / 黑胶）和刘海音乐卡片不读这个设置。
 ///
 /// 2026-11-24 起由三档（完整、迷你 64 宽、中卡 404 宽）收成两档：旧的迷你（`mini` 为真）
 /// 和中卡（`layout` 为 medium）都按精简读，启动时 `migrated` 把它们写成精简并去掉 `mini`；
@@ -27,8 +26,14 @@ public enum MusicCard {
     /// 精简卡片点开的精简面板宽度。
     public static let compactPanelWidth = 300.0
 
-    /// 卡片尺寸：只剩精简一档，不管存的是什么（旧迷你、中卡、完整、没存）都按精简画。
-    public static func size(_ config: WidgetConfig) -> Size { .compact }
+    /// 存着的尺寸：迷你、中卡、精简都算精简，其余（含没存的老卡片）是完整。
+    public static func size(_ config: WidgetConfig) -> Size {
+        if config.bool(legacyMiniKey) { return .compact }
+        switch config.string(layoutKey, default: wide) {
+        case compact, medium: return .compact
+        default: return .full
+        }
+    }
 
     public static func cardSize(_ config: WidgetConfig) -> CGSize {
         size(config) == .compact ? compactSize : fullSize
@@ -49,14 +54,13 @@ public enum MusicCard {
         !config.bool(legacyMiniKey) && config.string(layoutKey, default: wide) == medium
     }
 
-    /// 这张卡片还存着旧写法（`mini` 键，或 `layout` 不是精简）。
+    /// 这张卡片还存着旧写法（`mini` 键或 medium）。
     public static func needsMigration(_ instance: WidgetInstance) -> Bool {
         instance.kind == .music
-            && (instance.config.values[legacyMiniKey] != nil
-                || instance.config.string(layoutKey, default: compact) != compact)
+            && (instance.config.values[legacyMiniKey] != nil || instance.config.string(layoutKey) == medium)
     }
 
-    /// 迁移一张卡片：旧迷你、旧中卡、旧完整都写成精简，`mini` 去掉；其余设置不动。
+    /// 迁移一张卡片：旧迷你、旧中卡写成精简，旧完整写成完整，`mini` 去掉；其余设置不动。
     public static func migrated(_ instance: WidgetInstance) -> WidgetInstance {
         guard needsMigration(instance) else { return instance }
         var copy = instance

@@ -111,8 +111,8 @@ struct WidgetAppearanceSection: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .font(.system(size: 13))
-                ProBadge()
             }
+            // 黑胶 11-24 起免费，isPro 恒为假，这行提示不会再出现。
             if !unlocked, vinylAsked || stored.isPro {
                 HStack(spacing: 8) {
                     Text(tr("黑胶模式是 Pro 功能，现在显示标准样式"))

@@ -209,29 +209,21 @@ final class VinylMotionTests: XCTestCase {
         XCTAssertLessThan(calm, busy, "唱片停下时水面更静")
     }
 
-    // MARK: Pro
+    // MARK: 免费
 
-    func testVinylIsAProStyleForMusicOnly() {
+    func testVinylIsFreeAndTheDefault() {
         let vinyl: [String: WidgetConfig.Value] = [MusicPanelStyle.key: .string("vinyl")]
         let standard: [String: WidgetConfig.Value] = [MusicPanelStyle.key: .string("standard")]
-        XCTAssertTrue(ProFeatures.isKindProStyle(.music, vinyl))
+        XCTAssertFalse(ProFeatures.isKindProStyle(.music, vinyl), "黑胶 11-24 起免费")
         XCTAssertFalse(ProFeatures.isKindProStyle(.music, standard))
-        XCTAssertFalse(ProFeatures.isKindProStyle(.battery, vinyl))
-        XCTAssertFalse(ProFeatures.isProKind(.music), "正在播放整种仍免费")
-        XCTAssertFalse(ProLicenseGate.canChoose(.music, vinyl, unlocked: false))
-        XCTAssertTrue(ProLicenseGate.canChoose(.music, vinyl, unlocked: true))
+        XCTAssertFalse(ProFeatures.isProKind(.music))
+        XCTAssertTrue(ProLicenseGate.canChoose(.music, vinyl, unlocked: false))
         XCTAssertTrue(ProLicenseGate.canChoose(.music, standard, unlocked: false))
-    }
-
-    func testLockedVinylFallsBackButKeepsTheSetting() {
         let config = MusicPanelStyle.choosing(.vinyl, in: WidgetConfig())
-        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: config, unlocked: false), .standard,
-                       "没解锁时画标准样式")
-        XCTAssertEqual(MusicPanelStyle.of(config), .vinyl, "配置照旧存着")
-        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: config, unlocked: true), .vinyl, "解锁后回来")
-        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: WidgetConfig(), unlocked: false), .standard)
+        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: config, unlocked: false), .vinyl)
+        XCTAssertEqual(ProLicenseGate.musicPanelStyle(config: WidgetConfig(), unlocked: false), .vinyl)
         let instance = WidgetInstance(kind: .music, config: config)
-        XCTAssertFalse(ProLicenseGate.needsLockOverlay(instance, unlocked: false), "有标准样式可退，不盖遮罩")
-        XCTAssertTrue(ProFeatures.isPro(instance), "设置里标 Pro")
+        XCTAssertFalse(ProLicenseGate.needsLockOverlay(instance, unlocked: false))
+        XCTAssertFalse(ProFeatures.isPro(instance), "设置里不再标 Pro")
     }
 }

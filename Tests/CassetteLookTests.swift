@@ -235,26 +235,40 @@ final class CassetteLookTests: XCTestCase {
 
     // MARK: 卡带的三档（正在播放）
 
-    func testNowPlayingHasOneCompactSize() {
-        let card = WidgetCatalog.make(.music)!
-        XCTAssertEqual(WidgetCatalog.naturalSize(card), CGSize(width: 232, height: 62))
-        XCTAssertEqual(WidgetCatalog.entry(.music)?.variants.count, 0, "只剩精简一档，样式里不再分尺寸")
-        XCTAssertEqual(WidgetCatalog.contentSize(card, position: .left).width, WidgetCatalog.columnWidth)
-        XCTAssertNil(card.config.values["mini"], "新卡片不再存迷你开关")
-        XCTAssertEqual(MusicCard.compactPanelWidth, 300, "精简面板 300 宽")
-        // 旧迷你、旧中卡、旧完整都按精简量。
-        for overrides: [String: WidgetConfig.Value] in [["mini": .bool(true)],
-                                                         [MusicCard.layoutKey: .string(MusicCard.medium)],
-                                                         [MusicCard.layoutKey: .string(MusicCard.wide)]] {
-            let old = WidgetCatalog.make(.music, overrides: overrides)!
-            XCTAssertEqual(WidgetCatalog.naturalSize(old), MusicCard.compactSize)
-        }
+    func testNowPlayingHasTwoSizes() {
+        let full = WidgetCatalog.make(.music)!
+        let compact = WidgetCatalog.make(.music, overrides: [MusicCard.layoutKey: .string(MusicCard.compact)])!
+        XCTAssertEqual(WidgetCatalog.naturalSize(full), CGSize(width: 312, height: 132))
+        XCTAssertEqual(WidgetCatalog.naturalSize(compact), CGSize(width: 232, height: 62))
+        XCTAssertEqual(WidgetCatalog.entry(.music)?.variants.map(\.title), ["精简", "完整"])
+        XCTAssertEqual(WidgetCatalog.contentSize(compact, position: .left).width, WidgetCatalog.columnWidth)
+        XCTAssertNil(full.config.values["mini"], "新卡片不再存迷你开关")
+        XCTAssertEqual(MusicCard.compactPanelWidth, 300, "精简卡片点开是 300 宽的精简面板")
+        // 旧迷你、旧中卡都按精简量，紧凑的旧中卡也一样。
+        let mini = WidgetCatalog.make(.music, overrides: ["mini": .bool(true)])!
+        let mid = WidgetCatalog.make(.music, overrides: [MusicCard.layoutKey: .string(MusicCard.medium)])!
+        XCTAssertEqual(WidgetCatalog.naturalSize(mini), MusicCard.compactSize)
+        XCTAssertEqual(WidgetCatalog.naturalSize(mid), MusicCard.compactSize)
+        XCTAssertTrue(MusicCard.isMedium(mid.config))
+        XCTAssertFalse(MusicCard.isMedium(full.config))
         var leftover = medium(.tape)
         leftover.set(CassetteLook.legacyCompactKey, .bool(true))
         XCTAssertEqual(WidgetCatalog.naturalSize(WidgetInstance(kind: .music, config: leftover)).width, 232)
     }
 
-    func testOldSizesAllMigrateToCompact() {
+    func testVariantsMatchOldCards() {
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetCatalog.make(.music)!.config, kind: .music), "完整")
+        let mid = WidgetConfig(["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.medium)])
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: mid, kind: .music), "精简")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetConfig(["mini": .bool(false)]), kind: .music), "完整")
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: WidgetConfig(["mini": .bool(true)]), kind: .music), "精简")
+        XCTAssertEqual(WidgetCatalog.variantTitle(
+            matching: WidgetConfig(["mini": .bool(true), MusicCard.layoutKey: .string(MusicCard.wide)]), kind: .music), "精简",
+            "旧迷你存的是 wide 加 mini")
+        XCTAssertNil(WidgetCatalog.variantTitle(matching: WidgetConfig(), kind: .music), "空配置照旧谁都不匹配")
+    }
+
+    func testOldSizesMigrateToCompactAndFullStays() {
         func card(_ values: [String: WidgetConfig.Value]) -> WidgetInstance {
             WidgetInstance(kind: .music, config: WidgetConfig(values))
         }
@@ -266,11 +280,10 @@ final class CassetteLookTests: XCTestCase {
         let mid = MusicCard.migrated(card(["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.medium)]))
         XCTAssertEqual(mid.config.string(MusicCard.layoutKey), MusicCard.compact)
         let full = MusicCard.migrated(card(["mini": .bool(false), MusicCard.layoutKey: .string(MusicCard.wide)]))
-        XCTAssertEqual(full.config.string(MusicCard.layoutKey), MusicCard.compact, "旧完整也迁成精简")
+        XCTAssertEqual(full.config.string(MusicCard.layoutKey), MusicCard.wide)
         XCTAssertNil(full.config.values["mini"])
         // 迁过一遍再迁不变，新卡片不用迁，别的小组件不碰。
         XCTAssertFalse(MusicCard.needsMigration(mini))
-        XCTAssertFalse(MusicCard.needsMigration(full))
         XCTAssertFalse(MusicCard.needsMigration(WidgetCatalog.make(.music)!))
         let other = WidgetInstance(kind: .cassette, config: WidgetConfig(["mini": .bool(true)]))
         XCTAssertFalse(MusicCard.needsMigration(other))

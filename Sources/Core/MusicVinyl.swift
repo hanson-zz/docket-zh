@@ -1,7 +1,7 @@
 import Foundation
 
 /// 正在播放面板的样式：标准（11-24 起是精简面板）或黑胶模式。存在卡片配置里，
-/// 入口在面板底部「外观」里。没选过的卡片 Pro 画黑胶、免费画精简（见 `ProLicenseGate`）。
+/// 入口在面板底部「外观」里。没选过的卡片默认黑胶（见 `ProLicenseGate.musicPanelStyle`）。
 public enum MusicPanelStyle: String, CaseIterable, Sendable, Identifiable {
     case standard
     case vinyl
@@ -16,7 +16,7 @@ public enum MusicPanelStyle: String, CaseIterable, Sendable, Identifiable {
         MusicPanelStyle(rawValue: config.string(key, default: MusicPanelStyle.standard.rawValue)) ?? .standard
     }
 
-    /// 选一个样式，明写进配置（没写过的 Pro 默认黑胶，选精简得记住）。
+    /// 选一个样式，明写进配置（没写过的默认黑胶，选精简得记住）。
     public static func choosing(_ style: MusicPanelStyle, in config: WidgetConfig) -> WidgetConfig {
         var copy = config
         copy.set(key, .string(style.rawValue))
@@ -30,8 +30,8 @@ public enum MusicPanelStyle: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// 黑胶模式是码头 Pro（`ProFeatures.isKindProStyle`），标准免费。
-    public var isPro: Bool { self == .vinyl }
+    /// 11-24 起黑胶模式免费（之前是 Pro），两种样式都不要解锁。
+    public var isPro: Bool { false }
 }
 
 /// 黑胶模式的纯数学：唱台怎么摆、唱片转多快、唱臂按进度落在哪、水波纹怎么扩散。
