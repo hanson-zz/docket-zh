@@ -525,8 +525,6 @@ struct WidgetDetailChrome: View {
 
     @Environment(\.colorScheme) private var scheme
     @State private var appeared = false
-    /// 从右上角 ··· 进了外观页（`PanelMoreButton`）。每次打开面板回到主内容。
-    @State private var appearancePage = false
     /// 外层滚动区的位置。窗口和根视图在两次打开之间是复用的，SwiftUI 会把
     /// 上一次滚到的位置留下来，再打开时顶上一截看着像被截掉；每次打开都
     /// 回到顶上。
@@ -564,7 +562,6 @@ struct WidgetDetailChrome: View {
             .onAppear { enter() }
             .onChange(of: session) { _, _ in
                 appeared = false
-                appearancePage = false
                 userScrolled = false
                 scrollPosition.scrollTo(edge: .top)
                 Task { @MainActor in enter() }
@@ -585,16 +582,7 @@ struct WidgetDetailChrome: View {
     /// 原来一模一样。
     @ViewBuilder private var scrolling: some View {
         let pad = DetailPanelWidth.padding
-        let main = Group {
-            if appearancePage {
-                PanelAppearancePage(instance: instance, context: context, width: contentWidth) {
-                    withAnimation(.snappy(duration: 0.2)) { appearancePage = false }
-                }
-            } else {
-                WidgetDetailBody(instance: instance, context: context)
-                    .environment(\.openPanelAppearance, openAppearance)
-            }
-        }
+        let main = WidgetDetailBody(instance: instance, context: context)
             // 内容区左右边距对称的前提是没有哪一块比内容区宽：外框靠左对齐，
             // 撑宽的部分全落到右边被裁掉。量到超出就记一条，不改排版。
             .onGeometryChange(for: CGFloat.self) { proxy in
@@ -725,18 +713,6 @@ struct WidgetDetailChrome: View {
     /// 颜色和背景在 设置 ▸ 小组件 里改；正在播放从面板右上角 ··· 进它自己的外观页。
     static func offersAppearance(_ instance: WidgetInstance, _ context: WidgetContext) -> Bool {
         false
-    }
-
-    /// 给面板里 ··· 的「外观…」用；没有外观可调的卡片是 nil，··· 不画。
-    private var openAppearance: (@MainActor @Sendable () -> Void)? {
-        guard Self.hasAppearancePage(instance, context) else { return nil }
-        let page = $appearancePage
-        return { withAnimation(.snappy(duration: 0.2)) { page.wrappedValue = true } }
-    }
-
-    /// 能从 ··· 进外观页的卡片：有颜色或背景可调的。只有放了 `PanelMoreButton` 的面板才看得到入口。
-    static func hasAppearancePage(_ instance: WidgetInstance, _ context: WidgetContext) -> Bool {
-        !context.isPreview && WidgetAppearance.offered(instance.kind)
     }
 
     /// Which side the tail sits on, which is the side facing the shelf.
