@@ -82,9 +82,47 @@ public enum AppIconCatalog {
     public static let heroNinja = AppIconOption(
         id: "heroNinja", title: tr("暗影忍者"), resourceName: "AppIcon-HeroNinja", isSupporterOnly: true)
 
+    /// 新增 12 款图标（素材存在时才会在 Pro 设置中显示）。
+    public static let heroVioletShadow = AppIconOption(
+        id: "heroVioletShadow", title: tr("紫影行者"), resourceName: "AppIcon-VioletShadow", isSupporterOnly: true)
+
+    public static let heroShieldGuardian = AppIconOption(
+        id: "heroShieldGuardian", title: tr("星盾守卫"), resourceName: "AppIcon-ShieldGuardian", isSupporterOnly: true)
+
+    public static let heroAstralMage = AppIconOption(
+        id: "heroAstralMage", title: tr("星环法师"), resourceName: "AppIcon-AstralMage", isSupporterOnly: true)
+
+    public static let heroStormWielder = AppIconOption(
+        id: "heroStormWielder", title: tr("雷霆勇士"), resourceName: "AppIcon-StormWielder", isSupporterOnly: true)
+
+    public static let heroSkylineAcrobat = AppIconOption(
+        id: "heroSkylineAcrobat", title: tr("飞跃小熊"), resourceName: "AppIcon-SkylineAcrobat", isSupporterOnly: true)
+
+    public static let heroSkyGuardian = AppIconOption(
+        id: "heroSkyGuardian", title: tr("晴空守护"), resourceName: "AppIcon-SkyGuardian", isSupporterOnly: true)
+
+    public static let heroCrimsonArmor = AppIconOption(
+        id: "heroCrimsonArmor", title: tr("赤甲小熊"), resourceName: "AppIcon-CrimsonArmor", isSupporterOnly: true)
+
+    public static let heroEmeraldGiant = AppIconOption(
+        id: "heroEmeraldGiant", title: tr("绿能巨熊"), resourceName: "AppIcon-EmeraldGiant", isSupporterOnly: true)
+
+    public static let heroNightSentinel = AppIconOption(
+        id: "heroNightSentinel", title: tr("暗夜披风"), resourceName: "AppIcon-NightSentinel", isSupporterOnly: true)
+
+    public static let heroSpeedRunner = AppIconOption(
+        id: "heroSpeedRunner", title: tr("疾风跑者"), resourceName: "AppIcon-SpeedRunner", isSupporterOnly: true)
+
+    public static let heroAmberClaws = AppIconOption(
+        id: "heroAmberClaws", title: tr("金蓝爪卫"), resourceName: "AppIcon-AmberClaws", isSupporterOnly: true)
+
+    public static let heroRedMischief = AppIconOption(
+        id: "heroRedMischief", title: tr("红黑机灵"), resourceName: "AppIcon-RedMischief", isSupporterOnly: true)
+
     /// 隐藏系列，按这个顺序排在 `all` 后面。
     public static let hidden: [AppIconOption] = [
         heroBamboo, heroForge, heroCourier, heroLantern, heroRunner, heroStargazer, heroCaptain, heroNinja,
+        heroVioletShadow, heroShieldGuardian, heroAstralMage, heroStormWielder, heroSkylineAcrobat, heroSkyGuardian, heroCrimsonArmor, heroEmeraldGiant, heroNightSentinel, heroSpeedRunner, heroAmberClaws, heroRedMischief,
     ]
 
     public static var defaultOption: AppIconOption { classic }
