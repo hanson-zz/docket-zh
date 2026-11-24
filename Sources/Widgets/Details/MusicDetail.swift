@@ -230,6 +230,19 @@ struct MusicDetail: View {
                     }
                 }
                 .pickerStyle(.inline)
+                if style == .vinyl {
+                    Picker(tr("唱片样式"), selection: Binding(
+                        get: { MusicVinylSkin.of(config) },
+                        set: { chosen in
+                            guard !context.isPreview else { return }
+                            let latest = WidgetWriter.current(instance.id) ?? instance
+                            WidgetWriter.write(latest) { $0 = MusicVinylSkin.choosing(chosen, in: $0) }
+                        })) {
+                        ForEach(MusicVinylSkin.allCases) { item in
+                            Text(item.title).tag(item)
+                        }
+                    }
+                }
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -524,7 +537,8 @@ struct MusicDetail: View {
                                progress: track.duration > 0 ? track.progress : nil,
                                ended: VinylMotion.ended(playing: track.isPlaying, elapsed: track.elapsed,
                                                         duration: track.duration),
-                               track: [track.sourceBundleID, track.title, track.artist].joined(separator: "\u{1}"))
+                               track: [track.sourceBundleID, track.title, track.artist].joined(separator: "\u{1}"),
+                               skin: MusicVinylSkin.of(config))
                     .frame(width: CGFloat(MusicVinyl.sideStageWidth))
                 VStack(alignment: .leading, spacing: 0) {
                     Text(track.title)

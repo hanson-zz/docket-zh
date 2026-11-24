@@ -5,6 +5,16 @@ final class MusicVinylTests: XCTestCase {
 
     // MARK: 样式
 
+    func testVinylSkinDefaultsAndArt() {
+        XCTAssertEqual(MusicVinylSkin.of(WidgetConfig()), .classic)
+        let glow = MusicVinylSkin.choosing(.glow, in: WidgetConfig())
+        XCTAssertEqual(MusicVinylSkin.of(glow), .glow)
+        XCTAssertNil(MusicVinylSkin.classic.discArt)
+        XCTAssertEqual(MusicVinylSkin.glass.overlayArt, "vinyl-sheen-glass")
+        XCTAssertEqual(MusicVinylSkin.glow.overlayArt, "vinyl-ring-glow")
+        XCTAssertEqual(MusicVinylSkin.artHoleRatio, 0.38 / 0.98, accuracy: 1e-9)
+    }
+
     func testStyleDefaultsToStandard() {
         XCTAssertEqual(MusicPanelStyle.of(WidgetConfig()), .standard, "没选过的卡片外观不变")
         var config = WidgetConfig()

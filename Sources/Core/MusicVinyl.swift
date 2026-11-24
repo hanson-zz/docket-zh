@@ -34,6 +34,60 @@ public enum MusicPanelStyle: String, CaseIterable, Sendable, Identifiable {
     public var isPro: Bool { false }
 }
 
+/// 黑胶模式的唱片样式（11-24）：经典是代码画的黑胶；透明、流光用 Resources/Vinyl 里的
+/// 用户素材（1024 画布、唱片直径 98%、中心 38% 镂空）。唱片纹理跟着转，玻璃反光和流光外环不转，
+/// 外环单独一层，唱片本身不大面积发光。存在卡片配置里，入口在 ··· 菜单。
+public enum MusicVinylSkin: String, CaseIterable, Sendable, Identifiable {
+    case classic
+    case glass
+    case glow
+
+    public var id: String { rawValue }
+
+    public static let key = "vinylSkin"
+
+    public static func of(_ config: WidgetConfig) -> MusicVinylSkin {
+        MusicVinylSkin(rawValue: config.string(key, default: MusicVinylSkin.classic.rawValue)) ?? .classic
+    }
+
+    public static func choosing(_ skin: MusicVinylSkin, in config: WidgetConfig) -> WidgetConfig {
+        var copy = config
+        copy.set(key, .string(skin.rawValue))
+        return copy
+    }
+
+    public var title: String {
+        switch self {
+        case .classic: tr("经典黑胶")
+        case .glass: tr("透明")
+        case .glow: tr("流光")
+        }
+    }
+
+    /// 转的唱片素材；经典是代码画的，没有。
+    public var discArt: String? {
+        switch self {
+        case .classic: nil
+        case .glass: "vinyl-disc-glass"
+        case .glow: "vinyl-disc-glow"
+        }
+    }
+
+    /// 不转的上层：玻璃的反光，或流光的外环。
+    public var overlayArt: String? {
+        switch self {
+        case .classic: nil
+        case .glass: "vinyl-sheen-glass"
+        case .glow: "vinyl-ring-glow"
+        }
+    }
+
+    /// 素材画布边长与唱片直径之比（唱片占画布 98%）。
+    public static let artCanvasPerDisc = 1 / 0.98
+    /// 素材中心镂空半径与唱片半径之比（38% / 98%），封面标签按这个大小画，正好填满镂空。
+    public static let artHoleRatio = 0.38 / 0.98
+}
+
 /// 黑胶模式的纯数学：唱台怎么摆、唱片转多快、唱臂按进度落在哪、水波纹怎么扩散。
 /// 界面只拿这里算好的数画，测试可以拨到任意进度和时刻。
 ///

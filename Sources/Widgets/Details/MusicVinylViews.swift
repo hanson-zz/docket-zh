@@ -25,6 +25,8 @@ struct VinylStageView: View {
     var ended: Bool
     /// 认歌用的键，换歌时唱针回到外圈。
     var track: String
+    /// 唱片样式（··· 里选）。
+    var skin: MusicVinylSkin = .classic
 
     @State private var width: CGFloat = CGFloat(MusicVinyl.designWidth)
     @State private var visible = false
@@ -160,29 +162,35 @@ struct VinylStageView: View {
                 .position(center)
                 // 唱片压在唱盘上的一圈细影，不转。
                 Circle()
-                    .fill(.black.opacity(dark ? 0.6 : 0.35))
+                    .fill(.black.opacity(skin == .glass ? 0 : (dark ? 0.6 : 0.35)))
                     .frame(width: r * 2, height: r * 2)
                     .blur(radius: 2.5 * s)
                     .position(x: center.x, y: center.y + 1.5 * s)
-                VinylDisc(radius: r, label: CGFloat(stage.label), artwork: artwork,
-                          labelColor: labelColor, scale: s, texture: VinylArt.disc)
-                    .frame(width: r * 2, height: r * 2)
-                    .rotationEffect(.degrees(frame.discAngle))
-                    .position(center)
-                // 唱片表面的反光跟着灯，不跟着唱片转。
-                Group {
-                    if let art = VinylArt.sheen {
-                        Image(nsImage: art)
-                            .resizable()
-                            .interpolation(.high)
-                            .opacity(dark ? 0.85 : 0.7)
-                            .allowsHitTesting(false)
-                    } else {
-                        VinylSheen(radius: r, label: CGFloat(stage.label), scale: s, dark: dark)
+                if let disc = skin.discArt.flatMap { VinylArt.image($0) } {
+                    skinnedDisc(disc, overlay: skin.overlayArt.flatMap { VinylArt.image($0) }, radius: r,
+                                scale: s, angle: frame.discAngle)
+                        .position(center)
+                } else {
+                    VinylDisc(radius: r, label: CGFloat(stage.label), artwork: artwork,
+                              labelColor: labelColor, scale: s, texture: VinylArt.disc)
+                        .frame(width: r * 2, height: r * 2)
+                        .rotationEffect(.degrees(frame.discAngle))
+                        .position(center)
+                    // 唱片表面的反光跟着灯，不跟着唱片转。
+                    Group {
+                        if let art = VinylArt.sheen {
+                            Image(nsImage: art)
+                                .resizable()
+                                .interpolation(.high)
+                                .opacity(dark ? 0.85 : 0.7)
+                                .allowsHitTesting(false)
+                        } else {
+                            VinylSheen(radius: r, label: CGFloat(stage.label), scale: s, dark: dark)
+                        }
                     }
+                    .frame(width: r * 2, height: r * 2)
+                    .position(center)
                 }
-                .frame(width: r * 2, height: r * 2)
-                .position(center)
                 // 中心轴。
                 Circle()
                     .fill(RadialGradient(colors: [Color(white: 0.98), Color(white: 0.5)],
@@ -196,6 +204,33 @@ struct VinylStageView: View {
             .frame(width: CGFloat(stage.width), height: CGFloat(stage.height), alignment: .topLeading)
         }
         .accessibilityHidden(true)
+    }
+
+    /// 透明、流光唱片：素材唱片和封面标签一起转，上层（玻璃反光、流光外环）不转，单独一层。
+    /// 素材画布比唱片大 2%，按画布尺寸摆；封面标签正好填满中心镂空。
+    private func skinnedDisc(_ disc: NSImage, overlay: NSImage?, radius r: CGFloat, scale s: CGFloat,
+                             angle: Double) -> some View {
+        let canvas = r * 2 * CGFloat(MusicVinylSkin.artCanvasPerDisc)
+        let hole = r * CGFloat(MusicVinylSkin.artHoleRatio)
+        return ZStack {
+            ZStack {
+                VinylDisc(radius: hole, label: hole, artwork: artwork, labelColor: labelColor, scale: s, texture: nil)
+                    .frame(width: hole * 2, height: hole * 2)
+                Image(nsImage: disc)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: canvas, height: canvas)
+            }
+            .rotationEffect(.degrees(angle))
+            if let overlay {
+                Image(nsImage: overlay)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: canvas, height: canvas)
+                    .allowsHitTesting(false)
+            }
+        }
+        .frame(width: canvas, height: canvas)
     }
 
     /// 左下角趴着的听歌小熊猫（沿用刘海音乐卡片那张），压在唱盘边上，不挡唱针走的音轨，
@@ -236,6 +271,8 @@ enum VinylArt {
     static var sheen: NSImage? { PandaStateArt.image("vinyl-sheen") }
     static var platter: NSImage? { PandaStateArt.image("vinyl-platter") }
     static var tonearm: NSImage? { PandaStateArt.image("vinyl-tonearm") }
+    /// 唱片样式素材（`MusicVinylSkin.discArt` / `overlayArt`）。
+    static func image(_ name: String) -> NSImage? { PandaStateArt.image(name) }
     /// 唱臂素材（170×887）里转轴圆心和唱针尖的位置，按图片宽高的比例。
     static let armPivot = (x: 0.5, y: 165.0 / 887.0)
     static let armTip = 874.0 / 887.0

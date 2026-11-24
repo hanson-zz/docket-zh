@@ -74601,6 +74601,39 @@
         }
       }
     },
+    "唱片样式" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record Style"
+          }
+        }
+      }
+    },
+    "经典黑胶" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic Vinyl"
+          }
+        }
+      }
+    },
+    "流光" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glow"
+          }
+        }
+      }
+    },
     "面板样式" : {
       "extractionState" : "manual",
       "localizations" : {
