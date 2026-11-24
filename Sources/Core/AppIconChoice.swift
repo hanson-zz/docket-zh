@@ -34,12 +34,12 @@ public enum AppIconCatalog {
 
     /// bundle 自带的图标。选了别的图标时，Finder 里贴的是自定义图标。
     public static let classic = AppIconOption(
-        id: "classic", title: tr("经典"), resourceName: nil, isSupporterOnly: false)
+        id: "classic", title: tr("浅色"), resourceName: nil, isSupporterOnly: false)
 
     // 「小熊猫码头」「小熊猫夜色」两款 11-24 按用户要求下架；选过的人回退经典（`option` 找不到 id）。
 
-    // 经典扩展栏小熊猫的一套配色（用户 10-28 给的图）：深色和两款节日免费，
-    // 戴皇冠、带 Pro 角标的四款是 Pro 专属。
+    // 经典扩展栏小熊猫的一套配色（用户 10-28 给的图）。11-24 用户定：只有浅色（bundle 自带，
+    // id 仍是 classic）和深色免费，四款皇冠和两款节日都是 Pro 专属。
 
     public static let classicDark = AppIconOption(
         id: "classicDark", title: tr("深色"), resourceName: "AppIcon-ClassicDark", isSupporterOnly: false)
@@ -52,9 +52,9 @@ public enum AppIconCatalog {
     public static let classicRainbow = AppIconOption(
         id: "classicRainbow", title: tr("炫彩皇冠"), resourceName: "AppIcon-ClassicRainbow", isSupporterOnly: true)
     public static let classicHalloween = AppIconOption(
-        id: "classicHalloween", title: tr("万圣节"), resourceName: "AppIcon-ClassicHalloween", isSupporterOnly: false)
+        id: "classicHalloween", title: tr("万圣节"), resourceName: "AppIcon-ClassicHalloween", isSupporterOnly: true)
     public static let classicChristmas = AppIconOption(
-        id: "classicChristmas", title: tr("圣诞节"), resourceName: "AppIcon-ClassicChristmas", isSupporterOnly: false)
+        id: "classicChristmas", title: tr("圣诞节"), resourceName: "AppIcon-ClassicChristmas", isSupporterOnly: true)
 
     /// 设置里按这个顺序排列，第一项是默认。
     public static let all: [AppIconOption] = [

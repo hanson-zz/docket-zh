@@ -15,6 +15,12 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(AppIconCatalog.shown("nonsense", unlocked: true), AppIconCatalog.classic)
     }
 
+    func testOnlyLightAndDarkAreFree() {
+        XCTAssertEqual(AppIconCatalog.classic.title, "浅色")
+        XCTAssertEqual(AppIconCatalog.all.filter { !$0.isSupporterOnly }.map(\.id), ["classic", "classicDark"])
+        XCTAssertEqual(AppIconCatalog.shown("classicHalloween", unlocked: false), AppIconCatalog.classic)
+    }
+
     func testRetiredPandaIconsFallBackToClassic() {
         XCTAssertEqual(AppIconCatalog.option("panda"), AppIconCatalog.classic)
         XCTAssertEqual(AppIconCatalog.option("pandaDark"), AppIconCatalog.classic)
@@ -50,12 +56,13 @@ final class AppIconChoiceTests: XCTestCase {
         XCTAssertEqual(AppIconCatalog.key, "appIcon.choice")
     }
 
-    func testClassicColorSetLocksOnlyCrownIcons() {
+    func testProIconsAreCrownsAndHolidays() {
         let pro = AppIconCatalog.all.filter(\.isSupporterOnly).map(\.id)
-        XCTAssertEqual(pro, ["classicBlue", "classicRed", "classicGold", "classicRainbow"])
-        XCTAssertEqual(AppIconCatalog.all.count, 10)
+        XCTAssertEqual(pro, ["classicBlue", "classicRed", "classicGold", "classicRainbow",
+                             "classicHalloween", "classicChristmas"])
+        XCTAssertEqual(AppIconCatalog.all.count, 8)
         XCTAssertEqual(AppIconCatalog.option("classicHalloween"), AppIconCatalog.classicHalloween)
-        XCTAssertFalse(AppIconCatalog.classicChristmas.isSupporterOnly)
+        XCTAssertTrue(AppIconCatalog.classicChristmas.isSupporterOnly)
     }
 
     func testLicenseChangeSwapsProIconOnlyWhenNeeded() {
