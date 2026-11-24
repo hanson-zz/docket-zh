@@ -45,8 +45,10 @@ public enum MusicVinyl {
     /// 设计稿宽度（原 340 面板的内容区）和唱台高度；11-24 面板收到 320，唱台按 288 内容区等比缩到约 0.94。窄于设计宽度时整体等比缩小。
     /// V2 去掉左边的大封面卡，唱片放大居左，唱臂在右上，唱台约 250 高。
     public static let designWidth: Double = 308
-    /// 黑胶模式的面板宽（精简面板 300）。
-    public static let panelWidth: Double = 320
+    /// 黑胶模式的面板宽（精简面板 300）。11-24 改横排：唱台在左，控制在右。
+    public static let panelWidth: Double = 360
+    /// 横排面板里左边唱台的宽（唱台按设计宽等比缩小，约 0.5 倍，唱片直径约 112）。
+    public static let sideStageWidth: Double = 156
     public static let designHeight: Double = 250
 
     public struct Point: Equatable, Sendable {

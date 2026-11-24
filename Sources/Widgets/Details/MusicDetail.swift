@@ -461,31 +461,37 @@ struct MusicDetail: View {
         }
     }
 
-    /// 黑胶模式（V2）：上面唱台（大唱片、中心封面标签、唱臂、水面、听歌小熊猫），下面
-    /// 歌名（19pt）、歌手 · 专辑、进度两端时间、控制键和音量，有歌单入口时再接「接下来」
-    /// 或「刚才听过」。控制键和标准样式同一套判断，系统控制不了的键不画。高度交给面板容器。
+    /// 黑胶模式（11-24 横排版，按用户效果图）：面板 360 宽，左边唱台 156 宽（唱片、中心封面
+    /// 标签、金属唱臂，播放时转），右边歌名、歌手 · 专辑、上一首 / 实心圆播放键 / 下一首和带
+    /// 两端时间的进度条；下面一行歌单摘要（点了进列表页，音量在那页）。和竖排的精简面板拉开差别。
+    /// 控制键和精简面板同一套判断，系统控制不了的键不画。高度交给面板容器。
     private func vinylPlayer(_ track: Playing) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            VinylStageView(artwork: track.artwork, tint: track.tint, playing: track.isPlaying,
-                           progress: track.duration > 0 ? track.progress : nil,
-                           ended: VinylMotion.ended(playing: track.isPlaying, elapsed: track.elapsed,
-                                                    duration: track.duration),
-                           track: [track.sourceBundleID, track.title, track.artist].joined(separator: "\u{1}"))
-                .padding(.top, 6)
-            titles(track, big: 19)
-                .padding(.top, 10)
-            if track.duration > 0 || !track.isBrowser {
-                scrubber(track, inline: true)
-                    .padding(.top, 12)
+            HStack(alignment: .center, spacing: 12) {
+                VinylStageView(artwork: track.artwork, tint: track.tint, playing: track.isPlaying,
+                               progress: track.duration > 0 ? track.progress : nil,
+                               ended: VinylMotion.ended(playing: track.isPlaying, elapsed: track.elapsed,
+                                                        duration: track.duration),
+                               track: [track.sourceBundleID, track.title, track.artist].joined(separator: "\u{1}"))
+                    .frame(width: CGFloat(MusicVinyl.sideStageWidth))
+                VStack(alignment: .leading, spacing: 0) {
+                    titles(track, big: 17)
+                    transport(track, play: 42, height: 46, gap: 12, glyph: 15, glass: true)
+                        .padding(.top, 8)
+                    if track.duration > 0 || !track.isBrowser {
+                        scrubber(track, inline: true)
+                            .padding(.top, 8)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            transport(track, play: 54, height: 58, gap: 18, glyph: 18, glass: true)
-                .padding(.top, 10)
+            .padding(.top, 6)
             // 唱片是主角：音量和整张歌单放到二级（点摘要进列表页，音量在那页顶上）。
             if let block = queueBlock(track) {
                 queueSummary(track, block)
                     .padding(.top, 12)
             } else {
-                volume(track, top: 8)
+                volume(track, top: 10)
             }
         }
     }

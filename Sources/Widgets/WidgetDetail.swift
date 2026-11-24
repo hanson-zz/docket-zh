@@ -852,7 +852,7 @@ enum WidgetDetail {
         if instance.kind == .anniversary {
             return CGFloat(Anniversary.panelWidth(layout: instance.config.string("layout", default: "single")))
         }
-        // 正在播放：黑胶面板（Pro 默认）320 宽，精简面板 300 宽。
+        // 正在播放：黑胶面板 360 宽横排（完整卡片默认），精简面板 300 宽。
         if instance.kind == .music {
             let vinyl = ProLicenseGate.musicPanelStyle(config: instance.config,
                                                        unlocked: ProAccess.isUnlocked) == .vinyl
