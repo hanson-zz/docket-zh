@@ -485,14 +485,14 @@ struct DockShelfView: View {
 
     // MARK: Body
 
-    /// 底板染色开着时的颜色：设置 ▸ 通用 ▸ 小组件外观 当前的颜色（默认和跟随系统时
-    /// 用系统强调色，见 `ShelfTint.color`）。读 `WidgetLook.shared.config` 让通用外观
-    /// 改色时底板跟着重画。
+    /// 扩展栏背景颜色：六色之一，或跟随 设置 ▸ 通用 ▸ 小组件默认外观 的颜色。读
+    /// `WidgetLook.shared.config` 让通用外观改色时底板跟着重画。
     private var shelfPlateColor: Color? {
-        guard ShelfTint.isOn(settings.shelfColor) else { return nil }
-        switch ShelfTint.color(global: WidgetLook.shared.config) {
-        case .hex(let hex): return Color(hex: hex)
-        case .systemAccent: return Color(nsColor: .controlAccentColor)
+        let global = WidgetLook.shared.config
+        switch ShelfColorChoice(raw: settings.shelfColor).resolved(global: global) {
+        case .hex(let hex)?: return Color(hex: hex)
+        case .systemAccent?: return Color(nsColor: .controlAccentColor)
+        case nil: return nil
         }
     }
 

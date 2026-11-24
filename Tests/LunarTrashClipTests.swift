@@ -338,34 +338,99 @@ final class ShelfColorTests: XCTestCase {
         XCTAssertEqual(old.shelfColor, "")
     }
 
-    func testShelfTintSwitchReadsOldValues() throws {
-        XCTAssertFalse(ShelfTint.isOn(""))
-        XCTAssertTrue(ShelfTint.isOn(ShelfTint.onRaw))
-        XCTAssertEqual(ShelfTint.raw(on: true), ShelfTint.onRaw)
-        XCTAssertEqual(ShelfTint.raw(on: false), "")
-        // 旧版存的六色值都读作开。
+    func testShelfColorChoiceKeepsOldValues() throws {
+        XCTAssertEqual(ShelfColorChoice(raw: ""), .plain)
+        XCTAssertEqual(ShelfColorChoice(raw: "nope"), .plain)
+        XCTAssertEqual(ShelfColorChoice(raw: ShelfColor.followWidgetsRaw), .followWidgets)
         for color in ShelfColor.allCases {
-            XCTAssertTrue(ShelfTint.isOn(color.rawValue), color.rawValue)
+            XCTAssertEqual(ShelfColorChoice(raw: color.rawValue), .color(color))
+            XCTAssertEqual(ShelfColorChoice(raw: color.rawValue).raw, color.rawValue, "旧值原样写回")
         }
-        // 旧文件里存着配色：解码后仍是开；没有这个键：关。
+        XCTAssertEqual(ShelfColorChoice.followWidgets.raw, ShelfColor.followWidgetsRaw)
+        XCTAssertEqual(ShelfColorChoice.plain.raw, "")
+        // 跟随值不是 ShelfColor 的 case：六色和 Pro 外观计数不变。
+        XCTAssertNil(ShelfColor.parse(ShelfColor.followWidgetsRaw))
+        XCTAssertEqual(ShelfColor.allCases.count, 6)
+        // 旧配置文件里存的颜色读回不变。
         let old = try JSONDecoder().decode(CustomDockSettings.self, from: Data(#"{"shelfColor":"sakura"}"#.utf8))
-        XCTAssertTrue(ShelfTint.isOn(old.shelfColor))
-        let missing = try JSONDecoder().decode(CustomDockSettings.self, from: Data("{}".utf8))
-        XCTAssertFalse(ShelfTint.isOn(missing.shelfColor))
-        // 品牌强调色色值不变。
+        XCTAssertEqual(ShelfColorChoice(raw: old.shelfColor), .color(.sakura))
         XCTAssertEqual(ShelfColor.redPanda.hex, "#E8743B")
     }
 
-    func testShelfTintTakesTheGlobalWidgetColour() {
+    func testFollowWidgetsResolvesTheDefaultWidgetColour() {
         var global = WidgetConfig()
+        XCTAssertNil(ShelfColorChoice.plain.resolved(global: global))
+        XCTAssertEqual(ShelfColorChoice.color(.ocean).resolved(global: global), .hex(ShelfColor.ocean.hex))
         // 默认和跟随系统：系统强调色。
-        XCTAssertEqual(ShelfTint.color(global: global), .systemAccent)
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .systemAccent)
         global.set(WidgetTint.key, .string(WidgetTint.Choice.systemRaw))
-        XCTAssertEqual(ShelfTint.color(global: global), .systemAccent)
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .systemAccent)
         global.set(WidgetTint.key, .string("purple"))
-        XCTAssertEqual(ShelfTint.color(global: global), .hex(WidgetTint.Preset.purple.hex))
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex(WidgetTint.Preset.purple.hex))
         global.set(WidgetTint.key, .string("#123456"))
-        XCTAssertEqual(ShelfTint.color(global: global), .hex("#123456"))
+        XCTAssertEqual(ShelfColorChoice.followWidgets.resolved(global: global), .hex("#123456"))
+    }
+}
+
+/// 三处颜色设置各管各的：小组件单独设置优先于小组件默认外观，扩展栏背景颜色
+/// 不改变任何小组件的主题色。
+final class ColorSettingsScopeTests: XCTestCase {
+    func testOwnSettingWinsOverTheDefaultAppearance() {
+        let saved = WidgetTint.global
+        defer { WidgetTint.global = saved }
+        var global = WidgetConfig()
+        global.set(WidgetTint.key, .string("pink"))
+        WidgetTint.global = global
+
+        let following = WidgetConfig()
+        XCTAssertTrue(WidgetTint.followsGlobal(following))
+        XCTAssertEqual(WidgetTint.choice(following), .preset(.pink))
+
+        var own = WidgetConfig()
+        own.set(WidgetTint.key, .string("blue"))
+        own.set(WidgetTint.ownKey, .string("1"))
+        XCTAssertFalse(WidgetTint.followsGlobal(own))
+        XCTAssertEqual(WidgetTint.choice(own), .preset(.blue))
+
+        // 单独设置但都选回默认：仍是单独设置，不被通用外观盖掉。
+        var ownDefault = WidgetConfig()
+        ownDefault.set(WidgetTint.ownKey, .string("1"))
+        XCTAssertEqual(WidgetTint.choice(ownDefault), .kindDefault)
+
+        // 旧版单独选过颜色、没有 ownKey 的卡片保持原样。
+        var legacy = WidgetConfig()
+        legacy.set(WidgetTint.key, .string("green"))
+        XCTAssertFalse(WidgetTint.followsGlobal(legacy))
+        XCTAssertEqual(WidgetTint.choice(legacy), .preset(.green))
+    }
+
+    func testShelfBackgroundNeverChangesWidgetColours() {
+        let saved = WidgetTint.global
+        defer { WidgetTint.global = saved }
+        var global = WidgetConfig()
+        global.set(WidgetTint.key, .string("orange"))
+        WidgetTint.global = global
+        var own = WidgetConfig()
+        own.set(WidgetTint.key, .string("mint"))
+        own.set(WidgetTint.ownKey, .string("1"))
+        let following = WidgetConfig()
+
+        for raw in ["", ShelfColor.followWidgetsRaw] + ShelfColor.allCases.map(\.rawValue) {
+            var dock = CustomDockSettings()
+            dock.shelfColor = raw
+            _ = ShelfColorChoice(raw: dock.shelfColor).resolved(global: WidgetTint.global)
+            XCTAssertEqual(WidgetTint.global, global, raw)
+            XCTAssertEqual(WidgetTint.choice(following), .preset(.orange), raw)
+            XCTAssertEqual(WidgetTint.choice(own), .preset(.mint), raw)
+        }
+    }
+
+    func testStatusTitles() {
+        XCTAssertEqual(ShelfColorChoice.plain.statusTitle, tr("无"))
+        XCTAssertEqual(ShelfColorChoice.followWidgets.statusTitle, tr("跟随默认"))
+        XCTAssertEqual(ShelfColorChoice.color(.redPanda).statusTitle, ShelfColor.redPanda.title)
+        XCTAssertEqual(WidgetTint.statusTitle(.kindDefault), tr("默认"))
+        XCTAssertEqual(WidgetTint.statusTitle(.preset(.pink)), WidgetTint.Preset.pink.title)
     }
 }
 

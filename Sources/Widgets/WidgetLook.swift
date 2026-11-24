@@ -40,21 +40,28 @@ final class WidgetLook {
     static let sampleID = UUID()
 }
 
-/// 设置 ▸ 通用 里的「小组件外观」：一份颜色与背景给所有小组件，单个小组件可以在
-/// 设置 ▸ 小组件 里关掉「跟随通用外观」再单独调。
+/// 设置 ▸ 通用 里的「小组件默认外观」：一份颜色与背景给所有小组件，单个小组件可以在
+/// 设置 ▸ 小组件 的「当前小组件外观」里关掉「跟随小组件默认外观」再单独调。
 struct WidgetLookSection: View {
     private var look = WidgetLook.shared
 
     var body: some View {
-        Section("小组件外观") {
+        Section {
+            Text("统一设置所有小组件的默认颜色与背景，单独设置过的小组件不受影响。")
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             WidgetTintPicker(instance: WidgetInstance(id: WidgetLook.sampleID, kind: WidgetLook.sampleKind, config: look.config),
                              isGlobal: true) { change in
                 look.update(change)
             }
-            // 扩展栏底板染色的开关不在这里，说清楚在哪；开了以后用的就是这里的颜色。
-            Text("扩展栏底板可在 设置 ▸ 扩展栏 ▸ 外观 打开染色。")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
+        } header: {
+            // 标题旁是当前状态：小组件默认外观 · 粉 / · 默认。
+            HStack(spacing: 6) {
+                Text("小组件默认外观")
+                Text(verbatim: "· " + WidgetTint.statusTitle(WidgetTint.Choice(raw: look.config.string(WidgetTint.key))))
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }

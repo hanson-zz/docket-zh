@@ -252,7 +252,7 @@ struct WidgetTintPicker: View {
     var columns = 9
     /// 浅色和深色两张预览卡片。详情面板里不画：扩展栏上那张真卡片就在旁边。
     var showsPreview = true
-    /// 设置 ▸ 通用 ▸ 小组件外观 里那份通用的：没有「跟随通用」开关，文案按所有小组件说。
+    /// 设置 ▸ 通用 ▸ 小组件默认外观 里那份通用的：没有「跟随小组件默认外观」开关，文案按所有小组件说。
     var isGlobal = false
     var write: ((inout WidgetConfig) -> Void) -> Void
 
@@ -276,15 +276,23 @@ struct WidgetTintPicker: View {
     /// 单个小组件跟通用外观走（默认）。
     private var follows: Bool { !isGlobal && WidgetTint.followsGlobal(instance.config) }
 
+    /// 跟随时继承到的颜色：设置 ▸ 通用 ▸ 小组件默认外观 当前选的。读 `WidgetLook.shared`
+    /// 让那边改了这里跟着变。
+    private var inherited: WidgetTint.Choice {
+        WidgetTint.Choice(raw: WidgetLook.shared.config.string(WidgetTint.key))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if !isGlobal {
-                Toggle(tr("跟随通用外观"), isOn: Binding(get: { follows }, set: { setFollows($0) }))
-                Text(follows ? tr("在 设置 ▸ 通用 ▸ 小组件外观 里统一调整。关掉后可以给这个小组件单独设颜色和背景。")
-                             : tr("这个小组件用自己的颜色和背景。"))
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                Toggle(tr("跟随小组件默认外观"), isOn: Binding(get: { follows }, set: { setFollows($0) }))
+                // 开着时不展开颜色配置，只说一行现在继承的是什么；关掉才展开独立配色。
+                if follows {
+                    Text(tr("当前使用小组件默认外观：\(WidgetTint.statusTitle(inherited))"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
             }
             if !follows {
                 choices
@@ -441,7 +449,7 @@ struct WidgetTintPicker: View {
 
     private var caption: String {
         switch choice {
-        case .kindDefault: isGlobal ? tr("默认：每种小组件用自己的颜色") : tr("默认：这种小组件自己的颜色")
+        case .kindDefault: isGlobal ? tr("默认：每种小组件使用自己的主题色。") : tr("默认：这种小组件自己的颜色")
         case .system: tr("跟随系统强调色")
         case .preset(let preset): preset.title
         case .custom(let code): tr("自定义 \(code.hex)")
