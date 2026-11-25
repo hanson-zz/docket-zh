@@ -66,9 +66,12 @@ final class DesktopPetArticulatedLayers {
             return
         }
         if lastSize != size {
+            // 尺寸发生变化时，必须重建挖空路径；上一帧的姿态缓存不能沿用。
+            base.mask = nil
             layout(size)
             lastSize = size
             maskedParts = nil
+            lastPose = nil
         }
         setBackingScale(contentsScale)
 
