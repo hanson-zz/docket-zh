@@ -85,6 +85,26 @@ struct DesktopPetSettingsSection: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                if settings.livelyFace {
+                    Toggle(isOn: $settings.typingCompanion) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("打字陪伴")
+                            Text("跟着打字节奏轻点头。只读取系统提供的“距上次按键时间”，不读取、记录或上传按键内容；默认关闭。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Toggle(isOn: $settings.mouseHunt) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("鼠标掠过反应")
+                            Text("指针快速经过附近时小熊猫会短暂惊讶，约 7 秒冷却；只使用即时坐标，不记录轨迹。减弱动态效果时不触发。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
                 Toggle(isOn: $settings.quietInCalls) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("通话时藏起")
