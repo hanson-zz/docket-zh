@@ -125,6 +125,8 @@ final class DesktopPetController: NSObject {
     /// 灵动小熊猫（见 `DesktopPetFace`）：看哪边、正在演的表情；上一帧大脑画的图（判断是不是正面坐着）；
     /// 用户多久没操作、是不是夜里（快睡着前犯困）。都只在内存里。
     private var face = DesktopPetFaceState()
+    /// 桌面伙伴 2.0：只在内存中保留短暂输入节奏，无单独监听器。
+    private var companionMotion = DesktopPetCompanionState()
     private var faceBase = ""
     private var lastIdle: TimeInterval = 0
     private var lastNight = false
@@ -166,6 +168,7 @@ final class DesktopPetController: NSObject {
         updateDownloadWatch()
         if !next.stretchReminder { stretchClock = DesktopPetStretchClock() }
         if !next.livelyFace { face.reset() }
+        if !next.livelyFace || (!next.typingCompanion && !next.mouseHunt) { companionMotion.reset() }
     }
 
     /// 下载完成提示：总开关和子开关都开着才看下载文件夹。
@@ -213,6 +216,7 @@ final class DesktopPetController: NSObject {
         stopRescueWatch()
         downloads.stop()
         stretchClock = DesktopPetStretchClock()
+        companionMotion.reset()
         fetching = nil
         recentDownloads = nil
         downloadReview = nil
@@ -461,7 +465,9 @@ final class DesktopPetController: NSObject {
         let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         // 发呆时转、跳的小动作要顺，也按显示刷新画；低电量时不开，用慢计时器凑合。
         let fidgeting = !lowPower && (DesktopPetLively.needsSmooth(state, now: now, style: style, motion: Self.motion)
-            || (livelyShown && DesktopPetFace.needsSmooth(face, now: now, motion: Self.motion)))
+            || (livelyShown && DesktopPetFace.needsSmooth(face, now: now, motion: Self.motion))
+            || (livelyShown && settings.typingCompanion && Self.motion == .full
+                && companionMotion.needsSmooth(at: now)))
         let moving = dragging || transit != nil || DesktopPetBrain.isMoving(state, now: now) || fidgeting
         if moving {
             restingTimer?.invalidate()
@@ -759,6 +765,19 @@ final class DesktopPetController: NSObject {
         let following = livelyShown && Self.motion == .full
         face.follow(pointer: following ? NSEvent.mouseLocation : nil, center: drawnCenter,
                     scale: settings.size.scale, now: now)
+        // 沿用原来每帧读指针和上次 keyDown 的系统空闲时间，不读取键值，
+        // 不启动 KuroCat 的全局 EventTap/HID 监听（也不增加任何权限）。
+        if livelyShown && (settings.typingCompanion || settings.mouseHunt) {
+            let hunted = companionMotion.observe(
+                now: now, pointer: NSEvent.mouseLocation, center: drawnCenter,
+                scale: settings.size.scale,
+                keyIdle: settings.typingCompanion ? Self.keyIdleSeconds() : nil,
+                typingEnabled: settings.typingCompanion, huntEnabled: settings.mouseHunt,
+                reduceMotion: Self.motion == .reduced)
+            if hunted && face.activeEmote(now: now) == nil { face.play(.surprise, now: now) }
+        } else {
+            companionMotion.reset()
+        }
         if pointer != nil || dragging || pressPoint != nil { lastTouch = now }
         if petHovering || barHovering || dragging || pressPoint != nil { lastPet = now }
         current = sense(current, track: track, now: now)
@@ -896,6 +915,12 @@ final class DesktopPetController: NSObject {
         if mascot != .panda {
             let skinned = DesktopPetSkin.apply(pose, mascot: mascot)
             if DesktopPetArt.image(skinned.image) != nil { pose = skinned }
+        }
+        // 正面小熊猫打字时轻微点头；已在演点击、摸头等表情时不叠，避免动作冲突。
+        if !dragging, settings.livelyFace, settings.typingCompanion,
+           face.activeEmote(now: now) == nil,
+           DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image) {
+            pose = companionMotion.decorate(pose, now: now, motion: Self.motion)
         }
         let scale = CGFloat(settings.size.scale)
         let base = DesktopPetArt.size(pose)
