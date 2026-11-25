@@ -21,6 +21,7 @@ public struct DesktopPetArticulation: Equatable, Sendable {
 /// 没有匹配素材或正在拖动、睡觉、走路时，调用端直接不使用这个结果。
 public enum DesktopPetArticulationLogic {
     public static let headReach: Double = 380
+    public static let headFadeStart: Double = 260
     public static let typingFrequency: Double = 3.4
 
     /// 系统“减弱动态效果”或低电量模式下完全禁用局部 3D 变换。
@@ -38,8 +39,11 @@ public enum DesktopPetArticulationLogic {
             let dy = Double(pointer.y - center.y) / k
             if hypot(dx, dy) <= headReach {
                 // 只允许极小角度变化，不能把平面 PNG 当成真正 3D 模型大幅旋转。
-                yaw = max(-1, min(1, dx / 240))
-                pitch = max(-1, min(1, dy / 240))
+                // 指针越过 260pt 后平滑收回，避免从最远处突然弹回原位。
+                let distance = hypot(dx, dy)
+                let fade = min(1, max(0, (headReach - distance) / (headReach - headFadeStart)))
+                yaw = max(-1, min(1, dx / 240)) * fade
+                pitch = max(-1, min(1, dy / 240)) * fade
             }
         }
 
