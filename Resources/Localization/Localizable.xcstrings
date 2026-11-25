@@ -2245,6 +2245,17 @@
         }
       }
     },
+    "AI 正在生成、AI 输入框聚焦、专注计时进行中时，卡片边缘绕一道细细的光，颜色跟随小组件外观。开启「减弱动态效果」或低电量模式时只显示静止的光。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A thin light runs around the card edge while AI is generating, while the AI input has focus and while a focus session is running, in the widget's own color. With Reduce Motion or Low Power Mode on, the light stays still."
+          }
+        }
+      }
+    },
     "API %@，现在先用%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -47870,6 +47881,17 @@
         }
       }
     },
+    "沿边流光" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edge glow"
+          }
+        }
+      }
+    },
     "法兰克福" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -49940,6 +49962,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Status"
+          }
+        }
+      }
+    },
+    "状态提示" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Status cues"
           }
         }
       }

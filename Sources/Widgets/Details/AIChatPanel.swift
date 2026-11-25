@@ -781,6 +781,11 @@ private struct AIChatInput: View {
     var stop: () -> Void
     var close: () -> Void
 
+    /// 颜色面板里选过的强调色，没选过是 nil：沿边流光用柔和的白或灰。
+    @Environment(\.panelTint) private var panelTint
+    /// 输入框拿着光标没有：聚焦或生成中时输入条沿边流光。
+    @State private var focused = false
+
     private var draft: Binding<String> {
         Binding(get: { center.draft }, set: { center.draft = $0 })
     }
@@ -790,7 +795,7 @@ private struct AIChatInput: View {
             AIQuickMenuButton(center: center, service: service, close: close)
             ZStack(alignment: .topLeading) {
                 AskTextEditor(text: draft, onSubmit: { if !generating { submit() } }, onCancel: close,
-                              focusToken: focusToken)
+                              focusToken: focusToken, onFocusChange: { focused = $0 })
                     .frame(height: 36)
                     .accessibilityLabel("要问的问题")
                 if center.draft.isEmpty {
@@ -825,6 +830,8 @@ private struct AIChatInput: View {
         .frame(height: 50)
         .background(Capsule().fill(.panelFill))
         .overlay { Capsule().strokeBorder(.panelSeparator, lineWidth: 0.5) }
+        // 生成中、输入框聚焦时沿边流光，叠在最外层。
+        .edgeBeam(active: generating || focused, shape: .capsule, tint: panelTint?.color)
     }
 }
 

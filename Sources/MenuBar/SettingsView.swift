@@ -1350,6 +1350,9 @@ struct SettingsView: View {
         Form {
             WidgetSettingsSections(state: $state)
 
+            // 沿边流光：AI 生成中、输入框聚焦、专注进行中的状态提示，所有小组件共用一个开关。
+            EdgeBeamSettingsSection()
+
             // 钉在桌面：扩展栏卡片拖到桌面变成桌面卡片。
             DesktopPinSettingsSection(state: $state)
 

@@ -171,6 +171,10 @@ private struct AIAskView: View {
     @State private var focusToken = 0
     /// 刚点了「复制」的那条回答：按钮短暂显示「已复制」。
     @State private var copiedID: UUID?
+    /// 输入框拿着光标没有：聚焦时输入框沿边流光（`edgeBeam`）。
+    @State private var inputFocused = false
+    /// 正在生成：这时只让「AI 正在思考…」卡片流光，输入框不再同时亮。
+    @State private var generatingNow = false
 
     private var state: AIPanelState { AIPanelState.shared }
     private var center: AIChatCenter { AIChatCenter.shared }
@@ -218,6 +222,7 @@ private struct AIAskView: View {
         // 状态提示出现、淡出，生成中和结果卡片出现时一起过渡（面板高度也跟着变）。
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: state.hintToken(instance.id))
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: result?.key)
+        .onChange(of: result.map { !$0.phase.isFinished } ?? false, initial: true) { _, now in generatingNow = now }
         .onChange(of: phase) { old, new in
             if let pulse = PandaStateResolver.aiPulse(from: old, to: new, at: .now) { pandaPulse = pulse }
         }
@@ -335,6 +340,8 @@ private struct AIAskView: View {
                 .accessibilityHidden(true)
         }
         .readableGlass(in: shape)
+        // 生成中沿边流光：叠在可读玻璃外层，不放进玻璃里（会被翻深）。
+        .edgeBeam(active: !result.phase.isFinished, shape: .rounded(16), tint: panelTint?.color)
     }
 
     private func resultCard(_ result: ShownResult) -> some View {
@@ -555,7 +562,8 @@ private struct AIAskView: View {
         ZStack(alignment: .topLeading) {
             AskTextEditor(text: draft, onSubmit: submit,
                           onCancel: { WidgetDetailWindow.shared.close() },
-                          focusToken: focusToken)
+                          focusToken: focusToken,
+                          onFocusChange: { inputFocused = $0 })
                 .padding(.bottom, 20)
                 .accessibilityLabel("要问的问题")
             if state.draft(instance.id).isEmpty {
@@ -597,6 +605,9 @@ private struct AIAskView: View {
         }
         .padding(12)
         .readableGlass(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        // 聚焦时沿边流光（生成中让给思考卡片）。叠在可读玻璃外层。
+        .edgeBeam(active: inputFocused && !generatingNow && !context.isPreview,
+                  shape: .rounded(14), tint: panelTint?.color)
     }
 
     /// 输入框里一行文字能用的宽度：面板 380 减两边各 16 的边距和框里各 12 的留白，再让一点给光标。
@@ -1580,6 +1591,8 @@ struct AskTextEditor: NSViewRepresentable {
     var onCancel: () -> Void
     /// 变了就把光标放进来（刘海对话回答下面的「继续追问」）。0 是不动。
     var focusToken: Int = 0
+    /// 拿到或交出光标时告诉外面（输入框聚焦时的沿边流光）。
+    var onFocusChange: ((Bool) -> Void)? = nil
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -1616,6 +1629,7 @@ struct AskTextEditor: NSViewRepresentable {
         let coordinator = context.coordinator
         view.onSubmit = { coordinator.parent.onSubmit() }
         view.onCancel = { coordinator.parent.onCancel() }
+        view.onFocusChange = { focused in coordinator.parent.onFocusChange?(focused) }
         scroll.documentView = view
         return scroll
     }
@@ -1662,7 +1676,30 @@ struct AskTextEditor: NSViewRepresentable {
 final class AskTextView: NSTextView {
     var onSubmit: (() -> Void)?
     var onCancel: (() -> Void)?
+    /// 拿到或交出光标（`AskTextEditor.onFocusChange`）。
+    var onFocusChange: ((Bool) -> Void)?
     private var keyObserver: NSObjectProtocol?
+
+    override func becomeFirstResponder() -> Bool {
+        let took = super.becomeFirstResponder()
+        if took { reportFocus() }
+        return took
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let gave = super.resignFirstResponder()
+        if gave { reportFocus() }
+        return gave
+    }
+
+    /// 下一轮再报：光标常在 SwiftUI 更新视图时换手，当场改状态会被丢掉。
+    /// 报的是那一刻真实的状态，连着换几次手也不会报错。
+    private func reportFocus() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.onFocusChange?(self.window?.firstResponder === self)
+        }
+    }
 
     /// 拿着键盘的窗口里，正在输入的框（这个输入框，或者单行输入框的字段
     /// 编辑器）还有输入法没确认的字。点按钮不会让输入法先确认选字，所以

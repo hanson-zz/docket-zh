@@ -188,6 +188,7 @@ struct FocusTimerDetail: View {
         let resting = state.phase != .focus
         let color = resting ? Self.restGreen : accent
         let round = FocusCycle.round(state)
+        let focusing = !context.isPreview && state.phase == .focus && FocusCycle.isRunning(state, now: .now)
         return ZStack {
             Circle()
                 .stroke(.panelTrack, lineWidth: 10)
@@ -223,6 +224,12 @@ struct FocusTimerDetail: View {
             .padding(.horizontal, 22)
         }
         .frame(width: 150, height: 150)
+        // 专注进行中，圆环外面一圈沿边流光；暂停、休息、结束时淡出。不碰吉祥物素材。
+        .overlay {
+            Color.clear
+                .edgeBeam(active: focusing, shape: .circle, tint: panelTint?.color)
+                .padding(-9)
+        }
         .padding(.vertical, 3)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(tr("剩余 \(docketClockString(left))，\(FocusDay.status(state, now: .now))"))

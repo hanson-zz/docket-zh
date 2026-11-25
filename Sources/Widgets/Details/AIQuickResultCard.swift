@@ -103,6 +103,8 @@ struct AIQuickResultCard: View {
         }
         .background { ReadableGlass(shape: Self.shape) }
         .clipShape(Self.shape)
+        // 生成中（思考、回答中）沿边流光，答完或失败时淡出。叠在玻璃和裁切外层。
+        .edgeBeam(active: !phase.isFinished, shape: .rounded(24))
         .contentShape(Self.shape)
         .onHover { model.hovering = $0 }
         .accessibilityElement(children: .contain)
