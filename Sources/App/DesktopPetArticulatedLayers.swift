@@ -31,6 +31,10 @@ final class DesktopPetArticulatedLayers {
         }
     }
 
+    func setBackingScale(_ scale: CGFloat) {
+        for part in [head, leftPaw, rightPaw] { part.contentsScale = scale }
+    }
+
     func update(name: String, image: CGImage?, size: CGSize,
                 pose: DesktopPetArticulation?, contentsScale: CGFloat) {
         guard let pose, let image, name.hasPrefix("pet-sprite-lively-"),
