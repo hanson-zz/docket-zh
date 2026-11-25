@@ -38,6 +38,8 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
     public var livelyFace: Bool = true
     /// 打字节奏：仅看系统返回的上次按键活动时间，不监听按键内容。默认关闭。
     public var typingCompanion: Bool = false
+    /// 头部微幅立体跟随：用现有正面 PNG 的局部遮罩，不改脸型。默认关闭。
+    public var headParallax: Bool = false
     /// 鼠标快速掠过时的惊讶反应。默认关闭，不申请额外权限。
     public var mouseHunt: Bool = false
 
@@ -45,7 +47,8 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
                 size: DesktopPetSize = .medium, bubbles: Bool = true, hotKey: KeyCombo? = nil,
                 spot: DesktopPetSpot? = nil, stretchReminder: Bool = false, downloadNotice: Bool = true,
                 pointerPeek: Bool = false, quietInCalls: Bool = true, livelyFace: Bool = true,
-                typingCompanion: Bool = false, mouseHunt: Bool = false) {
+                typingCompanion: Bool = false, mouseHunt: Bool = false,
+                headParallax: Bool = false) {
         self.enabled = enabled
         self.trashRescue = trashRescue
         self.anchor = anchor
@@ -59,6 +62,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         self.quietInCalls = quietInCalls
         self.livelyFace = livelyFace
         self.typingCompanion = typingCompanion
+        self.headParallax = headParallax
         self.mouseHunt = mouseHunt
     }
 
@@ -67,7 +71,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case enabled, trashRescue, anchor, size, bubbles, hotKey, spot, stretchReminder, downloadNotice,
-             pointerPeek, quietInCalls, livelyFace, typingCompanion, mouseHunt
+             pointerPeek, quietInCalls, livelyFace, typingCompanion, mouseHunt, headParallax
     }
 
     /// 宽松解码：老状态文件没有这一组或缺新加的键、以后多了认不出的键或值，都照常读。
@@ -88,6 +92,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         quietInCalls = (try? c.decodeIfPresent(Bool.self, forKey: .quietInCalls)) ?? true
         livelyFace = (try? c.decodeIfPresent(Bool.self, forKey: .livelyFace)) ?? true
         typingCompanion = (try? c.decodeIfPresent(Bool.self, forKey: .typingCompanion)) ?? false
+        headParallax = (try? c.decodeIfPresent(Bool.self, forKey: .headParallax)) ?? false
         mouseHunt = (try? c.decodeIfPresent(Bool.self, forKey: .mouseHunt)) ?? false
     }
 }
