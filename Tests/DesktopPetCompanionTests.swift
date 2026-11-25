@@ -70,4 +70,53 @@ final class DesktopPetCompanionTests: XCTestCase {
         XCTAssertNotEqual(state.decorate(pose, now: t0.addingTimeInterval(0.1), motion: .full), pose)
         XCTAssertEqual(state.decorate(pose, now: t0.addingTimeInterval(1), motion: .full), pose)
     }
+    func testArticulatedGazeAndDistance() {
+        let center = CGPoint(x: 500, y: 300)
+        let now = Date(timeIntervalSinceReferenceDate: 800_000_000)
+        let near = DesktopPetArticulationLogic.pose(
+            pointer: CGPoint(x: 620, y: 360), center: center, scale: 1,
+            headTracking: true, typingStrength: 0, now: now,
+            reduceMotion: false, lowPower: false)
+        XCTAssertEqual(near?.headYaw, 0.5)
+        XCTAssertEqual(near?.headPitch, 0.25)
+        XCTAssertNil(DesktopPetArticulationLogic.pose(
+            pointer: CGPoint(x: 2000, y: 360), center: center, scale: 1,
+            headTracking: true, typingStrength: 0, now: now,
+            reduceMotion: false, lowPower: false))
+    }
+
+    func testArticulatedPawsAlternateAndPowerModeDisablesThem() {
+        let center = CGPoint(x: 500, y: 300)
+        let t = Date(timeIntervalSinceReferenceDate: 800_000_000.125)
+        let first = DesktopPetArticulationLogic.pose(
+            pointer: nil, center: center, scale: 1, headTracking: false,
+            typingStrength: 0.8, now: t, reduceMotion: false, lowPower: false)
+        let second = DesktopPetArticulationLogic.pose(
+            pointer: nil, center: center, scale: 1, headTracking: false,
+            typingStrength: 0.8,
+            now: t.addingTimeInterval(0.5 / DesktopPetArticulationLogic.typingFrequency),
+            reduceMotion: false, lowPower: false)
+        XCTAssertGreaterThan(first!.leftPaw, 0)
+        XCTAssertEqual(first!.rightPaw, 0, accuracy: 0.001)
+        XCTAssertEqual(second!.leftPaw, 0, accuracy: 0.001)
+        XCTAssertGreaterThan(second!.rightPaw, 0)
+        XCTAssertNil(DesktopPetArticulationLogic.pose(
+            pointer: center, center: center, scale: 1, headTracking: true,
+            typingStrength: 1, now: t, reduceMotion: true, lowPower: false))
+        XCTAssertNil(DesktopPetArticulationLogic.pose(
+            pointer: center, center: center, scale: 1, headTracking: true,
+            typingStrength: 1, now: t, reduceMotion: false, lowPower: true))
+    }
+
+    func testArticulationPreferencesReadOldSettings() throws {
+        let legacy = try JSONDecoder().decode(DesktopPetSettings.self, from: Data("{}".utf8))
+        XCTAssertFalse(legacy.headParallax)
+        let custom = DesktopPetSettings(typingCompanion: true, mouseHunt: true, headParallax: true)
+        let restored = try JSONDecoder().decode(DesktopPetSettings.self,
+                                                from: JSONEncoder().encode(custom))
+        XCTAssertTrue(restored.headParallax)
+        XCTAssertTrue(restored.typingCompanion)
+        XCTAssertTrue(restored.mouseHunt)
+    }
+
 }
