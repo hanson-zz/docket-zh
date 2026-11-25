@@ -465,9 +465,7 @@ final class DesktopPetController: NSObject {
         let lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         // 发呆时转、跳的小动作要顺，也按显示刷新画；低电量时不开，用慢计时器凑合。
         let fidgeting = !lowPower && (DesktopPetLively.needsSmooth(state, now: now, style: style, motion: Self.motion)
-            || (livelyShown && DesktopPetFace.needsSmooth(face, now: now, motion: Self.motion))
-            || (livelyShown && settings.typingCompanion && Self.motion == .full
-                && companionMotion.needsSmooth(at: now)))
+            || (livelyShown && DesktopPetFace.needsSmooth(face, now: now, motion: Self.motion)))
         let moving = dragging || transit != nil || DesktopPetBrain.isMoving(state, now: now) || fidgeting
         if moving {
             restingTimer?.invalidate()
@@ -481,7 +479,12 @@ final class DesktopPetController: NSObject {
             displayLink?.isPaused = false
         } else {
             displayLink?.isPaused = true
-            let rate = DesktopPetBrain.tickRate(state, style: style, lowPower: lowPower)
+            // 打字只需要 20fps 的轻量计时器，不连续开启 60fps displayLink；
+            // 低电量、减弱动态效果时维持原来的节能刷新率。
+            let baseRate = DesktopPetBrain.tickRate(state, style: style, lowPower: lowPower)
+            let typingActive = !lowPower && Self.motion == .full && livelyShown
+                && settings.typingCompanion && companionMotion.needsSmooth(at: now)
+            let rate = typingActive ? max(baseRate, 20) : baseRate
             guard restingTimer == nil || restingRate != rate else { return }
             restingTimer?.invalidate()
             restingRate = rate
