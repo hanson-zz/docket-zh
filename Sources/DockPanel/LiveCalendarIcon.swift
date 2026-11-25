@@ -133,7 +133,10 @@ struct LiveCalendarIcon: View {
         let corner = CGFloat(g.corner)
         let header = length * CGFloat(LiveCalendarFace.headerFraction)
         let pillFont = max(13, length * 0.3)
-        let pillHeight = event == nil ? 0 : pillFont + 4
+        // 胶囊字不小于 13pt：图标太小（程序坞常见尺寸）时胶囊会盖住日期，这时不画胶囊，
+        // 只留日期和液面，倒计时交给液面高度表达。
+        let showPill = event != nil && LiveCalendarFace.fitsPill(length: Double(length), font: Double(pillFont))
+        let pillHeight = showPill ? pillFont + 4 : 0
         let margin = max(1.5, length * 0.05)
         let dateArea = max(0, length - header - pillHeight - margin)
         let dateFont = max(1, min(length * (event == nil ? 0.5 : 0.42), dateArea * 1.35))
@@ -165,7 +168,7 @@ struct LiveCalendarIcon: View {
                     .lineLimit(1)
                     .frame(height: dateArea)
                     .frame(maxWidth: .infinity)
-                if let label {
+                if let label, showPill {
                     pill(label, palette: palette, font: pillFont, height: pillHeight, maxWidth: length - 3)
                         .frame(height: pillHeight)
                 }
@@ -218,6 +221,7 @@ struct LiveCalendarIcon: View {
             }
         }
         .frame(maxWidth: max(1, maxWidth))
+        .clipped()
     }
 }
 
@@ -225,6 +229,10 @@ struct LiveCalendarIcon: View {
 enum LiveCalendarFace {
     /// 红色页眉占内容区的高度比例。
     static let headerFraction = 0.25
+    /// 胶囊高度（字号 + 4）最多占内容区的 30%，否则会挤掉日期，图标上就不画胶囊。
+    static func fitsPill(length: Double, font: Double) -> Bool {
+        length > 0 && (font + 4) <= length * 0.3
+    }
 }
 
 /// 日历图标的颜色，浅色和深色外观各一套。平时冷色（灰蓝，低不透明度，不发光），
