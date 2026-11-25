@@ -65,7 +65,7 @@ public struct DesktopPetCompanionState: Sendable {
 
     /// 轻量动效，不改原来的 PNG、脸型、尺寸锚点，也不覆盖已有的点按/摸头表情。
     public func decorate(_ pose: DesktopPetPose, now: Date, motion: DesktopPetMotion) -> DesktopPetPose {
-        guard motion == .full else { return pose }
+        guard motion == .full, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return pose }
         let strength = typingStrength(at: now)
         guard strength > 0 else { return pose }
         var result = pose
