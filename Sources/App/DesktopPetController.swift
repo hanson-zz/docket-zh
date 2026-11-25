@@ -919,7 +919,23 @@ final class DesktopPetController: NSObject {
             let skinned = DesktopPetSkin.apply(pose, mascot: mascot)
             if DesktopPetArt.image(skinned.image) != nil { pose = skinned }
         }
-        // 正面小熊猫打字时轻微点头；已在演点击、摸头等表情时不叠，避免动作冲突。
+        // 2.5D 头部微倾与左右前爪交替轻点，只对正面 lively PNG 生效。
+        // 缺素材、拖动、睡觉、其他吉祥物时回退整张原图。
+        let articulation: DesktopPetArticulation?
+        if !dragging, settings.livelyFace, settings.headParallax || settings.typingCompanion,
+           DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image),
+           pose.image.hasPrefix("pet-sprite-lively-"),
+           face.activeEmote(now: now) == nil {
+            articulation = DesktopPetArticulationLogic.pose(
+                pointer: NSEvent.mouseLocation, center: drawnCenter, scale: settings.size.scale,
+                headTracking: settings.headParallax && face.gaze != .center,
+                typingStrength: settings.typingCompanion ? companionMotion.typingStrength(at: now) : 0,
+                now: now, reduceMotion: Self.motion == .reduced,
+                lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
+        } else {
+            articulation = nil
+        }
+        // 正面小熊猫打字时轻微点头；已在演点击、摸头等表情时不叠，避免动作冲突.
         if !dragging, settings.livelyFace, settings.typingCompanion,
            face.activeEmote(now: now) == nil,
            DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image) {
@@ -983,7 +999,8 @@ final class DesktopPetController: NSObject {
         let pivot = CGPoint(x: feet.x, y: feet.y + tall * CGFloat(pose.anchor))
         let localPivot = CGPoint(x: pivot.x - originX, y: pivot.y - originY)
         view.draw(image: pose.image, size: size, anchor: pose.anchor, position: localPivot,
-                  rotation: pose.wobble, scaleX: pose.scaleX * (flip ? -1 : 1), scaleY: pose.scaleY)
+                  rotation: pose.wobble, scaleX: pose.scaleX * (flip ? -1 : 1), scaleY: pose.scaleY,
+                  articulation: articulation)
         // 草丛：草根贴在没沉、没跳时脚底那条线上，横向以小熊猫为中。拖着时没有。
         if let grass = pose.grass, !dragging, !track.edge.vertical {
             let root = CGPoint(x: feet.x - originX, y: feet.y - CGFloat(pose.lift) * scale - originY)
@@ -1819,6 +1836,7 @@ final class DesktopPetController: NSObject {
 /// 别处交给后面的窗口；不是前台 App 时第一下点击也算数。
 final class DesktopPetSpriteView: NSView {
     private let sprite = CALayer()
+    private var articulated: DesktopPetArticulatedLayers?
     private var imageName = ""
     /// 草丛前后两层（见 `DesktopPetGrass`）：后层在小熊猫身后，前层挡在身前。
     private let grassBack = CALayer()
@@ -1849,6 +1867,7 @@ final class DesktopPetSpriteView: NSView {
         }
         layer?.addSublayer(grassBack)
         layer?.addSublayer(sprite)
+        articulated = DesktopPetArticulatedLayers(parent: sprite)
         layer?.addSublayer(grassFront)
         setAccessibilityElement(true)
         setAccessibilityRole(.button)
@@ -1867,6 +1886,7 @@ final class DesktopPetSpriteView: NSView {
     override func viewDidChangeBackingProperties() {
         super.viewDidChangeBackingProperties()
         sprite.contentsScale = window?.backingScaleFactor ?? 2
+        articulated?.setBackingScale(sprite.contentsScale)
         grassBack.contentsScale = sprite.contentsScale
         grassFront.contentsScale = sprite.contentsScale
     }
@@ -1904,10 +1924,13 @@ final class DesktopPetSpriteView: NSView {
     /// `anchor` 是转动、缩放的那一点在图高的哪儿（0 脚底，拎着时是后颈，吊着时是图顶的前爪抓握线），
     /// `position` 是那一点在窗口里的位置。
     func draw(image: String, size: CGSize, anchor: Double, position: CGPoint, rotation: Double,
-              scaleX: Double, scaleY: Double) {
+              scaleX: Double, scaleY: Double, articulation: DesktopPetArticulation?) {
         if let last = lastDrawn, last.image == image, last.size == size, last.anchor == anchor,
            last.position == position, last.rotation == rotation, last.scaleX == scaleX, last.scaleY == scaleY,
            imageName == image {
+            articulated?.update(name: image, image: articulation == nil ? nil : DesktopPetArt.cgImage(image),
+                                size: size, pose: articulation,
+                                contentsScale: window?.backingScaleFactor ?? 2)
             return
         }
         lastDrawn = (image, size, anchor, position, rotation, scaleX, scaleY)
@@ -1924,6 +1947,9 @@ final class DesktopPetSpriteView: NSView {
         var transform = CATransform3DMakeRotation(-CGFloat(rotation) * .pi / 180, 0, 0, 1)
         transform = CATransform3DScale(transform, CGFloat(scaleX), CGFloat(scaleY), 1)
         sprite.transform = transform
+        articulated?.update(name: image, image: articulation == nil ? nil : DesktopPetArt.cgImage(image),
+                            size: size, pose: articulation,
+                            contentsScale: window?.backingScaleFactor ?? 2)
         CATransaction.commit()
     }
 
