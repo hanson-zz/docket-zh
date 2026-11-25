@@ -86,6 +86,15 @@ struct DesktopPetSettingsSection: View {
                     }
                 }
                 if settings.livelyFace {
+                    Toggle(isOn: $settings.headParallax) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("头部立体跟随（实验）")
+                            Text("正面坐姿的小熊猫轻微倾头。使用现有图片分层，不改变原有脸型；低电量或减弱动态效果时关闭。默认关闭。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
                     Toggle(isOn: $settings.typingCompanion) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("打字陪伴")
