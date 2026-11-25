@@ -325,6 +325,37 @@ jobs:
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # 仅此实验分支：代码编译、扩展检查和测试都通过后打包可解压运行的 Mac App。
+      # 不创建 Release、tag，也不上传到正式下载源。ad-hoc 签名只能用于本机测试。
+      - name: Package Desktop Panda 2 test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/desktop-panda-companion-2-20261125'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir=$(xcodebuild -project Docket.xcodeproj -scheme Docket -configuration Debug -showBuildSettings 2>/dev/null \
+            | awk -F' = ' '$1 ~ / BUILT_PRODUCTS_DIR$/ { print $2; exit }')
+          app="$dir/Dockling.app"
+          test -d "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          mkdir -p dist
+          zipname="Dockling-DesktopPet2-Test-${GITHUB_SHA:0:8}.zip"
+          # .app 必须用 ditto，不可用 zip -r（会损坏符号链接及可执行权限）。
+          ditto -c -k --keepParent "$app" "dist/$zipname"
+          (cd dist && shasum -a 256 "$zipname" > SHA256SUMS.txt)
+          echo "### Desktop Panda 2 test package" >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA: ${GITHUB_SHA:0:8}; ad-hoc Debug build, for evaluation only." >> "$GITHUB_STEP_SUMMARY"
+          echo "Download the \`Dockling-DesktopPet2-Test\` artifact below. It contains the app ZIP and SHA256SUMS." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Desktop Panda 2 test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/desktop-panda-companion-2-20261125'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dockling-DesktopPet2-Test-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
       - name: Full xcodebuild log
         if: failure()
         uses: actions/upload-artifact@v7
