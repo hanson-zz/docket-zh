@@ -1,0 +1,122 @@
+name: Build beta.23 draft
+
+on:
+  push:
+    branches: [build/beta23-1f6c710]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: build-beta23-draft
+  cancel-in-progress: false
+
+env:
+  SOURCE_SHA: 1f6c710b0131809251204ab35e69ae16ac944f31
+  TAG: v1.1.0-beta.23
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful CI for the source commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GH_REPO/actions/workflows/ci.yml/runs?head_sha=$SOURCE_SHA&status=success" > runs.json
+          python3 - <<'PY'
+          import json, os
+          runs = json.load(open('runs.json'))['workflow_runs']
+          assert any(r['head_sha'] == os.environ['SOURCE_SHA'] and r['conclusion'] == 'success' for r in runs), 'Source CI is not green'
+          PY
+      - name: Pin the tag and create an unpublished draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$GH_REPO/git/ref/tags/$TAG" > tag.json 2>/dev/null; then
+            python3 - <<'PY'
+          import json, os
+          tag = json.load(open('tag.json'))['object']
+          assert tag['type'] == 'commit' and tag['sha'] == os.environ['SOURCE_SHA'], 'Existing tag points elsewhere'
+          PY
+          else
+            gh api -X POST "repos/$GH_REPO/git/refs" -f ref="refs/tags/$TAG" -f sha="$SOURCE_SHA"
+          fi
+          if gh release view "$TAG" --json isDraft > release.json 2>/dev/null; then
+            python3 -c 'import json; assert json.load(open("release.json"))["isDraft"], "Existing release is public"'
+          else
+            printf '内部测试版本，仅保留草稿，不公开发布。\n\n构建提交：%s\n\n该提交的完整 CI 已通过。包含 12 款新增应用图标，构建后将验证版本、通用架构和全部 36 张图标。\n' "$SOURCE_SHA" > notes.md
+            gh release create "$TAG" --target "$SOURCE_SHA" --title "$TAG" --draft --prerelease --notes-file notes.md
+          fi
+
+  build:
+    needs: prepare
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: v1.1.0-beta.23
+    secrets: inherit
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 1f6c710b0131809251204ab35e69ae16ac944f31
+      - name: Download the draft packages
+        run: gh release download "$TAG" --pattern 'Dockling-*.zip' --pattern 'Dockling-*.dmg' --dir packages
+      - name: Verify the packaged version, architectures, widgets and icon bytes
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, plistlib, struct, zipfile, zlib
+          from pathlib import Path
+          names = ['AmberClaws', 'AstralMage', 'CrimsonArmor', 'EmeraldGiant', 'NightSentinel', 'RedMischief', 'ShieldGuardian', 'SkyGuardian', 'SkylineAcrobat', 'SpeedRunner', 'StormWielder', 'VioletShadow']
+          package = Path('packages') / ('Dockling-' + os.environ['TAG'] + '.zip')
+          with zipfile.ZipFile(package) as z:
+              assert z.testzip() is None, 'ZIP checksum failure'
+              prefix = 'Dockling.app/Contents/'
+              info = plistlib.loads(z.read(prefix + 'Info.plist'))
+              assert info['CFBundleShortVersionString'] == '1.1.0-beta.23', info
+              executable = z.read(prefix + 'MacOS/' + info['CFBundleExecutable'])
+              assert executable[:4] == b'\xca\xfe\xba\xbe', 'Not a universal binary'
+              count = struct.unpack('>I', executable[4:8])[0]
+              cpus = [struct.unpack('>IIIII', executable[8+i*20:28+i*20])[0] for i in range(count)]
+              assert 0x0100000c in cpus and 0x01000007 in cpus, cpus
+              for name in names:
+                  for suffix, expected in [('', 1024), ('-512', 512), ('-256', 256)]:
+                      filename = 'AppIcon-' + name + suffix + '.png'
+                      data = z.read(prefix + 'Resources/' + filename)
+                      assert data == (Path('Resources/AppIcons') / filename).read_bytes(), filename
+                      assert data[:8] == b'\x89PNG\r\n\x1a\n', filename
+                      w, h = struct.unpack('>II', data[16:24])
+                      assert w == h == expected and data[25] == 6, filename
+                      offset, ended = 8, False
+                      while offset < len(data):
+                          length = struct.unpack('>I', data[offset:offset+4])[0]
+                          kind = data[offset+4:offset+8]
+                          payload = data[offset+8:offset+8+length]
+                          crc = struct.unpack('>I', data[offset+8+length:offset+12+length])[0]
+                          assert zlib.crc32(kind + payload) & 0xffffffff == crc, filename
+                          offset += length + 12
+                          if kind == b'IEND':
+                              ended = True
+                              break
+                      assert ended and offset == len(data), filename
+              assert prefix + 'PlugIns/DocklingWidgets.appex/Contents/Info.plist' in z.namelist()
+          report = {'source': os.environ['SOURCE_SHA'], 'version': info['CFBundleShortVersionString'], 'build': info['CFBundleVersion'], 'architectures': ['arm64', 'x86_64'], 'verified_icons': 36, 'widget_extension': True, 'sha256': {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('packages').iterdir()}}
+          Path('beta23-verification.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+      - name: Record verification in the draft
+        run: |
+          gh release view "$TAG" --json body --jq .body > notes.md
+          printf '\n\n## 安装包校验\n\n版本 1.1.0-beta.23、Apple Silicon / Intel 通用架构、桌面小组件扩展及全部 36 张图标均已验证。每张图标与固定构建提交中的原图逐字节一致，PNG 完整性检查通过。安装后的界面与图标切换仍待人工验证。\n\n构建与校验：https://github.com/%s/actions/runs/%s\n' "$GH_REPO" "$GITHUB_RUN_ID" >> notes.md
+          gh release edit "$TAG" --notes-file notes.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta23-verification
+          path: beta23-verification.json
