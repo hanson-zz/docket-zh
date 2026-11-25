@@ -143,11 +143,11 @@ final class DesktopPetArticulatedLayers {
         head.anchorPoint = CGPoint(x: 0.5, y: 0.62)
         head.position = CGPoint(x: w * 0.5, y: h * 0.62)
 
-        let silhouette = CGMutablePath()
-        silhouette.addEllipse(in: CGRect(x: w * 0.055, y: h * 0.35, width: w * 0.89, height: h * 0.55))
-        silhouette.addEllipse(in: CGRect(x: w * 0.07, y: h * 0.69, width: w * 0.27, height: h * 0.30))
-        silhouette.addEllipse(in: CGRect(x: w * 0.66, y: h * 0.69, width: w * 0.27, height: h * 0.30))
-        headPath = silhouette.copy()
+        // 采用一个连续的头部区域，避免 even-odd 规则把重叠耳朵误挖回来。
+        // 轻微移动时有原始 PNG 作为像素来源，不会重绘脸部细节。
+        headPath = CGPath(roundedRect: CGRect(x: w * 0.02, y: h * 0.33,
+                                               width: w * 0.96, height: h * 0.665),
+                          cornerWidth: w * 0.17, cornerHeight: h * 0.15, transform: nil)
 
         leftPaw.anchorPoint = CGPoint(x: 0.29, y: 0.14)
         leftPaw.position = CGPoint(x: w * 0.29, y: h * 0.14)
