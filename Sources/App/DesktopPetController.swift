@@ -1928,7 +1928,7 @@ final class DesktopPetSpriteView: NSView {
         if let last = lastDrawn, last.image == image, last.size == size, last.anchor == anchor,
            last.position == position, last.rotation == rotation, last.scaleX == scaleX, last.scaleY == scaleY,
            imageName == image {
-            articulated?.update(name: image, image: articulation == nil ? nil : DesktopPetArt.cgImage(image),
+            articulated?.update(name: image, image: DesktopPetArt.cgImage(image),
                                 size: size, pose: articulation,
                                 contentsScale: window?.backingScaleFactor ?? 2)
             return
@@ -1936,8 +1936,8 @@ final class DesktopPetSpriteView: NSView {
         lastDrawn = (image, size, anchor, position, rotation, scaleX, scaleY)
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        if image != imageName, let cg = DesktopPetArt.cgImage(image) {
-            sprite.contents = cg
+        // 画面内容交给独立的底图和局部图层管理，避免父层完整 PNG 与活动区重叠。
+        if image != imageName, DesktopPetArt.cgImage(image) != nil {
             imageName = image
         }
         sprite.transform = CATransform3DIdentity
@@ -1947,7 +1947,7 @@ final class DesktopPetSpriteView: NSView {
         var transform = CATransform3DMakeRotation(-CGFloat(rotation) * .pi / 180, 0, 0, 1)
         transform = CATransform3DScale(transform, CGFloat(scaleX), CGFloat(scaleY), 1)
         sprite.transform = transform
-        articulated?.update(name: image, image: articulation == nil ? nil : DesktopPetArt.cgImage(image),
+        articulated?.update(name: image, image: DesktopPetArt.cgImage(image),
                             size: size, pose: articulation,
                             contentsScale: window?.backingScaleFactor ?? 2)
         CATransaction.commit()
