@@ -3,7 +3,8 @@ import QuartzCore
 
 /// 小熊猫正面 PNG 的轻量局部动画。
 /// 底图通过 even-odd 遮罩挖掉当前正在运动的区域，三个局部图层再把原图相同像素画回。
-/// 这样运动时不会把头和前爪重复画在完整图片上；不运动时直接显示原图。
+/// 挖空区比活动层遮罩向内缩一圈，头部转动、前爪抬起时边缘仍压在底图上，不露透明细缝。
+/// 不运动时直接显示原图。
 @MainActor
 final class DesktopPetArticulatedLayers {
     private let base = CALayer()
@@ -18,6 +19,12 @@ final class DesktopPetArticulatedLayers {
     private var headPath: CGPath?
     private var leftPath: CGPath?
     private var rightPath: CGPath?
+    /// 底图挖空用的路径：比活动层遮罩向内缩，见 `layout`。
+    private var headHole: CGPath?
+    private var leftHole: CGPath?
+    private var rightHole: CGPath?
+    /// 按图片尺寸换算的 1pt（以 56pt 高的小熊猫为基准），前爪位移跟着大小走。
+    private var unit: CGFloat = 1
     private var maskedParts: (head: Bool, left: Bool, right: Bool)?
     private var lastName: String?
     private var lastSize: CGSize = .zero
@@ -109,12 +116,12 @@ final class DesktopPetArticulatedLayers {
             base.mask = nil
             return
         }
-        // 使用与活动层完全一致的裁切路径；when off -> mask=nil，底图是原始 PNG。
+        // 挖空区比活动层遮罩小一圈，活动层边缘与底图重叠；全部停下时 mask=nil，底图是原始 PNG。
         let shape = CGMutablePath()
         shape.addRect(CGRect(origin: .zero, size: lastSize))
-        if head, let headPath { shape.addPath(headPath) }
-        if left, let leftPath { shape.addPath(leftPath) }
-        if right, let rightPath { shape.addPath(rightPath) }
+        if head, let headHole { shape.addPath(headHole) }
+        if left, let leftHole { shape.addPath(leftHole) }
+        if right, let rightHole { shape.addPath(rightHole) }
         baseMask.frame = CGRect(origin: .zero, size: lastSize)
         baseMask.path = shape
         base.mask = baseMask
@@ -123,11 +130,15 @@ final class DesktopPetArticulatedLayers {
     private func applyPaw(_ layer: CALayer, tap: Double, left: Bool) {
         layer.isHidden = tap < 0.005
         guard !layer.isHidden else { return }
-        let angle = CGFloat(left ? -1 : 1) * CGFloat(tap) * .pi / 160
+        let angle = CGFloat(left ? -1 : 1) * CGFloat(tap) * Self.pawAngle
         var transform = CATransform3DMakeRotation(angle, 0, 0, 1)
-        transform = CATransform3DTranslate(transform, 0, CGFloat(tap) * 1.0, 0)
+        transform = CATransform3DTranslate(transform, 0, CGFloat(tap) * Self.pawLift * unit, 0)
         layer.transform = transform
     }
+
+    /// 前爪打字时最多抬起的距离（56pt 高时约 3pt）与最大转角。
+    private static let pawLift: CGFloat = 3
+    private static let pawAngle: CGFloat = .pi / 70
 
     private func hide() {
         if lastPose == nil && maskedParts == nil { return }
@@ -160,6 +171,26 @@ final class DesktopPetArticulatedLayers {
                                            width: w * 0.32, height: h * 0.255), transform: nil)
         rightPath = CGPath(ellipseIn: CGRect(x: w * 0.545, y: h * 0.01,
                                             width: w * 0.32, height: h * 0.255), transform: nil)
+        unit = max(0.5, min(w, h) / 56)
+        // 头部最多转约 2.25° 再加 m34 透视，边缘位移约 1～2pt：挖空区向内缩约 2pt，至少 1.5pt。
+        let inset = max(1.5, 2 * unit)
+        let headRect = CGRect(x: w * 0.02, y: h * 0.33, width: w * 0.96, height: h * 0.665)
+            .insetBy(dx: inset, dy: inset)
+        headHole = CGPath(roundedRect: headRect,
+                          cornerWidth: max(0, w * 0.17 - inset), cornerHeight: max(0, h * 0.15 - inset),
+                          transform: nil)
+        // 前爪会向上抬 `pawLift`：取「原位」与「抬到最高」两个内缩椭圆的交集，
+        // 抬起过程中任意高度的前爪都盖得住这个挖空区（凸形平移的性质），下缘不露缝。
+        let lift = Self.pawLift * unit
+        func pawHole(_ rect: CGRect) -> CGPath {
+            let rest = CGPath(ellipseIn: rect.insetBy(dx: inset, dy: inset), transform: nil)
+            let raised = CGPath(ellipseIn: rect.insetBy(dx: inset, dy: inset).offsetBy(dx: 0, dy: lift),
+                                transform: nil)
+            let both = rest.intersection(raised)
+            return both.isEmpty ? rest : both
+        }
+        leftHole = pawHole(CGRect(x: w * 0.135, y: h * 0.01, width: w * 0.32, height: h * 0.255))
+        rightHole = pawHole(CGRect(x: w * 0.545, y: h * 0.01, width: w * 0.32, height: h * 0.255))
         for (mask, path) in [(headMask, headPath), (leftMask, leftPath), (rightMask, rightPath)] {
             mask.frame = CGRect(origin: .zero, size: size)
             mask.path = path

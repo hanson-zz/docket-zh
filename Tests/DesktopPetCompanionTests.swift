@@ -21,11 +21,24 @@ final class DesktopPetCompanionTests: XCTestCase {
         XCTAssertEqual(state.typingStrength(at: t0), 0)
         XCTAssertFalse(sample(&state, offset: 0.1, keyIdle: 0.08, typing: true))
         XCTAssertGreaterThan(state.typingStrength(at: t0.addingTimeInterval(0.2)), 0)
-        XCTAssertEqual(state.typingStrength(at: t0.addingTimeInterval(0.6)), 0,
-                       "停止输入后迅速恢复普通动画")
+        XCTAssertGreaterThan(state.typingStrength(at: t0.addingTimeInterval(0.6)), 0,
+                             "约 1 秒内仍保持打字动作，避免一闪而过")
+        XCTAssertEqual(state.typingStrength(at: t0.addingTimeInterval(1.2)), 0,
+                       "停止输入约 1 秒后恢复普通动画")
         _ = sample(&state, offset: 0.7, keyIdle: 0.05, typing: true)
         _ = sample(&state, offset: 0.8, keyIdle: 100, typing: false)
         XCTAssertEqual(state.typingStrength(at: t0.addingTimeInterval(0.8)), 0)
+    }
+
+    func testRestingTickCatchesFirstKeyPress() {
+        // 静止时计时器每秒 10 次：两次采样之间按下的键，下一次采样时 keyIdle 不超过 0.1 秒，
+        // 只要在 0.5 秒的新鲜窗口内就算开始打字；超过窗口的旧按键不算。
+        var state = DesktopPetCompanionState()
+        _ = sample(&state, offset: 0, keyIdle: 0.45, typing: true)
+        XCTAssertGreaterThan(state.typingStrength(at: t0), 0)
+        var stale = DesktopPetCompanionState()
+        _ = sample(&stale, offset: 0, keyIdle: 0.6, typing: true)
+        XCTAssertEqual(stale.typingStrength(at: t0), 0)
     }
 
     func testInvalidIdleTimeCannotAnimate() {
@@ -68,7 +81,7 @@ final class DesktopPetCompanionTests: XCTestCase {
         let pose = DesktopPetPose(image: "pet-sprite-front-sit-1")
         XCTAssertEqual(state.decorate(pose, now: t0, motion: .reduced), pose)
         XCTAssertNotEqual(state.decorate(pose, now: t0.addingTimeInterval(0.1), motion: .full), pose)
-        XCTAssertEqual(state.decorate(pose, now: t0.addingTimeInterval(1), motion: .full), pose)
+        XCTAssertEqual(state.decorate(pose, now: t0.addingTimeInterval(1.5), motion: .full), pose)
     }
     func testArticulatedGazeAndDistance() {
         let center = CGPoint(x: 500, y: 300)

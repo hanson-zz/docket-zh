@@ -12,8 +12,8 @@ public struct DesktopPetCompanionState: Sendable {
     private var previousPointerAt: Date?
     private var lastHuntAt: Date?
 
-    public static let typingWindow: TimeInterval = 0.42
-    public static let keyFreshWindow: TimeInterval = 0.18
+    public static let typingWindow: TimeInterval = 1.0
+    public static let keyFreshWindow: TimeInterval = 0.5
     public static let huntCooldown: TimeInterval = 7
     public static let huntReach: Double = 240
     public static let huntSpeed: Double = 1050
@@ -69,9 +69,10 @@ public struct DesktopPetCompanionState: Sendable {
         let strength = typingStrength(at: now)
         guard strength > 0 else { return pose }
         var result = pose
-        let beat = sin(now.timeIntervalSinceReferenceDate * 21)
-        result.wobble += 1.2 * strength * beat
-        result.lift += 0.65 * strength * abs(beat)
+        // 约 1.5Hz 的点头：幅度约 1.5°、上抬约 1.5pt，看得出来又不至于整只抖动。
+        let beat = sin(now.timeIntervalSinceReferenceDate * 9.5)
+        result.wobble += 1.5 * strength * beat
+        result.lift += 1.5 * strength * abs(beat)
         result.scaleY *= 1 - 0.012 * strength * (1 + beat) / 2
         return result
     }

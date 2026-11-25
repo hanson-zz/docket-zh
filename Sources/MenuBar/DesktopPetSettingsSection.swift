@@ -89,7 +89,7 @@ struct DesktopPetSettingsSection: View {
                     Toggle(isOn: $settings.headParallax) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("头部立体跟随（实验）")
-                            Text("正面坐姿的小熊猫轻微倾头。使用现有图片分层，不改变原有脸型；低电量或减弱动态效果时关闭。默认关闭。")
+                            Text("跟着指针轻微倾头。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。使用现有图片分层，不改变原有脸型；低电量或减弱动态效果时关闭。默认关闭。")
                                 .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -98,7 +98,7 @@ struct DesktopPetSettingsSection: View {
                     Toggle(isOn: $settings.typingCompanion) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("打字陪伴")
-                            Text("跟着打字节奏轻点头。只读取系统提供的“距上次按键时间”，不读取、记录或上传按键内容；默认关闭。")
+                            Text("跟着打字节奏点头、前爪轻敲。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只读取系统提供的“距上次按键时间”，不读取、记录或上传按键内容；低电量或减弱动态效果时不动。默认关闭。")
                                 .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -107,7 +107,7 @@ struct DesktopPetSettingsSection: View {
                     Toggle(isOn: $settings.mouseHunt) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("鼠标掠过反应")
-                            Text("指针快速经过附近时小熊猫会短暂惊讶，约 7 秒冷却；只使用即时坐标，不记录轨迹。减弱动态效果时不触发。")
+                            Text("指针快速经过附近时小熊猫会短暂惊讶，约 7 秒冷却。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只使用即时坐标，不记录轨迹。减弱动态效果时不触发。")
                                 .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
