@@ -1,0 +1,73 @@
+import CoreGraphics
+import Foundation
+import XCTest
+
+/// 桌面伙伴 2.0：只检测系统输入的“活动时刻”，不读取任何按键内容。
+final class DesktopPetCompanionTests: XCTestCase {
+    private let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000)
+    private let center = CGPoint(x: 500, y: 300)
+
+    private func sample(_ state: inout DesktopPetCompanionState, offset: TimeInterval,
+                        pointer: CGPoint? = nil, keyIdle: TimeInterval? = nil,
+                        typing: Bool = false, hunt: Bool = false, reduce: Bool = false) -> Bool {
+        state.observe(now: t0.addingTimeInterval(offset), pointer: pointer,
+                      center: center, scale: 1, keyIdle: keyIdle,
+                      typingEnabled: typing, huntEnabled: hunt, reduceMotion: reduce)
+    }
+
+    func testTypingIsOptInAndExpires() {
+        var state = DesktopPetCompanionState()
+        XCTAssertFalse(sample(&state, offset: 0, keyIdle: 0.05), "默认不采样打字节奏")
+        XCTAssertEqual(state.typingStrength(at: t0), 0)
+        XCTAssertFalse(sample(&state, offset: 0.1, keyIdle: 0.08, typing: true))
+        XCTAssertGreaterThan(state.typingStrength(at: t0.addingTimeInterval(0.2)), 0)
+        XCTAssertEqual(state.typingStrength(at: t0.addingTimeInterval(0.6)), 0,
+                       "停止输入后迅速恢复普通动画")
+        _ = sample(&state, offset: 0.7, keyIdle: 0.05, typing: true)
+        _ = sample(&state, offset: 0.8, keyIdle: 100, typing: false)
+        XCTAssertEqual(state.typingStrength(at: t0.addingTimeInterval(0.8)), 0)
+    }
+
+    func testInvalidIdleTimeCannotAnimate() {
+        var state = DesktopPetCompanionState()
+        _ = sample(&state, offset: 0, keyIdle: -1, typing: true)
+        XCTAssertEqual(state.typingStrength(at: t0), 0)
+        _ = sample(&state, offset: 0.1, keyIdle: .infinity, typing: true)
+        XCTAssertEqual(state.typingStrength(at: t0.addingTimeInterval(0.1)), 0)
+    }
+
+    func testFastNearbyMouseTriggersOnceAndCooldown() {
+        var state = DesktopPetCompanionState()
+        XCTAssertFalse(sample(&state, offset: 0, pointer: center, hunt: true))
+        let near = CGPoint(x: 650, y: 300)
+        XCTAssertTrue(sample(&state, offset: 0.1, pointer: near, hunt: true),
+                      "150pt / 0.1s = 1500pt/s，应触发")
+        XCTAssertFalse(sample(&state, offset: 0.2, pointer: center, hunt: true),
+                       "冷却期间不重复惊讶")
+        XCTAssertFalse(sample(&state, offset: 7.5, pointer: center, hunt: true),
+                       "大于采样跨度时不误判速度")
+        XCTAssertTrue(sample(&state, offset: 7.6, pointer: near, hunt: true))
+    }
+
+    func testFarAwaySlowPointerAndReducedMotionNeverHunt() {
+        var state = DesktopPetCompanionState()
+        XCTAssertFalse(sample(&state, offset: 0, pointer: center, hunt: true))
+        XCTAssertFalse(sample(&state, offset: 0.1, pointer: CGPoint(x: 520, y: 300), hunt: true),
+                       "鼠标移动太慢")
+        XCTAssertFalse(sample(&state, offset: 0.2, pointer: CGPoint(x: 880, y: 300), hunt: true),
+                       "虽然很快但距离桌宠太远")
+        state.reset()
+        XCTAssertFalse(sample(&state, offset: 1, pointer: center, hunt: true))
+        XCTAssertFalse(sample(&state, offset: 1.1, pointer: CGPoint(x: 650, y: 300),
+                              hunt: true, reduce: true), "减弱动态效果优先")
+    }
+
+    func testMotionDecorationIsTemporaryAndRespectReducedMotion() {
+        var state = DesktopPetCompanionState()
+        _ = sample(&state, offset: 0, keyIdle: 0.05, typing: true)
+        let pose = DesktopPetPose(image: "pet-sprite-front-sit-1")
+        XCTAssertEqual(state.decorate(pose, now: t0, motion: .reduced), pose)
+        XCTAssertNotEqual(state.decorate(pose, now: t0.addingTimeInterval(0.1), motion: .full), pose)
+        XCTAssertEqual(state.decorate(pose, now: t0.addingTimeInterval(1), motion: .full), pose)
+    }
+}
