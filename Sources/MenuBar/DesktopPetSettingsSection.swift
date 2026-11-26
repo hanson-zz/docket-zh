@@ -104,6 +104,21 @@ struct DesktopPetSettingsSection: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
+                    if settings.typingCompanion {
+                        HStack {
+                            Button("预览打字动作（3 秒）") {
+                                DesktopPetController.shared.previewTyping()
+                            }
+                            .disabled(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+                                      || ProcessInfo.processInfo.isLowPowerModeEnabled)
+                            .help("独立播放动作，不依赖系统键盘检测；需要小熊猫位于程序坞上或随意摆放的位置。")
+                            Spacer(minLength: 8)
+                        }
+                        Text("测试说明：先点预览，确认小熊猫能点头和交替轻敲前爪；再正常输入文字。如果预览会动、打字不动，说明需要检查系统键盘活动检测。系统开启低电量或减弱动态效果时暂停动画。")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     Toggle(isOn: $settings.mouseHunt) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("鼠标掠过反应")
