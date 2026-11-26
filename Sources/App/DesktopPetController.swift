@@ -127,6 +127,8 @@ final class DesktopPetController: NSObject {
     private var face = DesktopPetFaceState()
     /// 桌面伙伴 2.0：只在内存中保留短暂输入节奏，无单独监听器。
     private var companionMotion = DesktopPetCompanionState()
+    /// 设置页的 3 秒动画预览：无需真实键盘事件，便于区分输入检测与绘制问题。
+    private var typingPreviewUntil: Date?
     private var faceBase = ""
     private var lastIdle: TimeInterval = 0
     private var lastNight = false
@@ -146,6 +148,31 @@ final class DesktopPetController: NSObject {
     private override init() { super.init() }
 
     // MARK: 开关
+
+    /// 测试按钮强制展示 3 秒打字动作；不会录制或模拟系统按键，也不更改持久化设置。
+    func previewTyping() {
+        guard settings.enabled, settings.livelyFace, settings.typingCompanion,
+              let track, shown, !dragging, var current = state,
+              track.style == .stroll || track.style == .sit,
+              Self.motion == .full, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
+        let now = Date()
+        switch current.activity {
+        case .idle, .sit, .edgePause, .walk, .sleep, .curl, .peek, .stretch, .yawn:
+            // 仅测试时短暂停在正面坐姿，不打断叼文件、救回等用户操作。
+            current.activity = .idle(until: now.addingTimeInterval(4))
+            current.since = now
+            state = current
+        default: return
+        }
+        typingPreviewUntil = now.addingTimeInterval(3)
+        render(now: now)
+        updateClock(now: now)
+    }
+
+    private func typingPreviewStrength(at now: Date) -> Double {
+        guard let typingPreviewUntil, now < typingPreviewUntil else { return 0 }
+        return min(1, max(0, typingPreviewUntil.timeIntervalSince(now) / 0.35))
+    }
 
     func apply(_ next: DesktopPetSettings) {
         let before = settings
@@ -169,6 +196,7 @@ final class DesktopPetController: NSObject {
         if !next.stretchReminder { stretchClock = DesktopPetStretchClock() }
         if !next.livelyFace { face.reset() }
         if !next.livelyFace || (!next.typingCompanion && !next.mouseHunt) { companionMotion.reset() }
+        if !next.livelyFace || !next.typingCompanion { typingPreviewUntil = nil }
     }
 
     /// 下载完成提示：总开关和子开关都开着才看下载文件夹。
@@ -217,6 +245,7 @@ final class DesktopPetController: NSObject {
         downloads.stop()
         stretchClock = DesktopPetStretchClock()
         companionMotion.reset()
+        typingPreviewUntil = nil
         fetching = nil
         recentDownloads = nil
         downloadReview = nil
@@ -483,7 +512,8 @@ final class DesktopPetController: NSObject {
             // 低电量、减弱动态效果时维持原来的节能刷新率。
             let baseRate = DesktopPetBrain.tickRate(state, style: style, lowPower: lowPower)
             let typingActive = !lowPower && Self.motion == .full && livelyShown
-                && settings.typingCompanion && companionMotion.needsSmooth(at: now)
+                && settings.typingCompanion
+                && (companionMotion.needsSmooth(at: now) || typingPreviewStrength(at: now) > 0)
             let rate = typingActive ? max(baseRate, 20) : baseRate
             guard restingTimer == nil || restingRate != rate else { return }
             restingTimer?.invalidate()
@@ -929,7 +959,8 @@ final class DesktopPetController: NSObject {
             articulation = DesktopPetArticulationLogic.pose(
                 pointer: NSEvent.mouseLocation, center: drawnCenter, scale: settings.size.scale,
                 headTracking: settings.headParallax && face.gaze != .center,
-                typingStrength: settings.typingCompanion ? companionMotion.typingStrength(at: now) : 0,
+                typingStrength: settings.typingCompanion
+                    ? max(companionMotion.typingStrength(at: now), typingPreviewStrength(at: now)) : 0,
                 now: now, reduceMotion: Self.motion == .reduced,
                 lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
         } else {
@@ -939,7 +970,8 @@ final class DesktopPetController: NSObject {
         if !dragging, settings.livelyFace, settings.typingCompanion,
            face.activeEmote(now: now) == nil,
            DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image) {
-            pose = companionMotion.decorate(pose, now: now, motion: Self.motion)
+            pose = companionMotion.decorate(pose, now: now, motion: Self.motion,
+                                            previewStrength: typingPreviewStrength(at: now))
         }
         let scale = CGFloat(settings.size.scale)
         let base = DesktopPetArt.size(pose)
