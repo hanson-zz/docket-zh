@@ -64,9 +64,10 @@ public struct DesktopPetCompanionState: Sendable {
     }
 
     /// 轻量动效，不改原来的 PNG、脸型、尺寸锚点，也不覆盖已有的点按/摸头表情。
-    public func decorate(_ pose: DesktopPetPose, now: Date, motion: DesktopPetMotion) -> DesktopPetPose {
+    public func decorate(_ pose: DesktopPetPose, now: Date, motion: DesktopPetMotion,
+                         previewStrength: Double = 0) -> DesktopPetPose {
         guard motion == .full, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return pose }
-        let strength = typingStrength(at: now)
+        let strength = max(typingStrength(at: now), min(1, max(0, previewStrength)))
         guard strength > 0 else { return pose }
         var result = pose
         // 约 1.5Hz 的点头：幅度约 1.5°、上抬约 1.5pt，看得出来又不至于整只抖动。
