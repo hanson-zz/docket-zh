@@ -114,7 +114,12 @@ struct DesktopPetSettingsSection: View {
                             .help("独立播放动作，不依赖系统键盘检测；需要小熊猫位于程序坞上或随意摆放的位置。")
                             Spacer(minLength: 8)
                         }
-                        Text("测试说明：先点预览，确认小熊猫能点头和交替轻敲前爪；再正常输入文字。如果预览会动、打字不动，说明需要检查系统键盘活动检测。系统开启低电量或减弱动态效果时暂停动画。")
+                        TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                            Text(keyboardActivityStatus)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("测试说明：先点预览，确认小熊猫能点头和交替轻敲前爪；再正常输入文字。如果预览会动、打字不动，请看上方键盘活动状态。系统开启低电量或减弱动态效果时暂停动画。")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -190,6 +195,17 @@ struct DesktopPetSettingsSection: View {
         } message: {
             Text("完全磁盘访问权限：看见刚放进废纸篓的文件和它原来的位置。自动化里允许码头控制访达：请访达把文件放回原处，第一次放回时系统会问。没有自动化权限时，小熊猫只把文件叼回来，给一个「放回原处」的按钮。")
         }
+    }
+
+    /// 状态只显示“距上一次按键的时间”是否新鲜，不接收键值、文本或按键历史。
+    private var keyboardActivityStatus: String {
+        let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)
+        guard idle.isFinite, idle >= 0 else {
+            return "键盘活动：系统当前无法读取（预览按钮仍可测试动画）"
+        }
+        return idle <= DesktopPetCompanionState.keyFreshWindow
+            ? "键盘活动：已检测到输入"
+            : "键盘活动：等待输入"
     }
 
     /// 停靠位置下面的一行说明，随选项变。
