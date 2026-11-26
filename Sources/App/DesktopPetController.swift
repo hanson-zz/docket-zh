@@ -800,12 +800,14 @@ final class DesktopPetController: NSObject {
                     scale: settings.size.scale, now: now)
         // 沿用原来每帧读指针和上次 keyDown 的系统空闲时间，不读取键值，
         // 不启动 KuroCat 的全局 EventTap/HID 监听（也不增加任何权限）。
-        if livelyShown && (settings.typingCompanion || settings.mouseHunt) {
+        // 打字活动与当前站姿无关：散步中也先记下节奏，走回正面时可自然接上。
+        // 捕猎表情仍然只允许在正面状态下触发。
+        if settings.typingCompanion || (livelyShown && settings.mouseHunt) {
             let hunted = companionMotion.observe(
                 now: now, pointer: NSEvent.mouseLocation, center: drawnCenter,
                 scale: settings.size.scale,
                 keyIdle: settings.typingCompanion ? Self.keyIdleSeconds() : nil,
-                typingEnabled: settings.typingCompanion, huntEnabled: settings.mouseHunt,
+                typingEnabled: settings.typingCompanion, huntEnabled: livelyShown && settings.mouseHunt,
                 reduceMotion: Self.motion == .reduced)
             if hunted && face.activeEmote(now: now) == nil { face.play(.surprise, now: now) }
         } else {
@@ -813,6 +815,22 @@ final class DesktopPetController: NSObject {
         }
         if pointer != nil || dragging || pressPoint != nil { lastTouch = now }
         if petHovering || barHovering || dragging || pressPoint != nil { lastPet = now }
+        // 用户正在输入时，小熊猫从散步/趴睡轻柔地回到正面坐姿陪伴打字；
+        // 不打断拖动、救回、文件叼送、欢呼等已有优先级更高的动作。
+        if settings.typingCompanion, settings.livelyFace, Self.motion == .full,
+           !ProcessInfo.processInfo.isLowPowerModeEnabled, !dragging,
+           (track.style == .stroll || track.style == .sit),
+           companionMotion.needsSmooth(at: now),
+           FocusMascot.of(TimerStateProvider.shared.state, unlocked: ProAccess.isUnlocked) == .panda {
+            switch current.activity {
+            case .walk, .curl, .sleep:
+                current.activity = .idle(until: now.addingTimeInterval(3))
+                current.since = now
+            case .idle(let until) where until < now.addingTimeInterval(1):
+                current.activity = .idle(until: now.addingTimeInterval(2))
+            default: break
+            }
+        }
         current = sense(current, track: track, now: now)
 
         let wasDelivering: Bool = if case .fileDelivery = current.activity { true } else { false }
