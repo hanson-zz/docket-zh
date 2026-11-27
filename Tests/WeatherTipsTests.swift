@@ -251,6 +251,8 @@ final class WeatherTipsTests: XCTestCase {
         let tip = WeatherTips.clothing(input(temperature: 12, apparent: 8.6))
         XCTAssertEqual(tip?.text, "体感 9 度，穿厚外套正合适")
         XCTAssertEqual(tip?.short, "宜穿厚外套")
+        // 晴天 10.6 度、体感 4.5 度：取中间 7.6 度，厚外套而不是羽绒服。
+        XCTAssertEqual(WeatherTips.clothing(input(temperature: 10.6, apparent: 4.5))?.short, "宜穿厚外套")
     }
 
     func testClothingIgnoresASmallFeelsLikeGap() {

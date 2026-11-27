@@ -215,11 +215,20 @@ public enum PhotoMemory {
     }
 
     /// 反查地点得到的“城市, 省份”只留城市；中文逗号也认。
+    /// 中文系统有时给一整串“中国河北省石家庄市”，没有逗号：去掉开头的国家和省、自治区，只留城市。
     public static func placeName(cityWithContext text: String?) -> String? {
         guard let text else { return nil }
-        let first = text.split(whereSeparator: { $0 == "," || $0 == "，" }).first.map(String.init) ?? text
-        let trimmed = first.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+        let first = text.split(whereSeparator: { $0 == "," || $0 == "，" || $0 == "、" }).first.map(String.init) ?? text
+        var name = first.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.hasPrefix("中国"), name.count > 2 { name = String(name.dropFirst(2)) }
+        for marker in ["特别行政区", "自治区", "省"] {
+            if let range = name.range(of: marker), range.upperBound < name.endIndex {
+                name = String(name[range.upperBound...])
+                break
+            }
+        }
+        name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
     }
 
     /// EXIF 的 DateTimeOriginal（“2024:10:18 15:42:07”），按本机时区读。

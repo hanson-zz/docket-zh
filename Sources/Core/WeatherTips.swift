@@ -291,7 +291,8 @@ public enum WeatherTips {
     static func clothing(_ input: Input) -> Tip? {
         guard let celsius = input.temperatureC, celsius.isFinite else { return nil }
         let feels = input.apparentC.flatMap { $0.isFinite ? $0 : nil }
-        let basis = feels ?? celsius
+        // 体感比气温低很多时（晴天有风），取两者中间选衣服，免得 10 度的晴天也叫人穿羽绒服。
+        let basis = feels.map { $0 < celsius ? ($0 + celsius) / 2 : $0 } ?? celsius
         // 英文里衣服名放在句中，小写（“a light jacket”的语气，中文不受影响）。
         let wear = L10n.isEnglish ? WeatherIndex.clothing(celsius: basis).lowercased()
                                   : WeatherIndex.clothing(celsius: basis)

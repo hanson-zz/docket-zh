@@ -101,9 +101,9 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     private func name(_ location: CLLocation) async {
         guard let request = MKReverseGeocodingRequest(location: location),
               let item = try? await request.mapItems.first,
-              let context = item.addressRepresentations?.cityWithContext
+              let context = item.addressRepresentations?.cityWithContext,
+              let place = PhotoMemory.placeName(cityWithContext: context)
         else { return }
-        let place = context.split(separator: ",").first.map(String.init) ?? context
-        city = place.trimmingCharacters(in: .whitespaces)
+        city = place
     }
 }

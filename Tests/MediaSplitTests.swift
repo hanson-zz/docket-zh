@@ -138,6 +138,9 @@ final class MediaSplitTests: XCTestCase {
         XCTAssertEqual(PhotoMemory.placeName(cityWithContext: "杭州市, 浙江省"), "杭州市")
         XCTAssertEqual(PhotoMemory.placeName(cityWithContext: "杭州，浙江"), "杭州")
         XCTAssertEqual(PhotoMemory.placeName(cityWithContext: "Kyoto"), "Kyoto")
+        XCTAssertEqual(PhotoMemory.placeName(cityWithContext: "中国河北省石家庄市"), "石家庄市")
+        XCTAssertEqual(PhotoMemory.placeName(cityWithContext: "中国上海市"), "上海市")
+        XCTAssertEqual(PhotoMemory.placeName(cityWithContext: "广西壮族自治区南宁市"), "南宁市")
         XCTAssertNil(PhotoMemory.placeName(cityWithContext: nil))
         XCTAssertNil(PhotoMemory.placeName(cityWithContext: " "))
     }
