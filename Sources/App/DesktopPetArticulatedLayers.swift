@@ -62,7 +62,14 @@ final class DesktopPetArticulatedLayers {
         CATransaction.setDisableActions(true)
         defer { CATransaction.commit() }
 
-        if let image, name != lastName {
+        guard let image, size.width > 0, size.height > 0 else {
+            hide()
+            base.contents = nil
+            for part in [head, leftPaw, rightPaw] { part.contents = nil }
+            lastName = nil
+            return
+        }
+        if name != lastName {
             base.contents = image
             for part in [head, leftPaw, rightPaw] { part.contents = image }
             lastName = name
@@ -82,7 +89,7 @@ final class DesktopPetArticulatedLayers {
         }
         setBackingScale(contentsScale)
 
-        guard let pose, name.hasPrefix("pet-sprite-lively-"), image != nil else {
+        guard let pose, name.hasPrefix("pet-sprite-lively-") else {
             hide()
             return
         }

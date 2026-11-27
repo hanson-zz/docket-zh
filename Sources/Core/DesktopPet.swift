@@ -42,13 +42,15 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
     public var headParallax: Bool = false
     /// 鼠标快速掠过时的惊讶反应。默认关闭，不申请额外权限。
     public var mouseHunt: Bool = false
+    /// 按住鼠标左右键时，小熊猫对应前爪轻敲；只读瞬时按键位，不监听或存储事件。
+    public var mouseButtonCompanion: Bool = false
 
     public init(enabled: Bool = false, trashRescue: Bool = false, anchor: DesktopPetAnchor = .dock,
                 size: DesktopPetSize = .medium, bubbles: Bool = true, hotKey: KeyCombo? = nil,
                 spot: DesktopPetSpot? = nil, stretchReminder: Bool = false, downloadNotice: Bool = true,
                 pointerPeek: Bool = false, quietInCalls: Bool = true, livelyFace: Bool = true,
                 typingCompanion: Bool = false, mouseHunt: Bool = false,
-                headParallax: Bool = false) {
+                headParallax: Bool = false, mouseButtonCompanion: Bool = false) {
         self.enabled = enabled
         self.trashRescue = trashRescue
         self.anchor = anchor
@@ -64,6 +66,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         self.typingCompanion = typingCompanion
         self.headParallax = headParallax
         self.mouseHunt = mouseHunt
+        self.mouseButtonCompanion = mouseButtonCompanion
     }
 
     /// 救回真正在不在工作：总开关和子开关都开着。
@@ -71,7 +74,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case enabled, trashRescue, anchor, size, bubbles, hotKey, spot, stretchReminder, downloadNotice,
-             pointerPeek, quietInCalls, livelyFace, typingCompanion, mouseHunt, headParallax
+             pointerPeek, quietInCalls, livelyFace, typingCompanion, mouseHunt, headParallax, mouseButtonCompanion
     }
 
     /// 宽松解码：老状态文件没有这一组或缺新加的键、以后多了认不出的键或值，都照常读。
@@ -94,6 +97,7 @@ public struct DesktopPetSettings: Codable, Hashable, Sendable {
         typingCompanion = (try? c.decodeIfPresent(Bool.self, forKey: .typingCompanion)) ?? false
         headParallax = (try? c.decodeIfPresent(Bool.self, forKey: .headParallax)) ?? false
         mouseHunt = (try? c.decodeIfPresent(Bool.self, forKey: .mouseHunt)) ?? false
+        mouseButtonCompanion = (try? c.decodeIfPresent(Bool.self, forKey: .mouseButtonCompanion)) ?? false
     }
 }
 

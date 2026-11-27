@@ -4,6 +4,53 @@ import XCTest
 
 /// 桌面伙伴 2.0：只检测系统输入的“活动时刻”，不读取任何按键内容。
 final class DesktopPetCompanionTests: XCTestCase {
+    func testMousePawsHoldReleaseAndDisable() {
+        var paws = DesktopPetMousePaws()
+        let start = Date(timeIntervalSinceReferenceDate: 100)
+        paws.update(buttons: 3, now: start, enabled: true)
+        XCTAssertTrue(paws.needsSmooth)
+        for i in 1...20 {
+            paws.update(buttons: 3, now: start.addingTimeInterval(Double(i) / 20), enabled: true)
+        }
+        XCTAssertEqual(paws.left, 0.9)
+        XCTAssertEqual(paws.right, 0.9)
+        XCTAssertFalse(paws.needsSmooth, "长按稳定后不应维持高频刷新")
+        paws.update(buttons: 2, now: start.addingTimeInterval(1.05), enabled: true)
+        XCTAssertGreaterThan(paws.left, 0)
+        XCTAssertLessThan(paws.left, 0.9)
+        XCTAssertEqual(paws.right, 0.9)
+        for i in 22...50 {
+            paws.update(buttons: 0, now: start.addingTimeInterval(Double(i) / 20), enabled: true)
+        }
+        XCTAssertEqual(paws.left, 0)
+        XCTAssertEqual(paws.right, 0)
+        XCTAssertFalse(paws.needsSmooth)
+        paws.update(buttons: 3, now: start.addingTimeInterval(2.55), enabled: true)
+        paws.update(buttons: 3, now: start.addingTimeInterval(2.6), enabled: true)
+        paws.update(buttons: 3, now: start.addingTimeInterval(2.65), enabled: false)
+        XCTAssertEqual(paws, DesktopPetMousePaws(), "禁用、表情、拖动或睡眠立即归零")
+    }
+
+    func testTypingDisabledClearsLaptopAndCannotResumeOldActivity() {
+        var state = DesktopPetCompanionState()
+        let start = Date(timeIntervalSinceReferenceDate: 100)
+        for i in 0...40 {
+            _ = state.observe(now: start.addingTimeInterval(Double(i) / 10), pointer: nil,
+                              center: .zero, scale: 1, keyIdle: 0.05,
+                              typingEnabled: true, huntEnabled: false, reduceMotion: false)
+        }
+        XCTAssertTrue(state.laptop(at: start.addingTimeInterval(4)))
+        _ = state.observe(now: start.addingTimeInterval(4.1), pointer: nil,
+                          center: .zero, scale: 1, keyIdle: nil,
+                          typingEnabled: false, huntEnabled: false, reduceMotion: false)
+        XCTAssertEqual(state.typingStrength(at: start.addingTimeInterval(4.1)), 0)
+        XCTAssertFalse(state.laptop(at: start.addingTimeInterval(4.1)))
+        _ = state.observe(now: start.addingTimeInterval(4.2), pointer: nil,
+                          center: .zero, scale: 1, keyIdle: 0.05,
+                          typingEnabled: true, huntEnabled: false, reduceMotion: false)
+        XCTAssertFalse(state.laptop(at: start.addingTimeInterval(4.2)))
+    }
+
     private let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000)
     private let center = CGPoint(x: 500, y: 300)
 
@@ -124,14 +171,38 @@ final class DesktopPetCompanionTests: XCTestCase {
     func testArticulationPreferencesReadOldSettings() throws {
         let legacy = try JSONDecoder().decode(DesktopPetSettings.self, from: Data("{}".utf8))
         XCTAssertFalse(legacy.headParallax)
+        XCTAssertFalse(legacy.mouseButtonCompanion)
         let custom = DesktopPetSettings(typingCompanion: true, mouseHunt: true, headParallax: true)
         let restored = try JSONDecoder().decode(DesktopPetSettings.self,
                                                 from: JSONEncoder().encode(custom))
         XCTAssertTrue(restored.headParallax)
         XCTAssertTrue(restored.typingCompanion)
         XCTAssertTrue(restored.mouseHunt)
+        XCTAssertFalse(restored.mouseButtonCompanion)
+        let mouse = DesktopPetSettings(mouseButtonCompanion: true)
+        let mouseRestored = try JSONDecoder().decode(DesktopPetSettings.self,
+                                                   from: JSONEncoder().encode(mouse))
+        XCTAssertTrue(mouseRestored.mouseButtonCompanion)
     }
 
+
+    func testMouseButtonPawsDoNotNeedKeyboardEvents() {
+        let now = t0
+        func pose(_ buttons: Int, lowPower: Bool = false, reduceMotion: Bool = false) -> DesktopPetArticulation? {
+            DesktopPetArticulationLogic.pose(pointer: nil, center: center, scale: 1,
+                headTracking: false, typingStrength: 0, now: now,
+                reduceMotion: reduceMotion, lowPower: lowPower, pressedMouseButtons: buttons)
+        }
+        XCTAssertNil(pose(0), "默认未按鼠标，不动")
+        XCTAssertEqual(pose(1)?.leftPaw, 0.9)
+        XCTAssertEqual(pose(1)?.rightPaw, 0)
+        XCTAssertEqual(pose(2)?.leftPaw, 0)
+        XCTAssertEqual(pose(2)?.rightPaw, 0.9)
+        XCTAssertEqual(pose(3)?.leftPaw, 0.9)
+        XCTAssertEqual(pose(3)?.rightPaw, 0.9)
+        XCTAssertNil(pose(1, lowPower: true))
+        XCTAssertNil(pose(2, reduceMotion: true))
+    }
 
     func testLaptopOpensAfterSustainedTypingAndClosesAfterPause() {
         var state = DesktopPetCompanionState()

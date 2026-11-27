@@ -124,6 +124,15 @@ struct DesktopPetSettingsSection: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    Toggle(isOn: $settings.mouseButtonCompanion) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("鼠标双爪联动（实验）")
+                            Text("按住鼠标左键时左爪轻敲，按住右键时右爪轻敲；两键一起按时双爪同时响应。只在正面小熊猫静坐、没有其他表情时生效。只读鼠标当前是否按住，不记录点击位置或轨迹；减弱动态效果与低电量时停用。默认关闭。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
                     Toggle(isOn: $settings.mouseHunt) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("鼠标掠过反应")
