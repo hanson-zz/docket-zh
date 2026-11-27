@@ -10,7 +10,7 @@
 
 [![macOS 26+](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)](#安装)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](project.yml)
-[![许可证: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
+[![许可证说明](https://img.shields.io/badge/licensing-分项许可-blue)](LICENSING.md)
 
 <br>
 
@@ -19,6 +19,10 @@
 </div>
 
 ---
+
+> **仓库公开状态说明（2026-11-27）**：码头将采用「**私有开发仓库 + 公开产品展示仓库**」的方式维护。未来的公开仓库主要用于官网展示、收集问题与建议、发布版本和更新日志，**不发布新商业版本的完整应用源码**。
+>
+> **请注意：当前这个 `docket-zh` 仓库仍然是 Public，并包含源代码与历史提交**；在私有化与公开展示仓库分离完成前，不能把它称为“没有公开源码”的仓库。已依据 MIT 等许可证公开的代码及其副本继续受原许可证保护，迁移不会撤销已授予的权利。详见 [许可说明](LICENSING.md)。
 
 ## 码头能做什么
 
