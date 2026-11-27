@@ -4775,6 +4775,72 @@
         }
       }
     },
+    "头部立体跟随（实验）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3D head follow (experimental)"
+          }
+        }
+      }
+    },
+    "跟着指针轻微倾头。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。使用现有图片分层，不改变原有脸型；低电量或减弱动态效果时关闭。默认关闭。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilts its head slightly toward the pointer. Requires Lively expressions, and works while the red panda sits facing you on the Dock or the desktop. Uses layers of the existing artwork without changing its face. Off in Low Power Mode or with Reduce Motion. Off by default."
+          }
+        }
+      }
+    },
+    "打字陪伴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typing companion"
+          }
+        }
+      }
+    },
+    "跟着打字节奏点头、前爪轻敲。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只读取系统提供的“距上次按键时间”，不读取、记录或上传按键内容；低电量或减弱动态效果时不动。默认关闭。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nods and taps its front paws along with your typing. Requires Lively expressions, and works while the red panda sits facing you on the Dock or the desktop. Only reads the system's \"time since last key press\". Keystrokes are never read, recorded, or uploaded. Stays still in Low Power Mode or with Reduce Motion. Off by default."
+          }
+        }
+      }
+    },
+    "鼠标掠过反应" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pointer swoop reaction"
+          }
+        }
+      }
+    },
+    "指针快速经过附近时小熊猫会短暂惊讶，约 7 秒冷却。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只使用即时坐标，不记录轨迹。减弱动态效果时不触发。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the pointer sweeps past quickly, the red panda looks briefly surprised, with a cooldown of about 7 seconds. Requires Lively expressions, and works while the red panda sits facing you on the Dock or the desktop. Only the current pointer position is used, and no path is recorded. Does not trigger with Reduce Motion on."
+          }
+        }
+      }
+    },
     "需安装助手" : {
       "extractionState" : "manual",
       "localizations" : {
