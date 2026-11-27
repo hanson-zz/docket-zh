@@ -89,7 +89,7 @@ struct TimeInsightsStatsView: View {
                 }
                 .help(tr("上一期"))
 
-                Text(date.formatted(.dateTime.year().month().day()))
+                Text(periodTitle)
                     .font(.system(size: 13, weight: .medium))
                     .monospacedDigit()
                     .frame(minWidth: 108)
@@ -140,6 +140,20 @@ struct TimeInsightsStatsView: View {
         } else {
             TimeInsightsEmptyNote(text: tr("本机记录暂时无法读取，请检查隐私与数据设置。"),
                                   symbol: "exclamationmark.triangle")
+        }
+    }
+
+    /// 日统计显示具体日期；周统计和月统计显示完整周期，避免误以为只看一天。
+    private var periodTitle: String {
+        let range = intervalForSelection
+        switch tab {
+        case .day:
+            return date.formatted(.dateTime.year().month().day())
+        case .week:
+            let last = range.end.addingTimeInterval(-1)
+            return "\(range.start.formatted(.dateTime.month().day())) – \(last.formatted(.dateTime.month().day()))"
+        case .month:
+            return date.formatted(.dateTime.year().month())
         }
     }
 
@@ -265,25 +279,43 @@ struct TimeInsightsStatsView: View {
     }
 
     private func appRanking(_ apps: [TimeInsightsAppUsage], maxItems: Int) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            let visible = Array(apps.prefix(maxItems))
+        let visible = Array(apps.prefix(maxItems))
+        let longest = visible.first?.active ?? 0
+        return VStack(alignment: .leading, spacing: 12) {
             if visible.isEmpty {
                 TimeInsightsEmptyNote(text: tr("还没有应用记录。"), symbol: "app.dashed")
-            }
-            ForEach(visible) { usage in
-                HStack(spacing: 9) {
-                    TimeInsightsAppIcon(bundleID: usage.bundleID)
-                        .frame(width: 25, height: 25)
-                    Text(usage.appName)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.panelPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer(minLength: 4)
-                    Text(TimeInsightsFormat.duration(usage.active))
-                        .font(.system(size: 13))
-                        .foregroundStyle(.panelSecondary)
-                        .monospacedDigit()
+            } else {
+                ForEach(visible) { usage in
+                    HStack(alignment: .center, spacing: 10) {
+                        TimeInsightsAppIcon(bundleID: usage.bundleID)
+                            .frame(width: 28, height: 28)
+                        VStack(alignment: .leading, spacing: 5) {
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(usage.appName)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(.panelPrimary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                    Text(usage.category.title)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.panelSecondary)
+                                }
+                                .layoutPriority(1)
+                                Spacer(minLength: 4)
+                                Text(TimeInsightsFormat.compactDuration(usage.active))
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.panelSecondary)
+                                    .monospacedDigit()
+                                    .fixedSize()
+                            }
+                            TimeInsightsShareBar(
+                                fraction: longest > 0 ? usage.active / longest : 0,
+                                colorHex: usage.category.colorHex
+                            )
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
                 }
             }
         }
