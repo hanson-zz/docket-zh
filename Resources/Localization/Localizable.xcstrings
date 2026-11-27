@@ -2190,13 +2190,13 @@
         }
       }
     },
-    "3 种机型，各占一格" : {
+    "4 种机型，各占一格" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3 models, one card each"
+            "value" : "4 models, one card each"
           }
         }
       }
@@ -69379,6 +69379,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Boombox"
+          }
+        }
+      }
+    },
+    "机芯卡座" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deck"
           }
         }
       }

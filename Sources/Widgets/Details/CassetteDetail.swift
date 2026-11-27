@@ -4,7 +4,7 @@ import SwiftUI
 /// 「复古卡带」面板（效果图 design/cassette-widget-glass-light.png、-dark.png，320 宽）。
 ///
 /// 从上到下：玻璃吊牌「来源：音乐」（点开换来源）和「打开 App」，机身（磁带、随身听、
-/// 收录机，实物质感、颜色写死），歌名 / 歌手 · 专辑，磁带款多一行「两边带卷粗细 +
+/// 收录机、机芯卡座，实物质感、颜色写死），歌名 / 歌手 · 专辑，磁带款多一行「两边带卷粗细 +
 /// 中间计数器」，玻璃键帽（随机、上一首、珊瑚播放键、下一首、循环；播放中珊瑚键锁住
 /// 下沉 1pt，不发光），玻璃推子音量，「接下来」B 面 3 首玻璃行，最底下机型分段。
 /// 底部「外观」行由面板外框画。
@@ -159,6 +159,14 @@ struct CassetteDetail: View {
         case .boombox:
             PanelBoombox(track: deck, visible: visible, volume: volumeLevel(track),
                          seek: seekHandler(track))
+        case .deck:
+            // 机芯卡座：顶上三个圆玻璃键接现有控制，标签写正在放的和接下来两首（B 面）。
+            DeckMachine(track: deck,
+                        lines: DeckLabel.lines(track, deck: deck, preview: context.isPreview,
+                                               limit: CassetteDeck.panelLines),
+                        layout: .full, visible: visible,
+                        actions: MusicNow.actions(track, config: config, preview: context.isPreview),
+                        keySize: 34, tapeHeight: 156, corner: 18)
         }
     }
 

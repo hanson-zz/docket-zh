@@ -73,8 +73,8 @@ public enum WidgetLibraryGroups {
         case .volume: tr("换输出设备和总音量")
         case .appVolume: tr("每个应用各调各的")
         case .music: tr("只管这首歌")
-        // 复古卡带：三种机型各占一格，直接添加。
-        case .cassette: tr("3 种机型，各占一格")
+        // 复古卡带：四种机型各占一格，直接添加。
+        case .cassette: tr("4 种机型，各占一格")
         default: nil
         }
     }

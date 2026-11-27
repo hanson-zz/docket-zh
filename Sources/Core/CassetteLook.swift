@@ -117,7 +117,7 @@ public enum CassetteLook: String, CaseIterable, Sendable {
     }
 }
 
-/// 复古卡带的三种机型：磁带、随身听、收录机，都是 Pro（整种小组件是 Pro）。
+/// 复古卡带的四种机型：磁带、随身听、收录机、机芯卡座，都是 Pro（整种小组件是 Pro）。
 public enum CassetteModel: String, CaseIterable, Sendable {
     /// 磁带：茶色半透明外壳，两个转轮，封面做标签贴纸。
     case tape
@@ -125,6 +125,9 @@ public enum CassetteModel: String, CaseIterable, Sendable {
     case portable
     /// 收录机：苔绿色横机身，左右喇叭网罩，中间调台条和磁带仓。
     case boombox
+    /// 机芯卡座：深炭黑机身露出电路板，顶上旋钮、橙色拨动开关和三个圆玻璃键，
+    /// 中间一盒黑磁带，标签用等宽字写曲目。和随身听、收录机一样不支持紧凑。
+    case deck
 
     public static let key = "model"
     public static let fallback: CassetteModel = .tape
@@ -134,6 +137,7 @@ public enum CassetteModel: String, CaseIterable, Sendable {
         case .tape: tr("磁带")
         case .portable: tr("随身听")
         case .boombox: tr("收录机")
+        case .deck: tr("机芯卡座")
         }
     }
 
@@ -146,8 +150,8 @@ public enum CassetteModel: String, CaseIterable, Sendable {
 /// 「复古卡带」小组件（Pro）：播放数据和控制都走正在播放的同一套服务，这里只管
 /// 卡片尺寸、机型、紧凑和面板上要显示的几样东西。
 ///
-/// - 扩展栏横排是中卡 404×58（和 Codex 用量的中卡一样），三种机型都有。
-/// - 紧凑（`compactKey`）收窄到 216 宽，只给磁带：随身听、收录机的机身和按键放不进
+/// - 扩展栏横排是中卡 404×58（和 Codex 用量的中卡一样），四种机型都有。
+/// - 紧凑（`compactKey`）收窄到 216 宽，只给磁带：随身听、收录机、机芯卡座的机身和按键放不进
 ///   216×58，设置里只在磁带时列出（已经开着的换了机型也列，好关掉）；别的机型开着
 ///   紧凑也按 404 宽画机身。
 /// - 扩展栏在左右两侧时是 76 宽的竖条：一盒精简磁带、歌名和播放键，不缩放机身。
@@ -218,7 +222,7 @@ public enum CassetteWidget {
         return "\(counter(elapsed)) · \(counter(duration))"
     }
 
-    /// 面板底部的机型分段点了一种：三种都是 Pro（整种是 Pro），没解锁时弹付费墙。
+    /// 面板底部的机型分段点了一种：四种都是 Pro（整种是 Pro），没解锁时弹付费墙。
     public enum PickResult: Equatable, Sendable {
         case apply
         case unchanged
@@ -244,6 +248,62 @@ public enum CassetteWidget {
         "spotify", "apple", "netease", "xiaoyuzhou", "qqmusic", "browsers",
         MusicSourceSwitch.autoKey, MusicSourceSwitch.pinnedKey, "previous", "next",
     ]
+}
+
+/// 机芯卡座（`CassetteModel.deck`）磁带标签上的几行字，纯函数好测。
+///
+/// 标签用等宽字一行一首：第一行是正在放的「歌名 - 歌手」（反白高亮），后面是
+/// 「接下来」（面板的 B 面）里的几首，曲序和面板「接下来」那几行一样从 01 数。
+/// 扩展栏卡片和桌面卡片只写正在放的一行；面板写到 `panelLines` 行。
+public enum CassetteDeck {
+    /// 面板里标签最多几行（正在放的一行加接下来两首）。
+    public static let panelLines = 3
+    /// 卡片上标签几行（只有正在放的）。
+    public static let cardLines = 1
+    /// 磁带左边小方块上的面：正在放的这一面就是 A 面（和面板标题旁的「A 面」一致），
+    /// 「接下来」才是 B 面，所以这里一直写 A。
+    public static let side = "A"
+
+    public struct Entry: Equatable, Sendable {
+        public var title: String
+        public var artist: String
+        public init(title: String, artist: String) {
+            self.title = title
+            self.artist = artist
+        }
+    }
+
+    public struct Line: Equatable, Sendable {
+        public var text: String
+        /// 正在放的这一首（反白高亮）。
+        public var current: Bool
+        public init(text: String, current: Bool) {
+            self.text = text
+            self.current = current
+        }
+    }
+
+    /// 一首的写法：「歌名 - 歌手」；缺一样就只写另一样。
+    public static func text(title: String, artist: String) -> String {
+        let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let a = artist.trimmingCharacters(in: .whitespacesAndNewlines)
+        if a.isEmpty { return t }
+        if t.isEmpty { return a }
+        return "\(t) - \(a)"
+    }
+
+    /// 标签上的几行：正在放的一行在最前，后面接下来几首带两位曲序（从 `startNumber` 数）。
+    /// `limit` 不大于 0 时一行都没有。
+    public static func lines(title: String, artist: String, upNext: [Entry], limit: Int,
+                             startNumber: Int = 1) -> [Line] {
+        guard limit > 0 else { return [] }
+        var out = [Line(text: text(title: title, artist: artist), current: true)]
+        for (offset, entry) in upNext.prefix(limit - 1).enumerated() {
+            let number = CassetteWidget.trackNumber(offset: offset, current: startNumber - 1)
+            out.append(Line(text: "\(number) \(text(title: entry.title, artist: entry.artist))", current: false))
+        }
+        return out
+    }
 }
 
 /// 卡带外观搬出正在播放时的一次性迁移（启动时、授权状态算好以后跑一遍）。

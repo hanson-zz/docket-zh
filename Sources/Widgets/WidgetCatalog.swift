@@ -187,7 +187,7 @@ public enum WidgetCatalog {
                          (tr("完整"), [MusicCard.layoutKey: .string(MusicCard.wide)])],
               supportsCompact: false, selfContained: true),
 
-        // 复古卡带（Pro）：磁带、随身听、收录机三种机型，库里各占一格（model 键）。
+        // 复古卡带（Pro）：磁带、随身听、收录机、机芯卡座四种机型，库里各占一格（model 键）。
         // 播放数据和控制走正在播放同一套服务，所以来源、自动切换、固定来源、浏览器
         // 和上一首下一首按钮这几个键和正在播放一样（CassetteWidget.sharedMusicKeys）。
         // 紧凑（216 宽）只给磁带（CassetteWidget.compactKey）。

@@ -136,20 +136,23 @@ final class CassetteLookTests: XCTestCase {
     // MARK: 机型和小组件
 
     func testModelsAndTheirTitles() {
-        XCTAssertEqual(CassetteModel.allCases, [.tape, .portable, .boombox])
+        XCTAssertEqual(CassetteModel.allCases, [.tape, .portable, .boombox, .deck])
         XCTAssertEqual(CassetteModel.tape.title, "磁带")
         XCTAssertEqual(CassetteModel.portable.title, "随身听")
         XCTAssertEqual(CassetteModel.boombox.title, "收录机")
+        XCTAssertEqual(CassetteModel.deck.title, "机芯卡座")
+        XCTAssertEqual(CassetteModel.deck.rawValue, "deck")
         XCTAssertEqual(CassetteModel.stored(WidgetConfig()), .tape, "没存按磁带读")
         XCTAssertEqual(CassetteModel.stored(WidgetConfig([CassetteModel.key: .string("bogus")])), .tape)
         XCTAssertEqual(CassetteModel.stored(WidgetConfig([CassetteModel.key: .string("boombox")])), .boombox)
+        XCTAssertEqual(CassetteModel.stored(WidgetConfig([CassetteModel.key: .string("deck")])), .deck)
     }
 
-    func testCassetteIsAProMediaWidgetWithThreeModels() throws {
+    func testCassetteIsAProMediaWidgetWithFourModels() throws {
         let entry = try XCTUnwrap(WidgetCatalog.entry(.cassette))
         XCTAssertEqual(entry.name, "复古卡带")
         XCTAssertEqual(entry.category, .media)
-        XCTAssertEqual(entry.variants.map(\.title), ["磁带", "随身听", "收录机"], "库里三种机型各占一格")
+        XCTAssertEqual(entry.variants.map(\.title), ["磁带", "随身听", "收录机", "机芯卡座"], "库里四种机型各占一格")
         XCTAssertEqual(WidgetKind.cassette.rawValue, "cassette")
         XCTAssertTrue(ProFeatures.isProKind(.cassette), "整种 Pro")
         for variant in entry.variants {
@@ -159,7 +162,7 @@ final class CassetteLookTests: XCTestCase {
         }
         XCTAssertNil(WidgetCatalog.openTarget(.cassette), "点卡片打开面板")
         XCTAssertTrue(WidgetLibraryGroups.isNew(.cassette))
-        XCTAssertEqual(WidgetLibraryGroups.note(.cassette), "3 种机型，各占一格")
+        XCTAssertEqual(WidgetLibraryGroups.note(.cassette), "4 种机型，各占一格")
         XCTAssertGreaterThan(WidgetLibraryGroups.rank(.cassette), WidgetLibraryGroups.rank(.music),
                              "排在正在播放后面")
         let locked = WidgetCatalog.make(.cassette)!
@@ -188,7 +191,7 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertEqual(WidgetCatalog.naturalSize(compactTape).width, 216)
         XCTAssertEqual(WidgetCatalog.contentSize(compactTape, position: .bottom).width, 216)
         XCTAssertTrue(CassetteWidget.isCompact(compactTape.config))
-        for model in [CassetteModel.portable, .boombox] {
+        for model in [CassetteModel.portable, .boombox, .deck] {
             let card = WidgetInstance(kind: .cassette, config: cassette(model, compact: true))
             XCTAssertFalse(CassetteWidget.isCompact(card.config), "\(model) 的机身放不进 216")
             XCTAssertEqual(WidgetCatalog.naturalSize(card).width, 404)
@@ -211,6 +214,50 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertTrue(WidgetCatalog.applies(CassetteWidget.compactKey, to: cassette(.boombox, compact: true),
                                             kind: .cassette), "已经开着的也列出来好关掉")
         XCTAssertTrue(WidgetCatalog.applies("spotify", to: cassette(.boombox), kind: .cassette))
+    }
+
+    func testDeckIsTheFourthModelWithoutCompact() {
+        let deck = cassette(.deck)
+        XCTAssertFalse(CassetteWidget.isCompact(cassette(.deck, compact: true)), "机芯卡座不支持紧凑")
+        XCTAssertFalse(CassetteWidget.offersCompact(deck), "设置里不列紧凑")
+        XCTAssertTrue(CassetteWidget.offersCompact(cassette(.deck, compact: true)), "已经开着的列出来好关掉")
+        XCTAssertEqual(CassetteWidget.width(cassette(.deck, compact: true)), 404)
+        XCTAssertEqual(WidgetCatalog.variantTitle(matching: deck, kind: .cassette), "机芯卡座")
+        let chosen = CassetteWidget.choosing(.deck, in: cassette(.tape, compact: true))
+        XCTAssertEqual(CassetteModel.stored(chosen), .deck)
+        XCTAssertFalse(chosen.bool(CassetteWidget.compactKey), "换成机芯卡座时关掉紧凑")
+        XCTAssertEqual(CassetteWidget.pick(.deck, current: .tape, unlocked: true), .apply)
+        XCTAssertEqual(CassetteWidget.pick(.deck, current: .tape, unlocked: false), .paywall)
+        XCTAssertTrue(ProFeatures.isPro(.cassette, overrides: [CassetteModel.key: .string("deck")]))
+        XCTAssertNil(CassetteLook.allCases.first { $0.model == .deck }, "旧的卡带外观里没有机芯卡座，迁移不会搬成它")
+    }
+
+    func testDeckLabelLines() {
+        XCTAssertEqual(CassetteDeck.text(title: "海边的晚风", artist: "林间乐队"), "海边的晚风 - 林间乐队")
+        XCTAssertEqual(CassetteDeck.text(title: "海边的晚风", artist: " "), "海边的晚风", "没有歌手只写歌名")
+        XCTAssertEqual(CassetteDeck.text(title: "", artist: "林间乐队"), "林间乐队")
+
+        let next = [CassetteDeck.Entry(title: "晚风轻拂", artist: "林间乐队"),
+                    CassetteDeck.Entry(title: "退潮", artist: ""),
+                    CassetteDeck.Entry(title: "灯塔与船", artist: "林间乐队")]
+        let panel = CassetteDeck.lines(title: "海边的晚风", artist: "林间乐队", upNext: next,
+                                       limit: CassetteDeck.panelLines)
+        XCTAssertEqual(panel.map(\.text), ["海边的晚风 - 林间乐队", "01 晚风轻拂 - 林间乐队", "02 退潮"],
+                       "正在放的在最前，接下来的曲序和面板一样从 01 数")
+        XCTAssertEqual(panel.map(\.current), [true, false, false], "只有正在放的反白")
+
+        let card = CassetteDeck.lines(title: "海边的晚风", artist: "林间乐队", upNext: next,
+                                      limit: CassetteDeck.cardLines)
+        XCTAssertEqual(card, [CassetteDeck.Line(text: "海边的晚风 - 林间乐队", current: true)], "卡片只写一行")
+        XCTAssertEqual(CassetteDeck.lines(title: "未在播放", artist: "", upNext: [], limit: 3).count, 1,
+                       "没有接下来时只有一行")
+        XCTAssertTrue(CassetteDeck.lines(title: "a", artist: "b", upNext: next, limit: 0).isEmpty)
+        XCTAssertEqual(CassetteDeck.lines(title: "a", artist: "", upNext: next, limit: 2, startNumber: 4)
+            .map(\.text), ["a", "04 晚风轻拂 - 林间乐队"])
+        XCTAssertEqual(CassetteDeck.side, "A", "正在放的是 A 面")
+        for line in panel {
+            XCTAssertFalse(line.text.contains("\u{2014}"), "不用长破折号")
+        }
     }
 
     func testMusicNoLongerOffersCassetteLooks() {

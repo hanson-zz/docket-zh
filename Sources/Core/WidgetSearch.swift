@@ -23,7 +23,7 @@ public enum WidgetSearch {
         "pull-tooth": ["pull a tooth", "tooth", "teeth", "hippo", "red panda", "dentist", "game", "party game", "baya", "拔牙", "牙齿", "河马", "小熊猫", "小游戏", "游戏", "派对", "啊呜"],
         "shiba-match": ["shiba match", "memory", "match", "pairs", "flip", "cards", "concentration", "shiba", "dog", "game", "fanfanle", "柴犬翻翻乐", "翻翻乐", "翻牌", "记忆", "配对", "连连看", "柴犬", "小狗", "小游戏", "游戏", "益智"],
         "divination": ["fortune", "fortune stick", "iching", "i ching", "yijing", "zhouyi", "hexagram", "oracle", "divination", "bugua", "卜卦", "抽签", "求签", "每日一签", "签", "易经", "周易", "算卦", "起卦", "六十四卦", "铜钱", "解忧书", "答案", "占卜", "运势"],
-        "cassette": ["cassette", "tape", "walkman", "boombox", "retro", "磁带", "卡带", "复古", "随身听", "收录机", "音乐", "播放"],
+        "cassette": ["cassette", "tape", "walkman", "boombox", "deck", "retro", "磁带", "卡带", "复古", "随身听", "收录机", "卡座", "机芯", "音乐", "播放"],
         "battery": ["battery", "电量", "充电"],
         "system": ["system", "cpu", "memory", "内存", "处理器"],
         "network": ["network", "speed", "网速", "流量", "wifi", "wi-fi", "信号", "无线"],

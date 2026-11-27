@@ -1,15 +1,17 @@
 import AppKit
 import SwiftUI
 
-/// 「复古卡带」小组件（Pro）的卡片：磁带、随身听、收录机三种机型（`CassetteModel`）。
+/// 「复古卡带」小组件（Pro）的卡片：磁带、随身听、收录机、机芯卡座四种机型（`CassetteModel`）。
 ///
-/// 扩展栏横排是中卡 404×58，三种机型都有（效果图 design/cassette-widget-glass-*.png
+/// 扩展栏横排是中卡 404×58，四种机型都有（效果图 design/cassette-widget-glass-*.png
 /// 的「扩展栏上」）：
 /// - 磁带：玻璃卡片上放一盒茶色磁带（封面当标签贴纸，两个转轮），旁边歌名、歌手、
 ///   上一首 / 珊瑚播放键 / 下一首和一条细进度。
 /// - 随身听：奶油机身（小窗转轮、灰绿液晶写歌名和时间），右边三个玻璃键。
 /// - 收录机：苔绿机身（双喇叭、调台条上的红指针走到哪就是进度、磁带仓和铜旋钮），
 ///   右边三个玻璃键。
+/// - 机芯卡座：深炭黑机身（电路板底纹），左边旋钮和橙色拨动开关，中间一盒黑磁带
+///   （等宽字标签写正在放的歌名歌手，反白高亮），右边三个圆玻璃键；磁带仓沿边一道细白光。
 /// - 紧凑（只有磁带，216 宽）：精简磁带加歌名歌手两行，点磁带播放暂停。
 /// - 扩展栏在左右两侧时是 76 宽的竖条：小磁带、歌名、播放键。
 ///
@@ -51,7 +53,11 @@ struct CassetteTile: View {
         let actions = connectOrActions(track)
         WidgetSurface {
             if context.position.isVertical {
-                CassetteColumnFace(track: deck, actions: actions, visible: visible)
+                if model == .deck {
+                    DeckColumnFace(track: deck, actions: actions, visible: visible)
+                } else {
+                    CassetteColumnFace(track: deck, actions: actions, visible: visible)
+                }
             } else if CassetteWidget.isCompact(config) {
                 CompactTapeFace(track: deck, actions: actions, visible: visible)
             } else {
@@ -59,6 +65,7 @@ struct CassetteTile: View {
                 case .tape: TapeCardFace(track: deck, actions: actions, visible: visible)
                 case .portable: PortableCardFace(track: deck, actions: actions, visible: visible)
                 case .boombox: BoomboxCardFace(track: deck, actions: actions, visible: visible)
+                case .deck: DeckCardFace(track: deck, actions: actions, visible: visible)
                 }
             }
         }
@@ -385,6 +392,24 @@ private struct BoomboxCardFace: View {
         .overlay(shape.strokeBorder(CassettePalette.rgb(220, 230, 190, 0.3), lineWidth: 0.6).padding(1))
         .overlay(shape.strokeBorder(.black.opacity(0.25), lineWidth: 0.5))
         .shadow(color: .black.opacity(0.25), radius: 2.5, y: 1.5)
+    }
+}
+
+// MARK: - 机芯卡座 404×58
+
+/// 矮条机身：旋钮和拨动开关、一盒磁带（标签一行写正在放的）、三个圆玻璃键。
+private struct DeckCardFace: View {
+    var track: CassetteTrack
+    var actions: CassetteActions
+    var visible: Bool
+
+    var body: some View {
+        DeckMachine(track: track,
+                    lines: CassetteDeck.lines(title: track.title, artist: track.artist, upNext: [],
+                                              limit: CassetteDeck.cardLines),
+                    layout: .strip, visible: visible, actions: actions, keySize: 30, corner: 11)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
     }
 }
 

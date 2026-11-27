@@ -459,7 +459,7 @@ private struct DMMusicCard: View {
 // MARK: - 复古卡带
 
 /// 复古卡带：机身是放在玻璃上的实物（颜色写死，和扩展栏一样），键用卡带自己的玻璃键帽，
-/// 播放键珊瑚色。小号只放磁带；中号、大号按设置的机型（磁带 / 随身听 / 收录机）画一条机身。
+/// 播放键珊瑚色。小号只放磁带；中号、大号按设置的机型（磁带 / 随身听 / 收录机 / 机芯卡座）画一条机身。
 private struct DMCassetteCard: View {
     var widget: WidgetInstance
     var size: DesktopPinSize
@@ -569,7 +569,7 @@ private struct DMCassetteCard: View {
     // 大：大机身，下面歌名、进度和两头时间、三个大键。
     private func large(_ deck: CassetteTrack, _ actions: CassetteActions, _ track: Playing?) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            machine(deck, height: 136)
+            machine(deck, height: 136, actions: model == .deck ? actions : nil)
             Spacer(minLength: 12)
             VStack(alignment: .leading, spacing: 3) {
                 Text(deck.title)
@@ -588,15 +588,18 @@ private struct DMCassetteCard: View {
                 DMProgress(elapsed: deck.elapsed, duration: deck.duration, tint: CassettePalette.needle)
                 Spacer(minLength: 10)
             }
-            keys(deck, actions, size: 48, all: track?.hasSkipControls ?? false)
-                .frame(maxWidth: .infinity)
+            // 机芯卡座的三个键长在机身顶上，下面不再摆一排。
+            if model != .deck {
+                keys(deck, actions, size: 48, all: track?.hasSkipControls ?? false)
+                    .frame(maxWidth: .infinity)
+            }
         }
     }
 
     /// 机身横条：磁带居中摆一盒；随身听奶油机身（小窗转轮 + 灰绿液晶）；收录机苔绿机身
-    /// （两只喇叭夹着调台条和磁带仓）。
+    /// （两只喇叭夹着调台条和磁带仓）；机芯卡座深炭黑机身（中号矮条，大号顶上带三个键）。
     @ViewBuilder
-    private func machine(_ deck: CassetteTrack, height: CGFloat) -> some View {
+    private func machine(_ deck: CassetteTrack, height: CGFloat, actions: CassetteActions? = nil) -> some View {
         switch model {
         case .tape:
             CassetteShell(track: deck, visible: true)
@@ -641,6 +644,13 @@ private struct DMCassetteCard: View {
             .overlay(casing.strokeBorder(CassettePalette.rgb(220, 230, 190, 0.3), lineWidth: 0.6).padding(1))
             .overlay(casing.strokeBorder(.black.opacity(0.25), lineWidth: 0.5))
             .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+        case .deck:
+            DeckMachine(track: deck,
+                        lines: CassetteDeck.lines(title: deck.title, artist: deck.artist, upNext: [],
+                                                  limit: CassetteDeck.cardLines),
+                        layout: height < 100 ? .strip : .full, visible: true, actions: actions,
+                        keySize: 28, corner: 12)
+                .frame(height: height)
         }
     }
 }
