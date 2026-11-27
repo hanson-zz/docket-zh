@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// 时间洞察：Dock 卡片点击后的轻量展开面板。
-/// 保留今日核心数据、真实分类分布、Top 3 与记录状态；日/周/月图表放进独立统计窗口。
-/// 宽面板和窄面板使用同一份数据，避免把完整统计页硬塞进 Dock 扩展栏。
+/// 时间洞察：Dock 扩展栏展开面板，浅色/深色跟随系统。
+/// 只显示本地实际记录；窗口标题、网站与 AI 统计仍待单独授权/接通。
+/// 日/周/月的完整统计和详细历史继续放在独立窗口中。
 struct TimeInsightsDetail: View {
     var instance: WidgetInstance
     var context: WidgetContext
@@ -24,16 +24,17 @@ struct TimeInsightsDetail: View {
         DetailCard {
             MeshBackdrop(color: TimeInsightsStyle.accent)
         } content: {
-            VStack(alignment: .leading, spacing: TimeInsightsMetrics.spacing + 2) {
+            VStack(alignment: .leading, spacing: TimeInsightsMetrics.spacing) {
                 header
                 if let problem = tracker.storageProblem {
                     warning(problem)
                 }
-                overview(day)
+                heroCards(day)
+                currentActivity
                 distribution(day)
                 topApps(day)
-                currentActivity
-                statsLink
+                activityPreview(day)
+                actions
                 privacyFooter
                 if let notice {
                     Text(notice)
@@ -50,16 +51,13 @@ struct TimeInsightsDetail: View {
         }
     }
 
-    // MARK: - 标题与记录状态
+    // MARK: 标题与控制
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Image(systemName: "chart.bar.fill")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(TimeInsightsStyle.accent)
-                .frame(width: 32, height: 32)
-                .readableGlass(in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 10) {
+            TimeInsightsBrandIcon()
+                .frame(width: 36, height: 36)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(tr("时间洞察"))
                     .font(.system(size: 17, weight: .bold))
                     .foregroundStyle(.panelPrimary)
@@ -86,7 +84,7 @@ struct TimeInsightsDetail: View {
             Image(systemName: paused ? "play.fill" : "pause.fill")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.panelPrimary)
-                .frame(width: 30, height: 30)
+                .frame(width: 31, height: 31)
                 .readableGlass(in: Circle())
                 .contentShape(Circle())
         }
@@ -98,94 +96,140 @@ struct TimeInsightsDetail: View {
     private func warning(_ text: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 13))
                 .foregroundStyle(.orange)
             Text(text)
-                .font(.system(size: 13))
                 .foregroundStyle(.panelPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .font(.system(size: 13))
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .readableGlass(in: RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
     }
 
-    // MARK: - 核心指标：一个主数字、两个辅助数字
+    // MARK: 顶部两张卡片（真实数据）
 
-    private func overview(_ day: TimeInsightsDay) -> some View {
-        let change = TimeInsightsStats.change(today: day.active, yesterday: tracker.yesterday)
-        return Group {
-            if wide {
-                HStack(alignment: .center, spacing: 16) {
-                    activeMetric(day, change: change)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Rectangle().fill(Color.panelSeparator)
-                        .frame(width: 1, height: 58)
-                    secondaryMetrics(day)
-                        .frame(width: 180, alignment: .leading)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    activeMetric(day, change: change)
-                    Rectangle().fill(Color.panelSeparator)
-                        .frame(height: 1)
-                    secondaryMetrics(day)
-                }
+    @ViewBuilder
+    private func heroCards(_ day: TimeInsightsDay) -> some View {
+        if wide {
+            HStack(spacing: TimeInsightsMetrics.spacing) {
+                activeHero(day)
+                    .frame(maxWidth: .infinity)
+                workHero(day)
+                    .frame(maxWidth: .infinity)
+            }
+        } else {
+            VStack(spacing: TimeInsightsMetrics.spacing) {
+                activeHero(day)
+                workHero(day)
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func activeHero(_ day: TimeInsightsDay) -> some View {
+        let change = TimeInsightsStats.change(today: day.active, yesterday: tracker.yesterday)
+        return HStack(alignment: .bottom, spacing: 0) {
+            VStack(alignment: .leading, spacing: 5) {
+                Text(tr("今日活跃"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                Text(TimeInsightsFormat.duration(day.active))
+                    .font(.system(size: 21, weight: .bold, design: .rounded))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                if let change {
+                    Text(tr("较昨日 \(TimeInsightsStats.changeText(change))"))
+                        .font(.system(size: 12))
+                        .foregroundStyle(.panelTertiary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            TimeInsightsMascot()
+                .frame(width: wide ? 72 : 90, height: 84, alignment: .bottom)
+                .padding(.trailing, -5)
+                .padding(.bottom, -6)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 110, alignment: .leading)
+        .readableGlass(in: RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func workHero(_ day: TimeInsightsDay) -> some View {
+        let percentage = TimeInsightsStats.percent(day.work, of: day.active)
+        return HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(tr("已分类工作"))
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(TimeInsightsFormat.duration(day.work))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            ZStack {
+                Circle()
+                    .stroke(Color.panelTrack, lineWidth: 6)
+                Circle()
+                    .trim(from: 0, to: min(1, max(0, day.active > 0 ? day.work / day.active : 0)))
+                    .stroke(TimeInsightsStyle.accent,
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text("\(percentage)%")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundStyle(.panelPrimary)
+                    .monospacedDigit()
+            }
+            .frame(width: 53, height: 53)
+            .accessibilityLabel(tr("已分类工作占活跃时间 \(percentage)%"))
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 110)
         .readableGlass(in: RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
     }
 
-    private func activeMetric(_ day: TimeInsightsDay, change: Double?) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(tr("今日活跃"))
+    // MARK: 当前应用：不在浏览器扩展接通前伪造站点和页面
+
+    private var currentActivity: some View {
+        HStack(spacing: 8) {
+            Text(tr("当前应用"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.panelSecondary)
-            Text(TimeInsightsFormat.duration(day.active))
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.panelPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-            if let change {
-                Text(tr("较昨日 \(TimeInsightsStats.changeText(change))"))
+            Spacer(minLength: 3)
+            if tracker.status == .recording, let app = tracker.currentApp {
+                TimeInsightsAppIcon(bundleID: app.bundleID)
+                    .frame(width: 18, height: 18)
+                Text(app.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.panelPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                TimeInsightsCategoryTag(category: tracker.currentCategory)
+            } else {
+                Image(systemName: tracker.status.symbol)
+                    .foregroundStyle(.panelSecondary)
+                    .font(.system(size: 12))
+                Text(tracker.status.shortTitle)
+                    .foregroundStyle(.panelSecondary)
                     .font(.system(size: 13))
-                    .foregroundStyle(.panelTertiary)
+                    .lineLimit(1)
             }
         }
+        .padding(.horizontal, 12)
+        .frame(height: 39)
+        .readableGlass(in: RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 
-    private func secondaryMetrics(_ day: TimeInsightsDay) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            metricLine(tr("已分类工作"), value: day.work,
-                       tint: Color(hex: TimeInsightsCategory.development.colorHex))
-            metricLine(tr("未分类"), value: day.uncategorized,
-                       tint: Color(hex: TimeInsightsCategory.uncategorized.colorHex))
-        }
-    }
-
-    private func metricLine(_ label: String, value: TimeInterval, tint: Color) -> some View {
-        HStack(spacing: 6) {
-            Circle().fill(tint).frame(width: 7, height: 7)
-            Text(label)
-                .font(.system(size: 13))
-                .foregroundStyle(.panelSecondary)
-                .lineLimit(1)
-            Spacer(minLength: 3)
-            Text(TimeInsightsFormat.duration(value))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.panelPrimary)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    // MARK: - 今日分类：紧凑分布条，不与独立统计窗口重复
+    // MARK: 分类分布：灰色明确表示未分类
 
     private func distribution(_ day: TimeInsightsDay) -> some View {
         let ranking = day.categoryRanking
@@ -193,7 +237,7 @@ struct TimeInsightsDetail: View {
             if day.active <= 0 || ranking.isEmpty {
                 TimeInsightsEmptyNote(text: emptyText, symbol: "chart.bar")
             } else {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 9) {
                     GeometryReader { geo in
                         let gap = CGFloat(max(0, ranking.count - 1)) * 2
                         HStack(spacing: 2) {
@@ -205,10 +249,10 @@ struct TimeInsightsDetail: View {
                             }
                         }
                     }
-                    .frame(height: 9)
+                    .frame(height: 12)
                     .accessibilityLabel(tr("今日时间分布"))
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
-                              alignment: .leading, spacing: 7) {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)],
+                              alignment: .leading, spacing: 6) {
                         ForEach(ranking) { usage in
                             TimeInsightsLegendRow(colorHex: usage.category.colorHex,
                                                   label: usage.category.title,
@@ -228,16 +272,16 @@ struct TimeInsightsDetail: View {
         }
     }
 
-    // MARK: - 应用 Top 3（完整 Top 5 和详情在独立窗口）
+    // MARK: 常用应用 Top 3
 
     private func topApps(_ day: TimeInsightsDay) -> some View {
         let top = day.top(3)
         let leader = top.first?.active ?? 0
-        return TimeInsightsCard(title: tr("常用应用")) {
+        return TimeInsightsCard(title: tr("常用应用 Top 3")) {
             if top.isEmpty {
                 TimeInsightsEmptyNote(text: tr("还没有应用记录。"), symbol: "app.dashed")
             } else {
-                VStack(spacing: 10) {
+                VStack(spacing: 9) {
                     ForEach(top) { usage in
                         appRow(usage, leader: leader)
                     }
@@ -249,16 +293,22 @@ struct TimeInsightsDetail: View {
     private func appRow(_ usage: TimeInsightsAppUsage, leader: TimeInterval) -> some View {
         HStack(spacing: 9) {
             TimeInsightsAppIcon(bundleID: usage.bundleID)
-                .frame(width: 24, height: 24)
+                .frame(width: 27, height: 27)
             VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 5) {
-                    Text(usage.appName)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.panelPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .layoutPriority(1)
-                    Spacer(minLength: 4)
+                HStack(spacing: 6) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(usage.appName)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.panelPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Text(usage.category.title)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.panelSecondary)
+                            .lineLimit(1)
+                    }
+                    .layoutPriority(1)
+                    Spacer(minLength: 3)
                     Text(TimeInsightsFormat.duration(usage.active))
                         .font(.system(size: 13))
                         .foregroundStyle(.panelSecondary)
@@ -273,68 +323,111 @@ struct TimeInsightsDetail: View {
         .accessibilityElement(children: .combine)
     }
 
-    private var currentActivity: some View {
-        HStack(spacing: 8) {
-            if tracker.status == .recording, let app = tracker.currentApp {
-                TimeInsightsAppIcon(bundleID: app.bundleID)
-                    .frame(width: 18, height: 18)
-                Text(app.name)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Spacer(minLength: 4)
-                TimeInsightsCategoryTag(category: tracker.currentCategory)
+    // MARK: 时间轴预览：每格一个小时，显示该小时占主导的活动分类
+
+    private func activityPreview(_ day: TimeInsightsDay) -> some View {
+        TimeInsightsCard(title: tr("活动时间轴（预览）")) {
+            if day.active <= 0 {
+                TimeInsightsEmptyNote(text: tr("暂无活动记录"), symbol: "clock")
             } else {
-                Image(systemName: tracker.status.symbol)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelSecondary)
-                Text(tracker.status.title)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.panelSecondary)
-                Spacer(minLength: 4)
+                VStack(spacing: 7) {
+                    HStack {
+                        Text("00:00")
+                        Spacer()
+                        Text("06:00")
+                        Spacer()
+                        Text("12:00")
+                        Spacer()
+                        Text("18:00")
+                        Spacer()
+                        Text("24:00")
+                    }
+                    .font(.system(size: 11))
+                    .foregroundStyle(.panelTertiary)
+                    HStack(spacing: 2) {
+                        ForEach(0..<24, id: \.self) { hour in
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(timelineColor(day, hour: hour))
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .frame(height: 10)
+                    Text(tr("按小时展示主要活动分类，详细记录请打开完整统计"))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.panelTertiary)
+                        .lineLimit(2)
+                }
             }
         }
-        .padding(.horizontal, 3)
-        .accessibilityElement(children: .combine)
     }
 
-    // MARK: - 单一详细入口与隐私控制
-
-    private var statsLink: some View {
-        Button {
-            WidgetDetailWindow.shared.close()
-            tracker.openStats()
-        } label: {
-            HStack(spacing: 9) {
-                Image(systemName: "chart.bar.xaxis")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(TimeInsightsStyle.accent)
-                Text(tr("打开完整统计"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.panelPrimary)
-                if !unlocked { ProBadge() }
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.panelTertiary)
-            }
-            .padding(.horizontal, TimeInsightsMetrics.padding)
-            .padding(.vertical, 11)
-            .readableGlass(in: RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
+    private func timelineColor(_ day: TimeInsightsDay, hour: Int) -> Color {
+        let categories = TimeInsightsCategory.allCases
+        let strongest = categories.max { lhs, rhs in
+            (day.hourCategories[lhs]?[hour] ?? 0) < (day.hourCategories[rhs]?[hour] ?? 0)
         }
-        .buttonStyle(.plain)
-        .help(tr("查看日、周、月统计及应用详情；高级数据需 Pro 和单独授权。"))
+        guard let strongest, (day.hourCategories[strongest]?[hour] ?? 0) > 0 else {
+            return Color.panelTrack
+        }
+        return Color(hex: strongest.colorHex)
+    }
+
+    // MARK: 唯一主操作入口 + 隐私设置
+
+    private var actions: some View {
+        HStack(spacing: 8) {
+            Button {
+                WidgetDetailWindow.shared.close()
+                tracker.openStats()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(TimeInsightsStyle.accent)
+                    Text(tr("打开完整统计"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.panelPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelTertiary)
+                }
+                .padding(.horizontal, 11)
+                .frame(height: 42)
+                .readableGlass(in: RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(tr("查看日、周、月统计及应用详情；高级数据需 Pro 和单独授权。"))
+
+            Button { openSettings() } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 13))
+                    Text(tr("隐私与设置…"))
+                        .font(.system(size: 13))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+                .foregroundStyle(.panelSecondary)
+                .padding(.horizontal, 10)
+                .frame(height: 42)
+                .readableGlass(in: RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: TimeInsightsMetrics.corner, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .help(tr("打开 设置 ▸ 时间洞察：记录开关、排除的应用、导出和清空数据"))
+        }
     }
 
     private var privacyFooter: some View {
-        HStack(spacing: 7) {
+        HStack(spacing: 8) {
             Image(systemName: "lock.shield")
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .foregroundStyle(.panelTertiary)
             Text(tr("数据仅保存在本机"))
-                .font(.system(size: 13))
+                .font(.system(size: 12))
                 .foregroundStyle(.panelTertiary)
             Spacer(minLength: 4)
             if let app = tracker.lastOtherApp, !tracker.settings.isExcluded(app.bundleID),
@@ -353,21 +446,29 @@ struct TimeInsightsDetail: View {
                 .menuStyle(.borderlessButton)
                 .help(tr("排除当前应用或打开隐私设置"))
             }
-            Button {
-                openSettings()
-            } label: {
-                Text(tr("隐私与设置…"))
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.panelSecondary)
-            }
-            .buttonStyle(.plain)
-            .help(tr("打开 设置 ▸ 时间洞察：记录开关、排除的应用、导出和清空数据"))
         }
+        .padding(.horizontal, 3)
     }
 
     private func openSettings() {
         WidgetDetailWindow.shared.close()
         tracker.openSettings()
+    }
+}
+
+/// 直接复用码头现有的小熊猫笔记本插画，避免图像模型临时重画造成形象不统一。
+private struct TimeInsightsMascot: View {
+    var body: some View {
+        Group {
+            if let image = PandaStateArt.image("panda-scene-ai-input") {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
