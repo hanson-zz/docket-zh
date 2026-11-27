@@ -220,14 +220,17 @@ struct WeatherTile: View {
         if let tip {
             // 高度放不下第三行时整行不要；宽度上先整句、再短句，都放不下就空着。
             ViewThatFits(in: .vertical) {
-                VStack(alignment: .leading, spacing: 2) {
+                // 提示行在卡片里左右居中，和上面图标加读数这一整排对齐中线（11-27 用户反馈靠左不居中）。
+                VStack(alignment: .center, spacing: 2) {
                     row
                     ViewThatFits(in: .horizontal) {
                         tipLine(tip.text)
                         tipLine(tip.short)
                         Color.clear.frame(width: 0, height: 0)
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
                 }
+                .frame(maxHeight: .infinity, alignment: .center)
                 row
             }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: tip.text)
