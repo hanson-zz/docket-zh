@@ -310,6 +310,19 @@ final class TimeInsightsTracker {
         feed(.tick, at: now)
     }
 
+    /// 独立统计窗口读取一段时间的真实会话，追加尚未写盘的当前活动段。
+    /// 返回 nil 表示数据库不可用；不能把读取失败伪装成 0 分钟。
+    func sessions(overlapping interval: DateInterval) -> [ActivitySession]? {
+        guard storageProblem == nil, let database,
+              let finished = try? database.sessions(overlapping: interval) else { return nil }
+        var snapshot = finished
+        if let live = recorder.provisional(now: .now),
+           live.end > interval.start, live.start < interval.end {
+            snapshot += TimeInsightsMath.splitByDay(live)
+        }
+        return snapshot
+    }
+
     /// 基础 CSV（免费）：时间、App、分类和来源，不含窗口标题和域名。
     func exportCSV(to url: URL) throws {
         var sessions = (try database?.allSessions()) ?? []
