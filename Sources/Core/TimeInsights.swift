@@ -244,16 +244,19 @@ public struct TimeInsightsSettings: Codable, Equatable, Sendable {
     /// 网站域名统计（Pro，阶段 B）的单独同意。
     public var websitesOptIn: Bool
     public var retentionDays: Int
+    /// 自定义分类规则（Pro），只保存在本机。
+    public var customRules: [TimeInsightsRule]
 
     public init(paused: Bool = false, idleMinutes: Int = defaultIdleMinutes, excludedBundleIDs: [String] = [],
                 windowTitlesOptIn: Bool = false, websitesOptIn: Bool = false,
-                retentionDays: Int = defaultRetentionDays) {
+                retentionDays: Int = defaultRetentionDays, customRules: [TimeInsightsRule] = []) {
         self.paused = paused
         self.idleMinutes = idleMinutes
         self.excludedBundleIDs = excludedBundleIDs
         self.windowTitlesOptIn = windowTitlesOptIn
         self.websitesOptIn = websitesOptIn
         self.retentionDays = retentionDays
+        self.customRules = customRules
     }
 
     /// 少了键（旧版本存的）按默认补，空闲分钟数夹在 1 到 60 之间。
@@ -267,6 +270,7 @@ public struct TimeInsightsSettings: Codable, Equatable, Sendable {
         websitesOptIn = try c.decodeIfPresent(Bool.self, forKey: .websitesOptIn) ?? false
         let keep = try c.decodeIfPresent(Int.self, forKey: .retentionDays) ?? Self.defaultRetentionDays
         retentionDays = max(1, keep)
+        customRules = try c.decodeIfPresent([TimeInsightsRule].self, forKey: .customRules) ?? []
     }
 
     public var idleThreshold: TimeInterval { TimeInterval(idleMinutes * 60) }
@@ -677,7 +681,12 @@ public enum TimeInsightsProFeature: String, CaseIterable, Sendable {
     }
 
     /// 周/月趋势现已接入本机数据；其他 Pro 功能仍需单独开发与授权。
-    public var isConnected: Bool { self == .trends }
+    public var isConnected: Bool {
+        switch self {
+        case .windowTitles, .customRules, .trends: true
+        default: false
+        }
+    }
 
     /// 要不要用户单独同意采集（和买没买 Pro 无关）。
     public var needsConsent: Bool {
@@ -692,7 +701,7 @@ public enum TimeInsightsPro {
     /// Pro 是否解锁，只决定「能不能打开」，不决定「打开了没有」。
     public static func isActive(unlocked: Bool) -> Bool { unlocked }
 
-    /// 现在采不采窗口标题：Pro、用户单独同意、功能接通，三样都要。阶段 A 没接通，恒为假。
+    /// 窗口标题需 Pro 解锁、单独同意；系统辅助功能授权由标题来源额外检查。
     public static func collectsWindowTitles(_ settings: TimeInsightsSettings, unlocked: Bool) -> Bool {
         unlocked && settings.windowTitlesOptIn && TimeInsightsProFeature.windowTitles.isConnected
     }
@@ -751,7 +760,40 @@ public struct UnconnectedBrowserBridge: TimeInsightsBrowserBridge {
     public func currentTab(for bundleID: String) -> BrowserTabSample? { nil }
 }
 
-/// 窗口标题来源。阶段 A 只有没接通的实现，不读任何窗口内容。
+/// 仅在明确同意时采集有限的窗口标题。浏览器的私密/无痕窗口无法稳定识别，
+/// 因此浏览器整个跳过；密码管理器及系统安全窗口也一律不采。
+public enum TimeInsightsTitlePrivacy {
+    public static let skippedBundleIDs: Set<String> = [
+        "com.apple.Safari", "com.apple.SafariTechnologyPreview",
+        "com.google.Chrome", "com.google.Chrome.canary", "com.microsoft.edgemac",
+        "org.mozilla.firefox", "company.thebrowser.Browser", "com.brave.Browser",
+        "com.vivaldi.Vivaldi", "com.operasoftware.Opera",
+        "com.1password.1password", "com.agilebits.onepassword7",
+        "com.bitwarden.desktop", "com.lastpass.LastPass",
+        "com.apple.keychainaccess", "com.apple.Passwords"
+    ]
+
+    public static func allows(bundleID: String) -> Bool {
+        !TimeInsightsDefaults.alwaysSkipped.contains(bundleID)
+            && !skippedBundleIDs.contains(bundleID)
+    }
+
+    /// 压缩空白、替换邮箱和六位以上数字、最多保留 120 字符。
+    public static func sanitize(_ title: String?) -> String? {
+        guard var value = title?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
+        value = value.replacingOccurrences(of: "[\r\n\t]+", with: " ", options: .regularExpression)
+        value = value.replacingOccurrences(
+            of: #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#,
+            with: "[邮箱]", options: .regularExpression)
+        value = value.replacingOccurrences(of: #"\b[0-9]{6,}\b"#,
+                                           with: "[数字]", options: .regularExpression)
+        value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+        return String(value.prefix(120))
+    }
+}
+
+/// 窗口标题来源，未获系统授权时返回 nil。
 public protocol TimeInsightsWindowTitleSource: Sendable {
     var isConnected: Bool { get }
     func title(forProcess pid: Int32) -> String?
