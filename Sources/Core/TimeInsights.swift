@@ -543,6 +543,19 @@ public enum TimeInsightsFormat {
         return tr("\(hours) 小时 \(rest) 分")
     }
 
+    /// 展开面板顶部大数字的紧凑写法（例如「6h 32m」），避免 440pt 面板挤压环形图。
+    /// 0 显示 0m；已有正时长但不足一分钟显示 <1m。
+    public static func compactDuration(_ seconds: TimeInterval) -> String {
+        let value = max(0, seconds)
+        let minutes = Int((value / 60).rounded(.down))
+        if minutes == 0 { return value > 0 ? "<1m" : "0m" }
+        let hours = minutes / 60
+        let rest = minutes % 60
+        if hours == 0 { return "\(minutes)m" }
+        if rest == 0 { return "\(hours)h" }
+        return "\(hours)h \(rest)m"
+    }
+
     /// 竖排卡片上的短写法「3:12」。
     public static func clock(_ seconds: TimeInterval) -> String {
         let minutes = Int((max(0, seconds) / 60).rounded(.down))
