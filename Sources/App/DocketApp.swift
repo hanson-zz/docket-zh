@@ -143,6 +143,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         TimeInsightsTracker.shared.openSettings = { [state] in
             SettingsWindow.shared.show(app: state, tab: TimeInsightsSettingsTab.id)
         }
+        TimeInsightsTracker.shared.openStats = {
+            TimeInsightsStatsWindow.shared.show()
+        }
         TimeInsightsTracker.shared.start()
         // 壁纸按早中晚自动换（Pro）：同样看着每个布局里的壁纸卡片，卡片不在屏幕上也换。
         WallpaperAutoDriver.shared.widgets = { [state] in state.allWidgets }
