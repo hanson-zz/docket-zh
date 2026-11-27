@@ -2190,6 +2190,17 @@
         }
       }
     },
+    "24 小时活动分布" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity Over 24 Hours"
+          }
+        }
+      }
+    },
     "4 种机型，各占一格" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21126,6 +21137,17 @@
         }
       }
     },
+    "分类占比" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Category"
+          }
+        }
+      }
+    },
     "分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23927,6 +23949,28 @@
         }
       }
     },
+    "占前台停留 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% of time in front"
+          }
+        }
+      }
+    },
+    "占活跃时长 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% of active time"
+          }
+        }
+      }
+    },
     "卡塔尔" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25137,6 +25181,17 @@
         }
       }
     },
+    "只记应用名称和时长，不读按键、不截图，数据只存在这台 Mac 上。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only app names and durations, no keystrokes or screenshots, and the data stays on this Mac."
+          }
+        }
+      }
+    },
     "只达标一项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25811,6 +25866,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ afternoon free"
+          }
+        }
+      }
+    },
+    "周、月趋势、完整应用排行和自定义分类规则都在完整统计里。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekly and monthly trends, the full app ranking and custom category rules are in Full Stats."
           }
         }
       }
@@ -29396,6 +29462,17 @@
         }
       }
     },
+    "完整统计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full Stats"
+          }
+        }
+      }
+    },
     "精简" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30818,6 +30895,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Workdays"
+          }
+        }
+      }
+    },
+    "工作时长" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work Time"
           }
         }
       }
@@ -33608,6 +33696,17 @@
         }
       }
     },
+    "当前记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording Now"
+          }
+        }
+      }
+    },
     "当天" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34924,6 +35023,17 @@
         }
       }
     },
+    "总活跃" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total active"
+          }
+        }
+      }
+    },
     "显示在输入框下面，最多 %@ 个。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35602,6 +35712,17 @@
         }
       }
     },
+    "打开 设置 ▸ 时间洞察：记录开关、排除的应用、导出和清空数据" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings ▸ Time Insights: recording, excluded apps, export and clearing data"
+          }
+        }
+      }
+    },
     "打开“%@”" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -35741,6 +35862,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open it to see unread mail here. Dockling never opens it on its own."
+          }
+        }
+      }
+    },
+    "打开完整统计窗口：日、周、月统计、历史和分类规则" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the full stats window: daily, weekly and monthly stats, history and category rules"
           }
         }
       }
@@ -36999,6 +37131,17 @@
         }
       }
     },
+    "持平" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same"
+          }
+        }
+      }
+    },
     "指数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37450,6 +37593,17 @@
         }
       }
     },
+    "排除后，这个应用在前台时不记录。可在 设置 ▸ 时间洞察 里移除。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once excluded, this app is not recorded while in front. You can remove it in Settings ▸ Time Insights."
+          }
+        }
+      }
+    },
     "排除最近使用的 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37538,6 +37692,17 @@
         }
       }
     },
+    "排除此应用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclude this app"
+          }
+        }
+      }
+    },
     "收起小键盘" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -37622,6 +37787,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to %@"
+          }
+        }
+      }
+    },
+    "本段 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This stretch %@"
           }
         }
       }
@@ -37776,6 +37952,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Click the number to copy the result (⌘C)"
+          }
+        }
+      }
+    },
+    "码头在前台，不计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling is in front, not counted"
+          }
+        }
+      }
+    },
+    "码头自身" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling itself"
           }
         }
       }
@@ -75506,6 +75704,17 @@
         }
       }
     },
+    "解锁 Pro 查看周、月趋势、完整应用排行和自定义分类规则。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock Pro for weekly and monthly trends, the full app ranking and custom category rules."
+          }
+        }
+      }
+    },
     "读不了这个文件夹，可能已被移动或删除。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -75902,6 +76111,28 @@
         }
       }
     },
+    "较昨日 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vs yesterday"
+          }
+        }
+      }
+    },
+    "还没有应用记录。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No apps recorded yet."
+          }
+        }
+      }
+    },
     "避免外出，关好门窗" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -75909,6 +76140,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avoid going out and keep windows closed"
+          }
+        }
+      }
+    },
+    "隐私与设置…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Settings…"
           }
         }
       }

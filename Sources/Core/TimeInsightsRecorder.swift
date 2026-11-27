@@ -111,6 +111,7 @@ public struct TimeInsightsRecorder: Sendable {
         if blocks.contains(.paused) { return .paused }
         if !blocks.subtracting([.notPlaced]).isEmpty { return .away }
         guard let app else { return .starting }
+        if app.bundleID == TimeInsightsDefaults.ownBundleID { return .ownApp }
         if excluded.contains(app.bundleID) || TimeInsightsDefaults.alwaysSkipped.contains(app.bundleID) {
             return .excluded
         }

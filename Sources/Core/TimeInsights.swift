@@ -294,7 +294,12 @@ public struct TimeInsightsSettings: Codable, Equatable, Sendable {
 
 /// 自带的、默认不记的 App：码头自己、登录窗口和屏保这类系统界面。
 public enum TimeInsightsDefaults {
+    /// 码头自己的 bundle ID（project.yml 的 PRODUCT_BUNDLE_IDENTIFIER）。点面板、开设置时
+    /// 码头会到前台，这段时间不算用了别的 App，也不算用了码头。
+    public static let ownBundleID = "com.docket-zh.app"
+
     public static let alwaysSkipped: Set<String> = [
+        ownBundleID,
         "com.apple.loginwindow",
         "com.apple.ScreenSaver.Engine",
         "com.apple.SecurityAgent",
@@ -371,13 +376,17 @@ public struct TimeInsightsAppUsage: Equatable, Sendable, Identifiable {
     public var appName: String
     public var category: TimeInsightsCategory
     public var active: TimeInterval
+    /// 有效活跃的段数（切换回来、空闲回来都是新的一段）。
+    public var segments: Int
     public var id: String { bundleID }
 
-    public init(bundleID: String, appName: String, category: TimeInsightsCategory, active: TimeInterval) {
+    public init(bundleID: String, appName: String, category: TimeInsightsCategory, active: TimeInterval,
+                segments: Int = 0) {
         self.bundleID = bundleID
         self.appName = appName
         self.category = category
         self.active = active
+        self.segments = segments
     }
 }
 
@@ -401,6 +410,12 @@ public struct TimeInsightsDay: Equatable, Sendable {
     public var segments: Int
     /// 最长的一段连续活跃（同一个 App，不被切换或空闲打断）。
     public var longest: TimeInsightsAppUsage?
+    /// 每个分类的有效活跃秒数（没有的分类不在里面）。
+    public var categories: [TimeInsightsCategory: TimeInterval] = [:]
+    /// 每个分类在 24 个小时里各有多少有效活跃秒数，按小时分类堆叠的柱状图用。
+    public var hourCategories: [TimeInsightsCategory: [TimeInterval]] = [:]
+    /// 每个 App（bundle ID）在 24 个小时里各有多少有效活跃秒数，按应用切换时用。
+    public var hourApps: [String: [TimeInterval]] = [:]
 
     public static let empty = TimeInsightsDay(active: 0, foreground: 0, work: 0, other: 0, uncategorized: 0,
                                               apps: [], hours: Array(repeating: 0, count: 24),
@@ -416,9 +431,12 @@ public struct TimeInsightsDay: Equatable, Sendable {
     /// 前台停留里没有输入、不算活跃的那部分。
     public var idleForeground: TimeInterval { max(0, foreground - active) }
 
+    /// 一天的汇总。码头自己、登录窗口这类默认不记的 App（`TimeInsightsDefaults.alwaysSkipped`）
+    /// 即使库里有（旧版本记过），也不计入。
     public static func make(_ sessions: [ActivitySession], day: Date, calendar: Calendar = .current) -> TimeInsightsDay {
         let interval = TimeInsightsMath.dayInterval(day, calendar: calendar)
-        let clean = TimeInsightsMath.clipped(TimeInsightsMath.normalized(sessions), to: interval)
+        let counted = sessions.filter { !TimeInsightsDefaults.alwaysSkipped.contains($0.bundleID) }
+        let clean = TimeInsightsMath.clipped(TimeInsightsMath.normalized(counted), to: interval)
         var result = TimeInsightsDay.empty
         var byApp: [String: TimeInsightsAppUsage] = [:]
         for session in clean {
@@ -438,6 +456,7 @@ public struct TimeInsightsDay: Equatable, Sendable {
                 ?? TimeInsightsAppUsage(bundleID: session.bundleID, appName: session.appName,
                                         category: session.classification, active: 0)
             usage.active += length
+            usage.segments += 1
             // 名字和分类用最近的一段（App 改名或规则改了以后，显示新的）。
             usage.appName = session.appName
             usage.category = session.classification
@@ -446,7 +465,12 @@ public struct TimeInsightsDay: Equatable, Sendable {
                 result.longest = TimeInsightsAppUsage(bundleID: session.bundleID, appName: session.appName,
                                                       category: session.classification, active: length)
             }
-            addHours(session, into: &result.hours, calendar: calendar)
+            result.categories[session.classification, default: 0] += length
+            for (hour, seconds) in hourParts(session, calendar: calendar) {
+                result.hours[hour] += seconds
+                result.hourCategories[session.classification, default: Array(repeating: 0, count: 24)][hour] += seconds
+                result.hourApps[session.bundleID, default: Array(repeating: 0, count: 24)][hour] += seconds
+            }
         }
         result.apps = byApp.values.sorted {
             $0.active != $1.active ? $0.active > $1.active : $0.appName < $1.appName
@@ -454,17 +478,20 @@ public struct TimeInsightsDay: Equatable, Sendable {
         return result
     }
 
-    private static func addHours(_ session: ActivitySession, into hours: inout [TimeInterval], calendar: Calendar) {
+    /// 一段在每个整点小时里各占多少秒（本地日历的小时，0 到 23）。
+    static func hourParts(_ session: ActivitySession, calendar: Calendar) -> [(Int, TimeInterval)] {
+        var parts: [(Int, TimeInterval)] = []
         var cursor = session.start
         while cursor < session.end {
             let hour = calendar.component(.hour, from: cursor)
             let hourStart = calendar.dateInterval(of: .hour, for: cursor)?.start ?? cursor
             let hourEnd = hourStart.addingTimeInterval(3600)
             let end = min(hourEnd, session.end)
-            if hours.indices.contains(hour) { hours[hour] += end.timeIntervalSince(cursor) }
             guard end > cursor else { break }
+            if (0..<24).contains(hour) { parts.append((hour, end.timeIntervalSince(cursor))) }
             cursor = end
         }
+        return parts
     }
 }
 
@@ -544,6 +571,8 @@ public enum TimeInsightsStatus: Equatable, Sendable {
     case away
     /// 前台是排除的 App。
     case excluded
+    /// 前台是码头自己（在看面板、设置或完整统计）：不计时。
+    case ownApp
     /// 还没开始（刚启动、还不知道前台是谁）。
     case starting
     /// 本机数据库打不开：不记，也不用假数据补。
@@ -556,6 +585,7 @@ public enum TimeInsightsStatus: Equatable, Sendable {
         case .paused: tr("已暂停记录")
         case .away: tr("锁屏或休眠中，不计时")
         case .excluded: tr("排除的应用，不计时")
+        case .ownApp: tr("码头在前台，不计时")
         case .starting: tr("准备中")
         case .storageError: tr("本机数据打不开，暂停记录")
         }
@@ -569,6 +599,7 @@ public enum TimeInsightsStatus: Equatable, Sendable {
         case .paused: tr("已暂停")
         case .away: tr("未在使用")
         case .excluded: tr("排除的应用")
+        case .ownApp: tr("码头自身")
         case .starting: tr("准备中")
         case .storageError: tr("数据打不开")
         }
@@ -581,6 +612,7 @@ public enum TimeInsightsStatus: Equatable, Sendable {
         case .paused: "pause.circle"
         case .away: "lock"
         case .excluded: "eye.slash"
+        case .ownApp: "pause.circle"
         case .starting: "hourglass"
         case .storageError: "exclamationmark.triangle"
         }

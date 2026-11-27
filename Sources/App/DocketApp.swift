@@ -140,6 +140,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 时间洞察：前台 App 的有效活跃时长，只记在本机。只有放着时间洞察卡片时才记，
         // 暂停、排除和清空在面板和设置里。
         TimeInsightsTracker.shared.widgets = { [state] in state.allWidgets }
+        TimeInsightsTracker.shared.openSettings = { [state] in
+            SettingsWindow.shared.show(app: state, tab: TimeInsightsSettingsTab.id)
+        }
         TimeInsightsTracker.shared.start()
         // 壁纸按早中晚自动换（Pro）：同样看着每个布局里的壁纸卡片，卡片不在屏幕上也换。
         WallpaperAutoDriver.shared.widgets = { [state] in state.allWidgets }

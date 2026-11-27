@@ -25,6 +25,10 @@ final class TimeInsightsTracker {
 
     /// 今天的汇总，包括还开着的那段（算到现在）。
     private(set) var today: TimeInsightsDay = .empty
+    /// 昨天的汇总（启动和跨天时从库里读一次）。昨天没有任何记录时 nil，面板就不写较昨日。
+    private(set) var yesterday: TimeInsightsDay?
+    /// 现在开着的那一段从什么时候开始（「当前记录」卡片的本段时长）；没在记时 nil。
+    private(set) var currentSegmentStart: Date?
     private(set) var status: TimeInsightsStatus = .starting
     /// 现在在前台、正被记着的 App；暂停、锁屏、排除时是 nil。
     private(set) var currentApp: TimeInsightsRecorder.App?
@@ -39,6 +43,10 @@ final class TimeInsightsTracker {
 
     /// 每个布局里的每个小组件。DocketApp 接上。
     @ObservationIgnored var widgets: @MainActor () -> [WidgetInstance] = { [] }
+    /// 打开 设置 ▸ 时间洞察（面板上的「隐私与设置」）。DocketApp 接上。
+    @ObservationIgnored var openSettings: @MainActor () -> Void = {}
+    /// 打开「完整统计」窗口。DocketApp 接上。
+    @ObservationIgnored var openStats: @MainActor () -> Void = {}
 
     @ObservationIgnored private var recorder: TimeInsightsRecorder
     @ObservationIgnored private var database: TimeInsightsDatabase?
@@ -226,6 +234,11 @@ final class TimeInsightsTracker {
         let interval = TimeInsightsMath.dayInterval(now)
         todayStart = interval.start
         todaySessions = (try? database?.sessions(overlapping: interval)) ?? []
+        let before = interval.start.addingTimeInterval(-1)
+        let previous = TimeInsightsMath.dayInterval(before)
+        let past = (try? database?.sessions(overlapping: previous)) ?? []
+        let day = TimeInsightsDay.make(past, day: before)
+        yesterday = day.active > 0 ? day : nil
     }
 
     // MARK: 汇总
@@ -244,6 +257,8 @@ final class TimeInsightsTracker {
         if app != currentApp { currentApp = app }
         let category = recorder.segment?.classification ?? .uncategorized
         if category != currentCategory { currentCategory = category }
+        let segmentStart = app == nil ? nil : recorder.segment?.start
+        if segmentStart != currentSegmentStart { currentSegmentStart = segmentStart }
     }
 
     // MARK: 用户操作（全部免费）
