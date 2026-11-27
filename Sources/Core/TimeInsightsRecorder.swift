@@ -51,9 +51,12 @@ public struct TimeInsightsRecorder: Sendable {
         public var lastSeen: Date
         public var idle: Bool
         public var classification: TimeInsightsCategory
+        /// 仅存储经脱敏且同意采集的窗口标题；旧存档默认 nil。
+        public var windowTitle: String?
 
         public init(id: String = UUID().uuidString, bundleID: String, appName: String, start: Date,
-                    lastSeen: Date, idle: Bool, classification: TimeInsightsCategory) {
+                    lastSeen: Date, idle: Bool, classification: TimeInsightsCategory,
+                    windowTitle: String? = nil) {
             self.id = id
             self.bundleID = bundleID
             self.appName = appName
@@ -61,12 +64,14 @@ public struct TimeInsightsRecorder: Sendable {
             self.lastSeen = lastSeen
             self.idle = idle
             self.classification = classification
+            self.windowTitle = windowTitle
         }
 
         func closed(at end: Date) -> ActivitySession? {
             let finish = max(start, end)
             guard finish.timeIntervalSince(start) >= TimeInsightsRecorder.minimumLength else { return nil }
             return ActivitySession(id: id, start: start, end: finish, bundleID: bundleID, appName: appName,
+                                   windowTitle: idle ? nil : windowTitle,
                                    classification: classification,
                                    source: idle ? .idleForeground : .foreground)
         }
@@ -197,6 +202,21 @@ public struct TimeInsightsRecorder: Sendable {
         guard let current = segment else { return [] }
         segment = nil
         return current.closed(at: end).map { [$0] } ?? []
+    }
+
+    /// 当前活跃 App 的 Pro 窗口标题（或规则）改变：旧片段在这一刻结束，
+    /// 新片段从此刻开始，不把新标题错误归到过去已记录的时长上。
+    public mutating func updateWindowTitle(_ title: String?, at now: Date) -> [ActivitySession] {
+        guard let current = segment, !isIdle, let target = eligibleApp else { return [] }
+        let safe = TimeInsightsTitlePrivacy.sanitize(title)
+        let category = TimeInsightsClassifier.classify(bundleID: target.bundleID,
+                                                       windowTitle: safe, rules: rules)
+        guard current.windowTitle != safe || current.classification != category else { return [] }
+        let finished = close(at: now)
+        segment = Open(bundleID: target.bundleID, appName: target.name, start: now, lastSeen: now,
+                       idle: false, classification: category, windowTitle: safe)
+        lastEvent = max(lastEvent ?? now, now)
+        return finished
     }
 
     /// 退出或停止时：开着的那段在这一刻结束。
