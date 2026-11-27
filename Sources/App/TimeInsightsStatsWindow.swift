@@ -389,6 +389,45 @@ struct TimeInsightsStatsView: View {
                             }
                         }
                     }
+
+                    // Pro：仅使用已经采集的应用、时间、分类，按真实片段展示。
+                    // 不读取窗口标题、域名或其他敏感内容；完整跨应用时间轴仍待接通。
+                    if unlocked {
+                        let rows = TimeInsightsActivityDetail.recentSessions(
+                            sessions, bundleID: usage.bundleID, interval: interval
+                        )
+                        TimeInsightsCard(title: tr("最近活动片段 · Pro")) {
+                            if rows.isEmpty {
+                                TimeInsightsEmptyNote(text: tr("这一段时间没有活动片段。"), symbol: "clock")
+                            } else {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ForEach(rows) { row in
+                                        HStack(spacing: 9) {
+                                            Circle()
+                                                .fill(Color(hex: row.classification.colorHex))
+                                                .frame(width: 7, height: 7)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(row.start.formatted(.dateTime.month().day().hour().minute())
+                                                    + " – "
+                                                    + row.end.formatted(.dateTime.month().day().hour().minute()))
+                                                    .font(.system(size: 12, weight: .medium))
+                                                    .foregroundStyle(.panelPrimary)
+                                                Text(row.classification.title)
+                                                    .font(.system(size: 11))
+                                                    .foregroundStyle(.panelSecondary)
+                                            }
+                                            Spacer(minLength: 4)
+                                            Text(TimeInsightsFormat.compactDuration(row.duration))
+                                                .font(.system(size: 12, weight: .medium))
+                                                .foregroundStyle(.panelSecondary)
+                                                .monospacedDigit()
+                                        }
+                                        .accessibilityElement(children: .combine)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 } else {
                     TimeInsightsEmptyNote(text: tr("本机记录暂时无法读取，请检查隐私与数据设置。"),
                                           symbol: "exclamationmark.triangle")
