@@ -173,12 +173,13 @@ final class TimeInsightsStatsTests: XCTestCase {
     }
 
     func testThePanelWidensOnlyWhenTheScreenHasRoom() {
-        XCTAssertEqual(TimeInsightsLayout.panelWidth(screenWidth: 1440), 680)
-        XCTAssertEqual(TimeInsightsLayout.panelWidth(screenWidth: 700), 340)
-        XCTAssertEqual(TimeInsightsLayout.panelWidth(screenWidth: nil), 680)
-        XCTAssertTrue(TimeInsightsLayout.isWide(contentWidth: 648))
-        XCTAssertFalse(TimeInsightsLayout.isWide(contentWidth: 300))
-        XCTAssertLessThanOrEqual(TimeInsightsLayout.wideWidth, 720)
-        XCTAssertGreaterThanOrEqual(TimeInsightsLayout.wideWidth, 640)
+        XCTAssertEqual(TimeInsightsLayout.panelWidth(screenWidth: 1440), 440)
+        XCTAssertEqual(TimeInsightsLayout.panelWidth(screenWidth: 700), 440)
+        XCTAssertEqual(TimeInsightsLayout.panelWidth(screenWidth: 450), 340)
+        XCTAssertEqual(TimeInsightsLayout.panelWidth(screenWidth: nil), 440)
+        XCTAssertTrue(TimeInsightsLayout.isWide(contentWidth: 408))
+        XCTAssertFalse(TimeInsightsLayout.isWide(contentWidth: 308))
+        XCTAssertLessThanOrEqual(TimeInsightsLayout.wideWidth, 480)
+        XCTAssertGreaterThanOrEqual(TimeInsightsLayout.wideWidth, 400)
     }
 }
