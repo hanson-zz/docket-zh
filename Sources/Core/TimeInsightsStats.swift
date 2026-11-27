@@ -158,6 +158,32 @@ public enum TimeInsightsChart {
     }
 }
 
+// MARK: 应用活动片段（Pro 小范围钻取）
+
+public enum TimeInsightsActivityDetail {
+    /// 返回最近 `limit` 个真实活跃片段；和每日合计一样先对所有应用去重，
+    /// 再截取日期区间、按 bundle ID 筛选，避免重叠记录在详情里被重复计算。
+    /// 故意不返回窗口标题或网站字段给界面；详情只用时间、来源和类别。
+    public static func recentSessions(_ sessions: [ActivitySession], bundleID: String,
+                                      interval: DateInterval, limit: Int = 8) -> [ActivitySession] {
+        guard limit > 0, !TimeInsightsDefaults.alwaysSkipped.contains(bundleID) else { return [] }
+        let clean = TimeInsightsMath.normalized(
+            sessions.filter { !TimeInsightsDefaults.alwaysSkipped.contains($0.bundleID) }
+        )
+        return TimeInsightsMath.clipped(clean, to: interval)
+            .filter { $0.bundleID == bundleID && $0.source.isActive }
+            .sorted { $0.start != $1.start ? $0.start > $1.start : $0.id > $1.id }
+            .prefix(limit)
+            .map { segment in
+                // 即便来源在将来包含额外字段，本界面也绝不通过片段列表泄露。
+                var safe = segment
+                safe.windowTitle = nil
+                safe.domain = nil
+                return safe
+            }
+    }
+}
+
 // MARK: 较昨日、占比
 
 public enum TimeInsightsStats {
