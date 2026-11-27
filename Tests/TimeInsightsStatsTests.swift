@@ -119,6 +119,9 @@ final class TimeInsightsStatsTests: XCTestCase {
         let webRows = TimeInsightsActivityDetail.recentSessions(all, bundleID: "web", interval: interval)
         XCTAssertEqual(webRows.count, 1)
         XCTAssertEqual(webRows[0].duration, 20 * 60, "重叠部分不得再计入浏览器")
+        let detailMatches = TimeInsightsActivityDetail.matchingSessions(all, bundleID: "web", interval: interval)
+        let detailDay = TimeInsightsDay.make(detailMatches, day: start, calendar: shanghai)
+        XCTAssertEqual(detailDay.active, 20 * 60, "详情图表与全局去重口径保持一致")
         XCTAssertEqual(TimeInsightsActivityDetail.recentSessions(all, bundleID: TimeInsightsDefaults.ownBundleID,
                                                                  interval: interval), [])
     }
