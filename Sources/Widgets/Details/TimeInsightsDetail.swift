@@ -114,7 +114,7 @@ struct TimeInsightsDetail: View {
         if wide {
             HStack(spacing: TimeInsightsMetrics.spacing) {
                 activeHero(day)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: contentWidth * 0.58)
                 workHero(day)
                     .frame(maxWidth: .infinity)
             }
