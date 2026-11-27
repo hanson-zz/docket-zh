@@ -55,6 +55,10 @@ struct TimeInsightsTile: View {
                     .foregroundStyle(status == .recording ? accent : WidgetStyle.secondary)
             }
             VStack(alignment: .leading, spacing: 2) {
+                Text(tr("时间洞察"))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(WidgetStyle.secondary)
+                    .lineLimit(1)
                 Text(TimeInsightsFormat.duration(day.active))
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(WidgetStyle.primary)
@@ -62,12 +66,12 @@ struct TimeInsightsTile: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Text(caption(status))
-                    .font(.system(size: 13))
+                    .font(.system(size: 12))
                     .foregroundStyle(WidgetStyle.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 TimeInsightsBar(fraction: TimeInsightsFormat.barFraction(day.active), color: accent)
-                    .frame(height: 4)
+                    .frame(height: 3)
             }
             Spacer(minLength: 0)
         }
