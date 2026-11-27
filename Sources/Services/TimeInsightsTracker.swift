@@ -40,6 +40,9 @@ final class TimeInsightsTracker {
     private(set) var settings: TimeInsightsSettings
     /// 浏览器扩展的连接状态（阶段 B），现在永远是没接通。
     let browserBridge: any TimeInsightsBrowserBridge = UnconnectedBrowserBridge()
+    /// macOS 原生窗口标题来源：只有主动同意、Pro 解锁且系统辅助功能授权后调用。
+    @ObservationIgnored private let titleSource = NativeTimeInsightsWindowTitleSource()
+    var accessibilityTrusted: Bool { titleSource.isConnected }
 
     /// 每个布局里的每个小组件。DocketApp 接上。
     @ObservationIgnored var widgets: @MainActor () -> [WidgetInstance] = { [] }
@@ -68,7 +71,7 @@ final class TimeInsightsTracker {
         settings = stored
         // App Nap 可能把 10 秒的定时器拖到一两分钟，心跳断开的判断放宽到 150 秒。
         recorder = TimeInsightsRecorder(idleAfter: stored.idleThreshold, excluded: Set(stored.excludedBundleIDs),
-                                        heartbeatGap: 150)
+                                        rules: ProAccess.isUnlocked ? stored.customRules : [], heartbeatGap: 150)
     }
 
     // MARK: 启停
@@ -161,6 +164,27 @@ final class TimeInsightsTracker {
             feed(nowPlaced ? .unblocked(.notPlaced) : .blocked(.notPlaced), at: now)
         }
         feed(.idle(Self.idleSeconds()), at: now)
+        refreshTitleAndRules(at: now)
+    }
+
+    /// 授权与采样都由用户控制；未授权时不调用辅助功能 API 读取窗口。
+    private func refreshTitleAndRules(at now: Date) {
+        let rules = ProAccess.isUnlocked ? settings.customRules : []
+        if recorder.rules != rules { recorder.rules = rules }
+        guard let segment = recorder.segment, !segment.idle,
+              let app = recorder.eligibleApp else { return }
+        let permitted = TimeInsightsPro.collectsWindowTitles(settings, unlocked: ProAccess.isUnlocked)
+            && titleSource.isConnected && TimeInsightsTitlePrivacy.allows(bundleID: app.bundleID)
+        let title: String?
+        if permitted, let running = NSWorkspace.shared.frontmostApplication,
+           running.bundleIdentifier == app.bundleID {
+            title = titleSource.title(forProcess: running.processIdentifier)
+        } else {
+            title = nil
+        }
+        persist(recorder.updateWindowTitle(title, at: now))
+        checkpoint(now)
+        publish(now)
     }
 
     private func feed(_ event: TimeInsightsRecorder.Event, at now: Date = .now) {
@@ -237,7 +261,7 @@ final class TimeInsightsTracker {
         let before = interval.start.addingTimeInterval(-1)
         let previous = TimeInsightsMath.dayInterval(before)
         let past = (try? database?.sessions(overlapping: previous)) ?? []
-        let day = TimeInsightsDay.make(past, day: before)
+        let day = TimeInsightsDay.make(categorized(past), day: before)
         yesterday = day.active > 0 ? day : nil
     }
 
@@ -249,7 +273,7 @@ final class TimeInsightsTracker {
         if let live = recorder.provisional(now: now) {
             sessions += TimeInsightsMath.splitByDay(live)
         }
-        let day = TimeInsightsDay.make(sessions, day: now)
+        let day = TimeInsightsDay.make(categorized(sessions), day: now)
         if day != today { today = day }
         let nextStatus = recorder.status
         if nextStatus != status { status = nextStatus }
@@ -272,11 +296,20 @@ final class TimeInsightsTracker {
         UserDefaults.standard.set(next.encoded(), forKey: TimeInsightsSettings.defaultsKey)
         recorder.idleAfter = next.idleThreshold
         recorder.excluded = Set(next.excludedBundleIDs)
+        recorder.rules = ProAccess.isUnlocked ? next.customRules : []
         if next.paused != wasPaused {
             feed(next.paused ? .blocked(.paused) : .unblocked(.paused))
         } else {
             feed(.tick)
         }
+        refreshTitleAndRules(at: .now)
+    }
+
+    /// 历史分类按当前规则重新计算，只影响显示，不改原始时间和数据库记录。
+    private func categorized(_ sessions: [ActivitySession]) -> [ActivitySession] {
+        TimeInsightsClassifier.reclassify(
+            sessions, rules: ProAccess.isUnlocked ? settings.customRules : []
+        )
     }
 
     func setPaused(_ paused: Bool) { update { $0.paused = paused } }
@@ -320,7 +353,7 @@ final class TimeInsightsTracker {
            live.end > interval.start, live.start < interval.end {
             snapshot += TimeInsightsMath.splitByDay(live)
         }
-        return snapshot
+        return categorized(snapshot)
     }
 
     /// 基础 CSV（免费）：时间、App、分类和来源，不含窗口标题和域名。
