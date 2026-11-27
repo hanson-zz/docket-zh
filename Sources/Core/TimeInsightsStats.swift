@@ -13,13 +13,13 @@ public extension TimeInsightsCategory {
     /// 其余各自一色，未分类是中性灰。
     var colorHex: String {
         switch self {
-        case .development: "#4A7BD8"
-        case .design: "#E2A23C"
-        case .learning: "#8E6FD8"
-        case .communication: "#3FAE6A"
-        case .entertainment: "#E0679A"
-        case .other: "#8D8478"
-        case .uncategorized: "#A9AFBB"
+        case .development: "#4A8EF1"
+        case .design: "#A18CE6"
+        case .learning: "#51B7DB"
+        case .communication: "#48B99A"
+        case .entertainment: "#E46BA2"
+        case .other: "#F2B84D"
+        case .uncategorized: "#A5ACB9"
         }
     }
 }
