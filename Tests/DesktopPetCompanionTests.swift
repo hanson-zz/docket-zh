@@ -124,14 +124,38 @@ final class DesktopPetCompanionTests: XCTestCase {
     func testArticulationPreferencesReadOldSettings() throws {
         let legacy = try JSONDecoder().decode(DesktopPetSettings.self, from: Data("{}".utf8))
         XCTAssertFalse(legacy.headParallax)
+        XCTAssertFalse(legacy.mouseButtonCompanion)
         let custom = DesktopPetSettings(typingCompanion: true, mouseHunt: true, headParallax: true)
         let restored = try JSONDecoder().decode(DesktopPetSettings.self,
                                                 from: JSONEncoder().encode(custom))
         XCTAssertTrue(restored.headParallax)
         XCTAssertTrue(restored.typingCompanion)
         XCTAssertTrue(restored.mouseHunt)
+        XCTAssertFalse(restored.mouseButtonCompanion)
+        let mouse = DesktopPetSettings(mouseButtonCompanion: true)
+        let mouseRestored = try JSONDecoder().decode(DesktopPetSettings.self,
+                                                   from: JSONEncoder().encode(mouse))
+        XCTAssertTrue(mouseRestored.mouseButtonCompanion)
     }
 
+
+    func testMouseButtonPawsDoNotNeedKeyboardEvents() {
+        let now = t0
+        func pose(_ buttons: Int, lowPower: Bool = false, reduceMotion: Bool = false) -> DesktopPetArticulation? {
+            DesktopPetArticulationLogic.pose(pointer: nil, center: center, scale: 1,
+                headTracking: false, typingStrength: 0, now: now,
+                reduceMotion: reduceMotion, lowPower: lowPower, pressedMouseButtons: buttons)
+        }
+        XCTAssertNil(pose(0), "默认未按鼠标，不动")
+        XCTAssertEqual(pose(1)?.leftPaw, 0.9)
+        XCTAssertEqual(pose(1)?.rightPaw, 0)
+        XCTAssertEqual(pose(2)?.leftPaw, 0)
+        XCTAssertEqual(pose(2)?.rightPaw, 0.9)
+        XCTAssertEqual(pose(3)?.leftPaw, 0.9)
+        XCTAssertEqual(pose(3)?.rightPaw, 0.9)
+        XCTAssertNil(pose(1, lowPower: true))
+        XCTAssertNil(pose(2, reduceMotion: true))
+    }
 
     func testLaptopOpensAfterSustainedTypingAndClosesAfterPause() {
         var state = DesktopPetCompanionState()
