@@ -3,6 +3,26 @@
 The 0.1.0 entry was written by hand. Everything after it is generated from the
 commits on `main`, which is why the voice changes partway down.
 
+## [1.1.0](https://github.com/hanson-zz/docket-zh/compare/v1.0.0...v1.1.0) (2026-11-27)
+
+
+### Features
+
+* add live icon status and display policy ([b1060f0](https://github.com/hanson-zz/docket-zh/commit/b1060f0e8d4827a58f8810292186a0022b16f200))
+* add live icon status and display policy ([20b3761](https://github.com/hanson-zz/docket-zh/commit/20b376185f03a71d7ac49f8c4fa5565168e0b36c))
+* add shelf live icon visual accents ([124411f](https://github.com/hanson-zz/docket-zh/commit/124411f98284c0104246a4b10b4bcac0f551ea7b))
+* display finder companion and chrome launch feedback in shelf ([1db47fe](https://github.com/hanson-zz/docket-zh/commit/1db47fe43e94204021cdf55a37079cfd64813e28))
+* 底板颜色改用小组件同一套 15 种预设 ([321023a](https://github.com/hanson-zz/docket-zh/commit/321023acc7ecdb0cc8a78117de6eb8247eab5ebe))
+* 灵动小熊猫第一阶段，正面坐着时看向指针、眨眼和触摸表情 ([027fdf7](https://github.com/hanson-zz/docket-zh/commit/027fdf71f4f9bf9e0babeccf93793b60d13e4da7))
+* 灵动小熊猫补正视与闭眼两张素材，画风统一 ([a4ca4df](https://github.com/hanson-zz/docket-zh/commit/a4ca4df874e0ee1a329611f16444701ccdaf5a53))
+
+
+### Bug Fixes
+
+* restore complete 1024px app icon PNGs from the import package ([aeaa4ab](https://github.com/hanson-zz/docket-zh/commit/aeaa4ab52668f20fc774014a281ca57efba3114c))
+* 按正式规格理清三处颜色设置的名称和层级 ([7ac90b3](https://github.com/hanson-zz/docket-zh/commit/7ac90b33e3425c19666884cd89ecd93d3763b758))
+* 理清扩展栏与小组件的颜色设置 ([fe3c2dc](https://github.com/hanson-zz/docket-zh/commit/fe3c2dce311e0338cb8958552b4ac43ea7997c95))
+
 ## [0.1.9](https://github.com/nparashar150/dockset/compare/v0.1.8...v0.1.9) (2026-10-01)
 
 
