@@ -365,7 +365,9 @@ struct TimeInsightsStatsView: View {
                 if tab != .day && !unlocked {
                     proPlaceholder
                 } else if let sessions = tracker.sessions(overlapping: interval) {
-                    let matching = sessions.filter { $0.bundleID == usage.bundleID }
+                    let matching = TimeInsightsActivityDetail.matchingSessions(
+                        sessions, bundleID: usage.bundleID, interval: interval
+                    )
                     if tab == .day {
                         let day = TimeInsightsDay.make(matching, day: date)
                         TimeInsightsCard(title: tr("该应用的 24 小时分布")) {
