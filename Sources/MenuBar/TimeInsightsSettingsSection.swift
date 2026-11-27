@@ -103,7 +103,7 @@ struct TimeInsightsSettingsPane: View {
                 let _ = permissionChecks
                 HStack(spacing: 8) {
                     Image(systemName: tracker.accessibilityTrusted ? "checkmark.shield" : "lock.shield")
-                        .foregroundStyle(tracker.accessibilityTrusted ? .green : .secondary)
+                        .foregroundStyle(tracker.accessibilityTrusted ? Color.green : Color.secondary)
                     Text(tracker.accessibilityTrusted
                          ? tr("辅助功能已授权，非敏感 App 的标题可以记录")
                          : tr("尚未获得 macOS 辅助功能权限，不会读取任何窗口标题"))
