@@ -73,9 +73,9 @@ struct WidgetSettingsSections: View {
                 if pair.instance.kind == .divination {
                     DivinationSettingsSection(instance: pair.instance) { change in write(pair.instance, change) }
                 }
-                // 时间洞察的设置是全局的（暂停、空闲判定、排除、清空、导出），不写进卡片配置。
+                // 时间洞察的设置是全局的，在侧栏单独一页（设置 ▸ 时间洞察），这里只留入口。
                 if pair.instance.kind == .timeInsights {
-                    TimeInsightsSettingsSection()
+                    TimeInsightsSettingsLink()
                 }
                 if WidgetTint.offersColor(pair.instance.kind) || WidgetTint.offersBackground(pair.instance.kind) {
                     Section {
