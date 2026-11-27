@@ -28,7 +28,7 @@ public enum DesktopPetArticulationLogic {
     /// `headTracking` 由已有 `DesktopPetFaceState.gaze` 提供，指针静止后会归零。
     public static func pose(pointer: CGPoint?, center: CGPoint, scale: Double, headTracking: Bool,
                             typingStrength: Double, now: Date, reduceMotion: Bool,
-                            lowPower: Bool) -> DesktopPetArticulation? {
+                            lowPower: Bool, pressedMouseButtons: Int = 0) -> DesktopPetArticulation? {
         guard !reduceMotion, !lowPower else { return nil }
 
         var yaw = 0.0
@@ -55,6 +55,11 @@ public enum DesktopPetArticulationLogic {
             left = max(0, sin(phase)) * typing
             right = max(0, -sin(phase)) * typing
         }
+
+        // NSEvent.pressedMouseButtons: bit 0 = 左键、bit 1 = 右键。
+        // 不引入另一套全局监听；只看当前是否按住，不记录点击地点或历史。
+        left = max(left, (pressedMouseButtons & 1) != 0 ? 0.9 : 0)
+        right = max(right, (pressedMouseButtons & 2) != 0 ? 0.9 : 0)
 
         guard abs(yaw) > 0.005 || abs(pitch) > 0.005 || left > 0.005 || right > 0.005 else {
             return nil
