@@ -294,34 +294,34 @@ struct TimeInsightsStatsView: View {
                         selectedApp = usage
                     } label: {
                         HStack(alignment: .center, spacing: 10) {
-                        TimeInsightsAppIcon(bundleID: usage.bundleID)
-                            .frame(width: 28, height: 28)
-                        VStack(alignment: .leading, spacing: 5) {
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(usage.appName)
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(.panelPrimary)
-                                        .lineLimit(1)
-                                        .truncationMode(.middle)
-                                    Text(usage.category.title)
-                                        .font(.system(size: 11))
+                            TimeInsightsAppIcon(bundleID: usage.bundleID)
+                                .frame(width: 28, height: 28)
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(usage.appName)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(.panelPrimary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                        Text(usage.category.title)
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(.panelSecondary)
+                                    }
+                                    .layoutPriority(1)
+                                    Spacer(minLength: 4)
+                                    Text(TimeInsightsFormat.compactDuration(usage.active))
+                                        .font(.system(size: 12, weight: .medium))
                                         .foregroundStyle(.panelSecondary)
+                                        .monospacedDigit()
+                                        .fixedSize()
                                 }
-                                .layoutPriority(1)
-                                Spacer(minLength: 4)
-                                Text(TimeInsightsFormat.compactDuration(usage.active))
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(.panelSecondary)
-                                    .monospacedDigit()
-                                    .fixedSize()
+                                TimeInsightsShareBar(
+                                    fraction: longest > 0 ? usage.active / longest : 0,
+                                    colorHex: usage.category.colorHex
+                                )
                             }
-                            TimeInsightsShareBar(
-                                fraction: longest > 0 ? usage.active / longest : 0,
-                                colorHex: usage.category.colorHex
-                            )
                         }
-                    }
                         .accessibilityElement(children: .combine)
                     }
                     .buttonStyle(.plain)
