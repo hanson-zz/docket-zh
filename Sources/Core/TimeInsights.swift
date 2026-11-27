@@ -878,7 +878,7 @@ public enum TimeInsightsTitlePrivacy {
         guard var value = title?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
         value = value.replacingOccurrences(of: "[\r\n\t]+", with: " ", options: .regularExpression)
         // 有些 App 会把完整网址放进窗口标题；先抹掉网址再做其它脱敏。
-        value = value.replacingOccurrences(of: #"(?i)https?://[^\\s]+"#,
+        value = value.replacingOccurrences(of: #"(?i)https?://[^\s]+"#,
                                            with: "[网址]", options: .regularExpression)
         value = value.replacingOccurrences(
             of: #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#,
