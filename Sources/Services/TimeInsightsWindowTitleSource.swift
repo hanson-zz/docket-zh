@@ -9,7 +9,9 @@ struct NativeTimeInsightsWindowTitleSource: TimeInsightsWindowTitleSource {
 
     /// 只由用户点击设置页的「授权辅助功能」按钮触发，不在启动时弹窗。
     static func requestAccessibilityPermission() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        // Swift 6 严格并发检查将 C 全局 kAXTrustedCheckOptionPrompt 视为共享可变状态。
+        // 使用该公开常量的 CFString 值，避免访问非隔离的全局 var。
+        let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)
     }
 
