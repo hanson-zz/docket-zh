@@ -13,7 +13,7 @@ or use it in place of the Dock.
 
 [![macOS 26+](https://img.shields.io/badge/macOS-26%2B-000000?logo=apple&logoColor=white)](#build-from-source)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](project.yml)
-[![License: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
+[![Licensing](https://img.shields.io/badge/license-see%20LICENSING.md-blue)](LICENSING.md)
 
 <br>
 
@@ -22,6 +22,10 @@ or use it in place of the Dock.
 </div>
 
 ---
+
+> **Repository visibility notice (2026-11-27):** Dockling is moving toward **private development + a public product/support repository**. The public-facing repository will host product information, user feedback, issue reports, release announcements, and updates—not the complete source for new proprietary releases.
+>
+> **Important:** The current `docket-zh` repository is still public and includes source files and Git history. Until the split is completed, it must not be presented as a source-free showcase. Previously distributed MIT-licensed code and copies remain governed by their original licenses; making a repository private cannot revoke those rights. See [Licensing](LICENSING.md).
 
 ## What Dockling does
 
