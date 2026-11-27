@@ -174,7 +174,9 @@ final class DesktopPetController: NSObject {
     }
 
     private func typingPreviewStrength(at now: Date) -> Double {
-        guard let typingPreviewUntil, now < typingPreviewUntil else { return 0 }
+        guard !IsSecureEventInputEnabled(), Self.motion == .full,
+              !ProcessInfo.processInfo.isLowPowerModeEnabled, !dragging, !screensAsleep,
+              let typingPreviewUntil, now < typingPreviewUntil else { return 0 }
         return min(1, max(0, typingPreviewUntil.timeIntervalSince(now) / 0.35))
     }
 
@@ -810,8 +812,12 @@ final class DesktopPetController: NSObject {
         // 捕猎表情仍然只允许在正面状态下触发。
         // 密码输入由系统 Secure Event Input 标志保护：停用打字节奏，不显示动作。
         // 不检查窗口内容，不申请新权限。只有鼠标掠过功能仍按原方式工作。
-        let safeTyping = settings.typingCompanion && !IsSecureEventInputEnabled()
-        if safeTyping || (livelyShown && settings.mouseHunt) {
+        let safeTyping = settings.typingCompanion && settings.livelyFace && !dragging
+            && Self.motion == .full && !ProcessInfo.processInfo.isLowPowerModeEnabled
+            && !IsSecureEventInputEnabled()
+        if !safeTyping { typingPreviewUntil = nil }
+        if safeTyping || (livelyShown && settings.mouseHunt && !dragging
+            && Self.motion == .full && !ProcessInfo.processInfo.isLowPowerModeEnabled) {
             let hunted = companionMotion.observe(
                 now: now, pointer: NSEvent.mouseLocation, center: drawnCenter,
                 scale: settings.size.scale,
@@ -974,7 +980,7 @@ final class DesktopPetController: NSObject {
         }
         // 办公形态：连续打字约 3 秒，正面小熊猫换成抱着小电脑那张；停手约 5 秒收起。
         // 只换正面坐姿那几张，正在演表情、拖动、其他吉祥物、缺图时照旧。
-        if !dragging, mascot == .panda, settings.livelyFace, settings.typingCompanion,
+        if !dragging, !IsSecureEventInputEnabled(), mascot == .panda, settings.livelyFace, settings.typingCompanion,
            Self.motion == .full, !ProcessInfo.processInfo.isLowPowerModeEnabled,
            pose.image.hasPrefix(DesktopPetFace.prefix), face.activeEmote(now: now) == nil,
            companionMotion.laptop(at: now) || typingPreviewStrength(at: now) > 0,
@@ -996,7 +1002,7 @@ final class DesktopPetController: NSObject {
             articulation = DesktopPetArticulationLogic.pose(
                 pointer: NSEvent.mouseLocation, center: drawnCenter, scale: settings.size.scale,
                 headTracking: settings.headParallax && face.gaze != .center,
-                typingStrength: settings.typingCompanion
+                typingStrength: settings.typingCompanion && !IsSecureEventInputEnabled()
                     ? max(companionMotion.typingStrength(at: now), typingPreviewStrength(at: now)) : 0,
                 now: now, reduceMotion: Self.motion == .reduced,
                 lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled,
@@ -1005,7 +1011,7 @@ final class DesktopPetController: NSObject {
             articulation = nil
         }
         // 正面小熊猫打字时轻微点头；已在演点击、摸头等表情时不叠，避免动作冲突.
-        if !dragging, settings.livelyFace, settings.typingCompanion,
+        if !dragging, !IsSecureEventInputEnabled(), settings.livelyFace, settings.typingCompanion,
            face.activeEmote(now: now) == nil,
            DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image) {
             pose = companionMotion.decorate(pose, now: now, motion: Self.motion,
