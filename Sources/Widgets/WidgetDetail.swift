@@ -897,6 +897,9 @@ enum WidgetDetail {
         case .shibaMatch: CGFloat(ShibaMatch.panelWidth)
         // 卜卦：和同组的扫雷一样 340，内容按卡片真实内容宽排（Divination.panelContentWidth）。
         case .divination: CGFloat(Divination.panelWidth)
+        // 时间洞察：精简为今日活跃主数字、分类分布条与应用 Top 3，标准面板 440；
+        // 完整 24 小时图表在独立统计窗口，高度继续交给 DetailPanelFit 控制。
+        case .timeInsights: TimeInsightsLayout.wideWidth
         // 相册按第二批效果图改成 320；标准、宽幅两套面板一样宽，换样式面板不跳。
         case .photos: 320
         // 最近截图改版：搜索、筛选、多选和标注，和下载一样 320。

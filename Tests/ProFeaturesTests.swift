@@ -107,7 +107,7 @@ final class ProFeaturesTests: XCTestCase {
         let kinds = Set(WidgetCatalog.entries.filter(\.selfContained).map(\.kind))
         let pro = kinds.filter(ProFeatures.isProKind)
         XCTAssertEqual(pro.count, 14, "Codex 用量 2026-10-29 起不再整种 Pro")
-        XCTAssertEqual(kinds.count - pro.count, 49, "官网和 README 写的免费小组件数量（柴犬翻翻乐是第 49 个）")
+        XCTAssertEqual(kinds.count - pro.count, 50, "官网和 README 写的免费小组件数量（柴犬翻翻乐是第 49 个，时间洞察是第 50 个）")
     }
 
     func testCodexSimpleIsFreeAndDetailedIsPro() {

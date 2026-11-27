@@ -149,6 +149,8 @@ struct SettingsView: View {
         ("Shelf", tr("扩展栏"), "rectangle.bottomthird.inset.filled"),
         ("Widgets", tr("小组件"), "square.grid.2x2"),
         ("WidgetManager", tr("小组件管理"), "slider.horizontal.3"),
+        // 时间洞察：只放采集权限、隐私和配置，统计从扩展栏卡片和面板进。
+        (TimeInsightsSettingsTab.id, tr("时间洞察"), "clock"),
         ("Layouts", tr("布局"), "square.stack.3d.up"),
         // AI 和快捷键各自一页，不再堆在“通用”里。
         ("AI", "AI", "sparkles"),
@@ -197,6 +199,7 @@ struct SettingsView: View {
         switch selection.current {
         case "Widgets": widgets
         case "WidgetManager": widgetManager
+        case TimeInsightsSettingsTab.id: TimeInsightsSettingsPane()
         case "Layouts": layouts
         case "AI": ai
         case "Shortcuts": shortcuts
