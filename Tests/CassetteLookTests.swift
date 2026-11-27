@@ -254,7 +254,9 @@ final class CassetteLookTests: XCTestCase {
         XCTAssertTrue(CassetteDeck.lines(title: "a", artist: "b", upNext: next, limit: 0).isEmpty)
         XCTAssertEqual(CassetteDeck.lines(title: "a", artist: "", upNext: next, limit: 2, startNumber: 4)
             .map(\.text), ["a", "04 晚风轻拂 - 林间乐队"])
-        XCTAssertEqual(CassetteDeck.side, "A", "正在放的是 A 面")
+        XCTAssertEqual(CassetteDeck.side([CassetteDeck.Line(text: "a", current: true)]), "A", "只有正在放的是 A 面")
+        XCTAssertEqual(CassetteDeck.side([CassetteDeck.Line(text: "a", current: true),
+                                          CassetteDeck.Line(text: "01 b", current: false)]), "B", "列着接下来写 B 面")
         for line in panel {
             XCTAssertFalse(line.text.contains("\u{2014}"), "不用长破折号")
         }

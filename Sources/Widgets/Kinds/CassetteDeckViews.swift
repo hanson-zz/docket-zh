@@ -213,11 +213,11 @@ struct DeckTape: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    /// 转轮窗：左边 A 面小方块，两个转轮。
+    /// 转轮窗：左边 A / B 面小方块，两个转轮。
     private func reelWindow(height: CGFloat) -> some View {
         let window = RoundedRectangle(cornerRadius: compact ? 4 : 7, style: .continuous)
         return HStack(spacing: compact ? 4 : 8) {
-            Text(verbatim: CassetteDeck.side)
+            Text(verbatim: CassetteDeck.side(lines))
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundStyle(DeckPalette.highlightInk)
                 .frame(width: compact ? 16 : 22, height: compact ? 16 : 22)

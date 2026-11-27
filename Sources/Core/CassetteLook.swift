@@ -260,9 +260,10 @@ public enum CassetteDeck {
     public static let panelLines = 3
     /// 卡片上标签几行（只有正在放的）。
     public static let cardLines = 1
-    /// 磁带左边小方块上的面：正在放的这一面就是 A 面（和面板标题旁的「A 面」一致），
-    /// 「接下来」才是 B 面，所以这里一直写 A。
-    public static let side = "A"
+    /// 磁带左边小方块上的面：标签上列着「接下来」（面板的 B 面）时写 B，只有正在放的一首时写 A。
+    public static func side(_ lines: [Line]) -> String {
+        lines.contains { !$0.current } ? "B" : "A"
+    }
 
     public struct Entry: Equatable, Sendable {
         public var title: String
