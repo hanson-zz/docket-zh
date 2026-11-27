@@ -308,18 +308,19 @@ public struct TimeInsightsPeriod: Equatable, Sendable {
 // MARK: 面板宽度
 
 public enum TimeInsightsLayout {
-    /// 主面板的宽度：屏幕够宽时 680，按内容加宽；窄屏退到 340，内容排成单列。
-    public static let wideWidth: CGFloat = 680
+    /// Dock 展开面板用 440pt 紧凑布局；极窄屏退到 340pt，指标转为纵排。
+    /// 24 小时柱状图留给独立的完整统计窗口，不让 Dock 面板过宽。
+    public static let wideWidth: CGFloat = 440
     public static let narrowWidth: CGFloat = 340
 
-    /// 屏幕可见区域宽 `screenWidth` 时面板多宽：两边各留 40 还放得下才用宽版。
+    /// 屏幕可见区域宽 `screenWidth` 时面板多宽：两边各留 40 才使用标准版。
     public static func panelWidth(screenWidth: CGFloat?) -> CGFloat {
         guard let screenWidth else { return wideWidth }
         return screenWidth >= wideWidth + 80 ? wideWidth : narrowWidth
     }
 
-    /// 内容区宽度够不够排两三列。
-    public static func isWide(contentWidth: CGFloat) -> Bool { contentWidth >= 560 }
+    /// 内容区宽 380pt 及以上时主数字与辅助指标并排，否则纵排。
+    public static func isWide(contentWidth: CGFloat) -> Bool { contentWidth >= 380 }
 }
 
 // MARK: 完整导出（Pro）
