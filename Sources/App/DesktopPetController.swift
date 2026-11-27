@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import Observation
 import QuartzCore
 import SwiftUI
@@ -156,7 +157,8 @@ final class DesktopPetController: NSObject {
         guard settings.enabled, settings.livelyFace, settings.typingCompanion,
               let track, shown, !dragging, var current = state,
               track.style == .stroll || track.style == .sit,
-              Self.motion == .full, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
+              Self.motion == .full, !ProcessInfo.processInfo.isLowPowerModeEnabled,
+              !IsSecureEventInputEnabled() else { return }
         let now = Date()
         switch current.activity {
         case .idle, .sit, .edgePause, .walk, .sleep, .curl, .peek, .stretch, .yawn:
@@ -516,7 +518,9 @@ final class DesktopPetController: NSObject {
             let typingActive = !lowPower && Self.motion == .full && livelyShown
                 && settings.typingCompanion
                 && (companionMotion.needsSmooth(at: now) || typingPreviewStrength(at: now) > 0)
-            let rate = typingActive ? max(baseRate, 20) : baseRate
+            let mouseActive = !lowPower && Self.motion == .full && livelyShown
+                && settings.mouseButtonCompanion && (NSEvent.pressedMouseButtons & 0b11) != 0
+            let rate = typingActive || mouseActive ? max(baseRate, 20) : baseRate
             guard restingTimer == nil || restingRate != rate else { return }
             restingTimer?.invalidate()
             restingRate = rate
@@ -804,12 +808,15 @@ final class DesktopPetController: NSObject {
         // 不启动 KuroCat 的全局 EventTap/HID 监听（也不增加任何权限）。
         // 打字活动与当前站姿无关：散步中也先记下节奏，走回正面时可自然接上。
         // 捕猎表情仍然只允许在正面状态下触发。
-        if settings.typingCompanion || (livelyShown && settings.mouseHunt) {
+        // 密码输入由系统 Secure Event Input 标志保护：停用打字节奏，不显示动作。
+        // 不检查窗口内容，不申请新权限。只有鼠标掠过功能仍按原方式工作。
+        let safeTyping = settings.typingCompanion && !IsSecureEventInputEnabled()
+        if safeTyping || (livelyShown && settings.mouseHunt) {
             let hunted = companionMotion.observe(
                 now: now, pointer: NSEvent.mouseLocation, center: drawnCenter,
                 scale: settings.size.scale,
-                keyIdle: settings.typingCompanion ? Self.keyIdleSeconds() : nil,
-                typingEnabled: settings.typingCompanion, huntEnabled: livelyShown && settings.mouseHunt,
+                keyIdle: safeTyping ? Self.keyIdleSeconds() : nil,
+                typingEnabled: safeTyping, huntEnabled: livelyShown && settings.mouseHunt,
                 reduceMotion: Self.motion == .reduced)
             if hunted && face.activeEmote(now: now) == nil { face.play(.surprise, now: now) }
         } else {
@@ -819,7 +826,7 @@ final class DesktopPetController: NSObject {
         if petHovering || barHovering || dragging || pressPoint != nil { lastPet = now }
         // 用户正在输入时，小熊猫从散步/趴睡轻柔地回到正面坐姿陪伴打字；
         // 不打断拖动、救回、文件叼送、欢呼等已有优先级更高的动作。
-        if settings.typingCompanion, settings.livelyFace, Self.motion == .full,
+        if safeTyping, settings.livelyFace, Self.motion == .full,
            !ProcessInfo.processInfo.isLowPowerModeEnabled, !dragging,
            (track.style == .stroll || track.style == .sit),
            companionMotion.needsSmooth(at: now),
@@ -981,7 +988,8 @@ final class DesktopPetController: NSObject {
         // 2.5D 头部微倾与左右前爪交替轻点，只对正面 lively PNG 生效。
         // 缺素材、拖动、睡觉、其他吉祥物时回退整张原图。
         let articulation: DesktopPetArticulation?
-        if !dragging, settings.livelyFace, settings.headParallax || settings.typingCompanion,
+        if !dragging, settings.livelyFace,
+           settings.headParallax || settings.typingCompanion || settings.mouseButtonCompanion,
            DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image),
            pose.image.hasPrefix("pet-sprite-lively-"), pose.image != Self.laptopImage,
            face.activeEmote(now: now) == nil {
@@ -991,7 +999,8 @@ final class DesktopPetController: NSObject {
                 typingStrength: settings.typingCompanion
                     ? max(companionMotion.typingStrength(at: now), typingPreviewStrength(at: now)) : 0,
                 now: now, reduceMotion: Self.motion == .reduced,
-                lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
+                lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled,
+                pressedMouseButtons: settings.mouseButtonCompanion ? NSEvent.pressedMouseButtons : 0)
         } else {
             articulation = nil
         }
