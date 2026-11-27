@@ -676,8 +676,8 @@ public enum TimeInsightsProFeature: String, CaseIterable, Sendable {
         }
     }
 
-    /// 这一项现在接通了没有。阶段 A 全部没有。
-    public var isConnected: Bool { false }
+    /// 周/月趋势现已接入本机数据；其他 Pro 功能仍需单独开发与授权。
+    public var isConnected: Bool { self == .trends }
 
     /// 要不要用户单独同意采集（和买没买 Pro 无关）。
     public var needsConsent: Bool {
