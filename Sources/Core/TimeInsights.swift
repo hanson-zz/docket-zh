@@ -169,6 +169,38 @@ public struct TimeInsightsRule: Codable, Equatable, Hashable, Sendable {
     }
 }
 
+/// 规则编辑页的输入检查，拒绝空关键词、无效域名和跨行的模式。
+public enum TimeInsightsRuleInput {
+    public enum Kind: String, CaseIterable, Sendable {
+        case app, title, domain
+    }
+
+    public static func make(kind: Kind, text: String, category: TimeInsightsCategory) -> TimeInsightsRule? {
+        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+        switch kind {
+        case .app:
+            guard value.count <= 200, value.contains("."), !value.hasPrefix("."),
+                  !value.hasSuffix("."), !value.contains(".."),
+                  value.range(of: #"^[A-Za-z0-9.-]+$"#, options: .regularExpression) != nil
+            else { return nil }
+            return TimeInsightsRule(.bundleID(value), category: category)
+        case .title:
+            guard value.count >= 2 && value.count <= 80,
+                  value.rangeOfCharacter(from: .newlines) == nil else { return nil }
+            return TimeInsightsRule(.titleKeyword(value), category: category)
+        case .domain:
+            let host = value.lowercased()
+            guard host.count <= 253, host.contains("."), !host.hasPrefix("."),
+                  !host.hasSuffix("."), !host.contains(".."),
+                  host.range(of: #"^[a-z0-9.-]+$"#, options: .regularExpression) != nil,
+                  host.split(separator: ".").allSatisfy({ !$0.hasPrefix("-") && !$0.hasSuffix("-") })
+            else { return nil }
+            return TimeInsightsRule(.domain(host), category: category)
+        }
+    }
+}
+
 public enum TimeInsightsClassifier {
     /// 内置的少量规则：只收确定的 bundle ID。浏览器、终端以外的通用工具、
     /// 认不出的 App 都不在这里，保持未分类。
