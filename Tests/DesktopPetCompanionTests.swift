@@ -4,6 +4,53 @@ import XCTest
 
 /// 桌面伙伴 2.0：只检测系统输入的“活动时刻”，不读取任何按键内容。
 final class DesktopPetCompanionTests: XCTestCase {
+    func testMousePawsHoldReleaseAndDisable() {
+        var paws = DesktopPetMousePaws()
+        let start = Date(timeIntervalSinceReferenceDate: 100)
+        paws.update(buttons: 3, now: start, enabled: true)
+        XCTAssertTrue(paws.needsSmooth)
+        for i in 1...20 {
+            paws.update(buttons: 3, now: start.addingTimeInterval(Double(i) / 20), enabled: true)
+        }
+        XCTAssertEqual(paws.left, 0.9)
+        XCTAssertEqual(paws.right, 0.9)
+        XCTAssertFalse(paws.needsSmooth, "长按稳定后不应维持高频刷新")
+        paws.update(buttons: 2, now: start.addingTimeInterval(1.05), enabled: true)
+        XCTAssertGreaterThan(paws.left, 0)
+        XCTAssertLessThan(paws.left, 0.9)
+        XCTAssertEqual(paws.right, 0.9)
+        for i in 22...50 {
+            paws.update(buttons: 0, now: start.addingTimeInterval(Double(i) / 20), enabled: true)
+        }
+        XCTAssertEqual(paws.left, 0)
+        XCTAssertEqual(paws.right, 0)
+        XCTAssertFalse(paws.needsSmooth)
+        paws.update(buttons: 3, now: start.addingTimeInterval(2.55), enabled: true)
+        paws.update(buttons: 3, now: start.addingTimeInterval(2.6), enabled: true)
+        paws.update(buttons: 3, now: start.addingTimeInterval(2.65), enabled: false)
+        XCTAssertEqual(paws, DesktopPetMousePaws(), "禁用、表情、拖动或睡眠立即归零")
+    }
+
+    func testTypingDisabledClearsLaptopAndCannotResumeOldActivity() {
+        var state = DesktopPetCompanionState()
+        let start = Date(timeIntervalSinceReferenceDate: 100)
+        for i in 0...40 {
+            _ = state.observe(now: start.addingTimeInterval(Double(i) / 10), pointer: nil,
+                              center: .zero, scale: 1, keyIdle: 0.05,
+                              typingEnabled: true, huntEnabled: false, reduceMotion: false)
+        }
+        XCTAssertTrue(state.laptop(at: start.addingTimeInterval(4)))
+        _ = state.observe(now: start.addingTimeInterval(4.1), pointer: nil,
+                          center: .zero, scale: 1, keyIdle: nil,
+                          typingEnabled: false, huntEnabled: false, reduceMotion: false)
+        XCTAssertEqual(state.typingStrength(at: start.addingTimeInterval(4.1)), 0)
+        XCTAssertFalse(state.laptop(at: start.addingTimeInterval(4.1)))
+        _ = state.observe(now: start.addingTimeInterval(4.2), pointer: nil,
+                          center: .zero, scale: 1, keyIdle: 0.05,
+                          typingEnabled: true, huntEnabled: false, reduceMotion: false)
+        XCTAssertFalse(state.laptop(at: start.addingTimeInterval(4.2)))
+    }
+
     private let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000)
     private let center = CGPoint(x: 500, y: 300)
 

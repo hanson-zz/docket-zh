@@ -128,6 +128,7 @@ final class DesktopPetController: NSObject {
     private var face = DesktopPetFaceState()
     /// 桌面伙伴 2.0：只在内存中保留短暂输入节奏，无单独监听器。
     private var companionMotion = DesktopPetCompanionState()
+    private var mousePaws = DesktopPetMousePaws()
     /// 设置页的 3 秒动画预览：无需真实键盘事件，便于区分输入检测与绘制问题。
     private var typingPreviewUntil: Date?
     private var faceBase = ""
@@ -294,6 +295,9 @@ final class DesktopPetController: NSObject {
             MainActor.assumeIsolated {
                 let pet = DesktopPetController.shared
                 pet.screensAsleep = true
+                pet.companionMotion.reset()
+                pet.mousePaws = DesktopPetMousePaws()
+                pet.typingPreviewUntil = nil
                 pet.stopClocks()
                 pet.feedAway(.blocked(.displayOff))
             }
@@ -519,9 +523,9 @@ final class DesktopPetController: NSObject {
             let baseRate = DesktopPetBrain.tickRate(state, style: style, lowPower: lowPower)
             let typingActive = !lowPower && Self.motion == .full && livelyShown
                 && settings.typingCompanion
-                && (companionMotion.needsSmooth(at: now) || typingPreviewStrength(at: now) > 0)
+                && (companionMotion.typingStrength(at: now) > 0 || typingPreviewStrength(at: now) > 0)
             let mouseActive = !lowPower && Self.motion == .full && livelyShown
-                && settings.mouseButtonCompanion && (NSEvent.pressedMouseButtons & 0b11) != 0
+                && settings.mouseButtonCompanion && mousePaws.needsSmooth
             let rate = typingActive || mouseActive ? max(baseRate, 20) : baseRate
             guard restingTimer == nil || restingRate != rate else { return }
             restingTimer?.invalidate()
@@ -838,7 +842,7 @@ final class DesktopPetController: NSObject {
            companionMotion.needsSmooth(at: now),
            FocusMascot.of(TimerStateProvider.shared.state, unlocked: ProAccess.isUnlocked) == .panda {
             switch current.activity {
-            case .walk, .curl, .sleep:
+            case .walk:
                 current.activity = .idle(until: now.addingTimeInterval(3))
                 current.since = now
             case .idle(let until) where until < now.addingTimeInterval(1):
@@ -993,6 +997,13 @@ final class DesktopPetController: NSObject {
         }
         // 2.5D 头部微倾与左右前爪交替轻点，只对正面 lively PNG 生效。
         // 缺素材、拖动、睡觉、其他吉祥物时回退整张原图。
+        let mouseAllowed = !dragging && settings.livelyFace && settings.mouseButtonCompanion
+            && Self.motion == .full && !ProcessInfo.processInfo.isLowPowerModeEnabled
+            && !screensAsleep && face.activeEmote(now: now) == nil
+            && DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image)
+            && pose.image.hasPrefix(DesktopPetFace.prefix) && pose.image != Self.laptopImage
+        mousePaws.update(buttons: mouseAllowed ? NSEvent.pressedMouseButtons : 0,
+                         now: now, enabled: mouseAllowed)
         let articulation: DesktopPetArticulation?
         if !dragging, settings.livelyFace,
            settings.headParallax || settings.typingCompanion || settings.mouseButtonCompanion,
@@ -1006,7 +1017,7 @@ final class DesktopPetController: NSObject {
                     ? max(companionMotion.typingStrength(at: now), typingPreviewStrength(at: now)) : 0,
                 now: now, reduceMotion: Self.motion == .reduced,
                 lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled,
-                pressedMouseButtons: settings.mouseButtonCompanion ? NSEvent.pressedMouseButtons : 0)
+                mousePaws: mousePaws)
         } else {
             articulation = nil
         }
