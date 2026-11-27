@@ -91,6 +91,38 @@ final class TimeInsightsStatsTests: XCTestCase {
         XCTAssertEqual(period.categories.map(\.category), [.development])
     }
 
+    func testActivitySegmentsUseGlobalDeDupAndDoNotExposeTitles() {
+        let start = date(25, 9)
+        let xcode = ActivitySession(id: "code", start: start, end: start.addingTimeInterval(30 * 60),
+                                    bundleID: "code", appName: "Xcode", windowTitle: "Private document",
+                                    domain: "internal.test", classification: .development)
+        let overlapping = ActivitySession(id: "web", start: start.addingTimeInterval(20 * 60),
+                                          end: start.addingTimeInterval(50 * 60),
+                                          bundleID: "web", appName: "Browser", classification: .uncategorized)
+        let idle = ActivitySession(id: "idle", start: start.addingTimeInterval(50 * 60),
+                                   end: start.addingTimeInterval(60 * 60),
+                                   bundleID: "code", appName: "Xcode", classification: .development,
+                                   source: .idleForeground)
+        let later = ActivitySession(id: "later", start: start.addingTimeInterval(60 * 60),
+                                    end: start.addingTimeInterval(80 * 60),
+                                    bundleID: "code", appName: "Xcode", classification: .development)
+        let interval = TimeInsightsMath.dayInterval(start, calendar: shanghai)
+        let all = [overlapping, xcode, idle, later, xcode]
+
+        let codeRows = TimeInsightsActivityDetail.recentSessions(all, bundleID: "code", interval: interval)
+        XCTAssertEqual(codeRows.map(\.id), ["later", "code"])
+        XCTAssertEqual(codeRows.reduce(0) { $0 + $1.duration }, 50 * 60)
+        XCTAssertNil(codeRows.last?.windowTitle)
+        XCTAssertNil(codeRows.last?.domain)
+        XCTAssertEqual(TimeInsightsActivityDetail.recentSessions(all, bundleID: "code", interval: interval, limit: 1).count, 1)
+
+        let webRows = TimeInsightsActivityDetail.recentSessions(all, bundleID: "web", interval: interval)
+        XCTAssertEqual(webRows.count, 1)
+        XCTAssertEqual(webRows[0].duration, 20 * 60, "重叠部分不得再计入浏览器")
+        XCTAssertEqual(TimeInsightsActivityDetail.recentSessions(all, bundleID: TimeInsightsDefaults.ownBundleID,
+                                                                 interval: interval), [])
+    }
+
     // MARK: 较昨日和占比
 
     func testComparedWithYesterdayOnlyWithRealData() {
