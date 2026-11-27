@@ -132,4 +132,23 @@ final class DesktopPetCompanionTests: XCTestCase {
         XCTAssertTrue(restored.mouseHunt)
     }
 
+
+    func testLaptopOpensAfterSustainedTypingAndClosesAfterPause() {
+        var state = DesktopPetCompanionState()
+        for i in 0..<30 { _ = sample(&state, offset: Double(i) * 0.1, keyIdle: 0.05, typing: true) }
+        XCTAssertFalse(state.laptop(at: t0.addingTimeInterval(2.9)), "不到 3 秒不拿电脑")
+        for i in 30..<35 { _ = sample(&state, offset: Double(i) * 0.1, keyIdle: 0.05, typing: true) }
+        XCTAssertTrue(state.laptop(at: t0.addingTimeInterval(3.4)), "连续打字 3 秒拿出电脑")
+        XCTAssertTrue(state.laptop(at: t0.addingTimeInterval(8)), "停手 5 秒内保持")
+        _ = sample(&state, offset: 9, keyIdle: 6, typing: true)
+        XCTAssertFalse(state.laptop(at: t0.addingTimeInterval(9)), "停手超过 5 秒收起")
+    }
+
+    func testLaptopRunRestartsAfterGap() {
+        var state = DesktopPetCompanionState()
+        _ = sample(&state, offset: 0, keyIdle: 0.05, typing: true)
+        _ = sample(&state, offset: 2, keyIdle: 0.05, typing: true)
+        _ = sample(&state, offset: 3.2, keyIdle: 0.05, typing: true)
+        XCTAssertFalse(state.laptop(at: t0.addingTimeInterval(3.2)), "中间停顿超过 1.5 秒重新计时")
+    }
 }

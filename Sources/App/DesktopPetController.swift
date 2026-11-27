@@ -144,6 +144,8 @@ final class DesktopPetController: NSObject {
 
     /// 窗口边长（中号）：放得下最宽的跑步帧压扁、拖着晃的时候。
     static let windowSide: CGFloat = 132
+    /// 办公形态那张图（抱着小电脑），和 lively-center 同尺寸同锚点。
+    static let laptopImage = "pet-sprite-lively-laptop"
 
     private override init() { super.init() }
 
@@ -963,6 +965,15 @@ final class DesktopPetController: NSObject {
                                           drowsy: DesktopPetFace.drowsy(userIdle: lastIdle, night: lastNight),
                                           motion: Self.motion, exists: { DesktopPetArt.exists($0) })
         }
+        // 办公形态：连续打字约 3 秒，正面小熊猫换成抱着小电脑那张；停手约 5 秒收起。
+        // 只换正面坐姿那几张，正在演表情、拖动、其他吉祥物、缺图时照旧。
+        if !dragging, mascot == .panda, settings.livelyFace, settings.typingCompanion,
+           Self.motion == .full, !ProcessInfo.processInfo.isLowPowerModeEnabled,
+           pose.image.hasPrefix(DesktopPetFace.prefix), face.activeEmote(now: now) == nil,
+           companionMotion.laptop(at: now) || typingPreviewStrength(at: now) > 0,
+           DesktopPetArt.exists(Self.laptopImage) {
+            pose.image = Self.laptopImage
+        }
         if mascot != .panda {
             let skinned = DesktopPetSkin.apply(pose, mascot: mascot)
             if DesktopPetArt.image(skinned.image) != nil { pose = skinned }
@@ -972,7 +983,7 @@ final class DesktopPetController: NSObject {
         let articulation: DesktopPetArticulation?
         if !dragging, settings.livelyFace, settings.headParallax || settings.typingCompanion,
            DesktopPetFace.applies(enabled: true, mascot: mascot, style: track.style, image: brain.image),
-           pose.image.hasPrefix("pet-sprite-lively-"),
+           pose.image.hasPrefix("pet-sprite-lively-"), pose.image != Self.laptopImage,
            face.activeEmote(now: now) == nil {
             articulation = DesktopPetArticulationLogic.pose(
                 pointer: NSEvent.mouseLocation, center: drawnCenter, scale: settings.size.scale,

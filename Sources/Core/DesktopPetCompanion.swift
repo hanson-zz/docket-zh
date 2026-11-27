@@ -11,12 +11,19 @@ public struct DesktopPetCompanionState: Sendable {
     private var previousPointer: CGPoint?
     private var previousPointerAt: Date?
     private var lastHuntAt: Date?
+    /// 办公形态：这一段连续打字从什么时候开始、电脑是不是已经掀开。只在内存里。
+    private var typingRunStart: Date?
+    private var laptopOpen = false
 
     public static let typingWindow: TimeInterval = 1.0
     public static let keyFreshWindow: TimeInterval = 0.5
     public static let huntCooldown: TimeInterval = 7
     public static let huntReach: Double = 240
     public static let huntSpeed: Double = 1050
+    /// 连续打字这么久后拿出小电脑；停手这么久后收起。两次按键间隔超过 runGap 算重新开始。
+    public static let laptopAfter: TimeInterval = 3
+    public static let laptopHold: TimeInterval = 5
+    public static let runGap: TimeInterval = 1.5
 
     public init() {}
 
@@ -34,8 +41,20 @@ public struct DesktopPetCompanionState: Sendable {
         }
         if !typingEnabled || reduceMotion {
             lastTypingAt = nil
+            typingRunStart = nil
+            laptopOpen = false
         } else if let keyIdle, keyIdle.isFinite, keyIdle >= 0, keyIdle <= Self.keyFreshWindow {
+            if !laptopOpen, lastTypingAt.map({ now.timeIntervalSince($0) > Self.runGap }) ?? true {
+                typingRunStart = now
+            }
             lastTypingAt = now
+            if let typingRunStart, now.timeIntervalSince(typingRunStart) >= Self.laptopAfter {
+                laptopOpen = true
+            }
+        }
+        if laptopOpen, !laptop(at: now) {
+            laptopOpen = false
+            typingRunStart = nil
         }
 
         guard huntEnabled, !reduceMotion, let pointer,
@@ -59,8 +78,15 @@ public struct DesktopPetCompanionState: Sendable {
         return 1 - age / Self.typingWindow
     }
 
+    /// 办公形态：连续打字约 3 秒后为真，停手约 5 秒后回到假。
+    public func laptop(at now: Date) -> Bool {
+        guard laptopOpen, let lastTypingAt else { return false }
+        let age = now.timeIntervalSince(lastTypingAt)
+        return age >= 0 && age <= Self.laptopHold
+    }
+
     public func needsSmooth(at now: Date) -> Bool {
-        typingStrength(at: now) > 0
+        typingStrength(at: now) > 0 || laptop(at: now)
     }
 
     /// 轻量动效，不改原来的 PNG、脸型、尺寸锚点，也不覆盖已有的点按/摸头表情。
