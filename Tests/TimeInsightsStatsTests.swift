@@ -69,6 +69,28 @@ final class TimeInsightsStatsTests: XCTestCase {
         XCTAssertEqual(slices.reduce(0) { $0 + $1.seconds }, day.active, "堆起来正好是整天的活跃")
     }
 
+    func testAppDetailAggregatesOnlyTheSelectedApplication() {
+        let sessions = [
+            session("x1", date(25, 9), minutes: 20, "xcode", .development),
+            session("x2", date(25, 10), minutes: 30, "xcode", .development),
+            session("other", date(25, 11), minutes: 35, "music", .entertainment),
+        ]
+        let filtered = sessions.filter { $0.bundleID == "xcode" }
+        let day = TimeInsightsDay.make(filtered, day: date(25, 12), calendar: shanghai)
+        XCTAssertEqual(day.active, 50 * 60)
+        XCTAssertEqual(day.apps.count, 1)
+        XCTAssertEqual(day.apps.first?.segments, 2)
+        XCTAssertEqual(day.hourCategories[.development]?[9], 20 * 60)
+        XCTAssertEqual(day.hourCategories[.development]?[10], 30 * 60)
+        XCTAssertNil(day.hourCategories[.entertainment])
+
+        let interval = TimeInsightsPeriod.interval(.week, containing: date(25, 12), calendar: shanghai)
+        let period = TimeInsightsPeriod.make(filtered, interval: interval, calendar: shanghai)
+        XCTAssertEqual(period.active, 50 * 60)
+        XCTAssertEqual(period.apps.map(\.bundleID), ["xcode"])
+        XCTAssertEqual(period.categories.map(\.category), [.development])
+    }
+
     // MARK: 较昨日和占比
 
     func testComparedWithYesterdayOnlyWithRealData() {
