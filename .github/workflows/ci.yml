@@ -328,7 +328,7 @@ jobs:
       # 仅此实验分支：代码编译、扩展检查和测试都通过后打包可解压运行的 Mac App。
       # 不创建 Release、tag，也不上传到正式下载源。ad-hoc 签名只能用于本机测试。
       - name: Package Desktop Panda 2 test build
-        if: github.event_name == 'pull_request' && github.head_ref == 'feature/desktop-panda-companion-2-20261125'
+        if: github.event_name == 'pull_request' && (github.head_ref == 'feature/desktop-panda-companion-2-20261125' || github.head_ref == 'feature/desktop-pet-kurocat-interactions-20261127')
         shell: bash
         run: |
           set -euo pipefail
@@ -347,7 +347,7 @@ jobs:
           echo "Download the \`Dockling-DesktopPet2-Test\` artifact below. It contains the app ZIP and SHA256SUMS." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Desktop Panda 2 test build
-        if: github.event_name == 'pull_request' && github.head_ref == 'feature/desktop-panda-companion-2-20261125'
+        if: github.event_name == 'pull_request' && (github.head_ref == 'feature/desktop-panda-companion-2-20261125' || github.head_ref == 'feature/desktop-pet-kurocat-interactions-20261127')
         uses: actions/upload-artifact@v7
         with:
           name: Dockling-DesktopPet2-Test-${{ github.sha }}
