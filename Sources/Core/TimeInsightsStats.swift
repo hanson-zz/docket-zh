@@ -176,7 +176,8 @@ public enum TimeInsightsActivityDetail {
     /// 最近 `limit` 个有效活跃片段（不含无操作的前台停留）。默认不读取
     /// 窗口标题、域名，且在返回界面前清空这些敏感字段。
     public static func recentSessions(_ sessions: [ActivitySession], bundleID: String,
-                                      interval: DateInterval, limit: Int = 8) -> [ActivitySession] {
+                                      interval: DateInterval, limit: Int = 8,
+                                      includeTitles: Bool = false) -> [ActivitySession] {
         guard limit > 0 else { return [] }
         return matchingSessions(sessions, bundleID: bundleID, interval: interval)
             .filter { $0.source.isActive }
@@ -184,7 +185,9 @@ public enum TimeInsightsActivityDetail {
             .prefix(limit)
             .map { segment in
                 var safe = segment
-                safe.windowTitle = nil
+                // 旧数据库里可能含未脱敏内容：展示之前再次过滤。
+                safe.windowTitle = includeTitles && TimeInsightsTitlePrivacy.allows(bundleID: segment.bundleID)
+                    ? TimeInsightsTitlePrivacy.sanitize(segment.windowTitle) : nil
                 safe.domain = nil
                 return safe
             }
