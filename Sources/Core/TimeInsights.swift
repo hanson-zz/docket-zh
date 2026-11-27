@@ -769,6 +769,57 @@ public struct BrowserTabSample: Equatable, Sendable {
     }
 }
 
+/// 阶段 B 浏览器扩展接入前的纯逻辑隐私闸门。
+/// 原始网址仅在内存中传入，结果只保留域名；目前未连接任何扩展，也不触发采集。
+/// 浏览器标签标题需要第三个独立的 opt-in；现阶段故意永远不接收标题。
+public enum TimeInsightsBrowserSamplePolicy {
+    public static let supportedBrowsers: Set<String> = [
+        "com.apple.Safari", "com.apple.SafariTechnologyPreview",
+        "com.google.Chrome", "com.google.Chrome.beta", "com.google.Chrome.dev", "com.google.Chrome.canary",
+        "com.microsoft.edgemac", "com.microsoft.edgemac.Beta", "com.microsoft.edgemac.Dev",
+        "org.mozilla.firefox", "org.mozilla.firefoxdeveloperedition", "org.mozilla.nightly",
+        "com.brave.Browser", "com.vivaldi.Vivaldi", "com.operasoftware.Opera"
+    ]
+    public static let maximumAge: TimeInterval = 20
+
+    /// 只接受当前前台、刚收到的真实浏览器事件；无需、也不会查询任何后台标签页。
+    /// 这个函数不是通讯连接器，只供后续原生消息桥在收到事件时调用。
+    public static func accept(
+        browserBundleID: String, foregroundBundleID: String?,
+        rawURL: String, isPrivate: Bool, isSensitive: Bool = false,
+        capturedAt: Date, now: Date,
+        settings: TimeInsightsSettings, unlocked: Bool
+    ) -> BrowserTabSample? {
+        guard unlocked, settings.websitesOptIn, !settings.paused,
+              !settings.isExcluded(browserBundleID),
+              foregroundBundleID == browserBundleID,
+              supportedBrowsers.contains(browserBundleID),
+              !isPrivate, !isSensitive,
+              capturedAt <= now,
+              now.timeIntervalSince(capturedAt) <= maximumAge,
+              let url = URLComponents(string: rawURL),
+              url.user == nil, url.password == nil,
+              let domain = TimeInsightsDomain.sanitize(rawURL),
+              domain.count <= 253, domain.contains("."),
+              !domain.hasSuffix(".local")
+        else { return nil }
+
+        // 即使扩展忘了标记登录页，也在 App 端做第二道保护。
+        let sensitiveParts: Set<String> = [
+            "login", "signin", "sign-in", "signup", "sign-up", "register",
+            "password", "forgot-password", "reset-password", "authorize",
+            "oauth", "oauth2", "checkout", "payment", "verify"
+        ]
+        let components = url.path.lowercased().split(separator: "/").map(String.init)
+        guard !components.contains(where: { sensitiveParts.contains($0) }),
+              !["login.", "accounts.", "auth.", "sso."].contains(where: { domain.hasPrefix($0) })
+        else { return nil }
+
+        // 此数据模型有 title 字段，但浏览器标签标题尚无独立授权，必须留空。
+        return BrowserTabSample(browserBundleID: browserBundleID, domain: domain, title: nil)
+    }
+}
+
 /// 浏览器通讯的连接状态。
 public enum BrowserBridgeState: Equatable, Sendable {
     /// 还没有接通任何浏览器扩展（阶段 A 永远是这个）。
@@ -805,15 +856,30 @@ public enum TimeInsightsTitlePrivacy {
         "com.apple.keychainaccess", "com.apple.Passwords"
     ]
 
+    /// 覆盖浏览器、密码管理器的预览版和开发版，避免它们绕过精确 bundle ID 列表。
+    /// 前缀刻意保守：宁可少采标题，也不误采私密或安全窗口。
+    private static let skippedPrefixes: [String] = [
+        "com.apple.safari", "com.google.chrome", "com.microsoft.edgemac",
+        "org.mozilla.firefox", "org.mozilla.nightly", "com.brave.browser",
+        "company.thebrowser.browser", "com.vivaldi.vivaldi", "com.operasoftware.opera",
+        "com.1password.", "com.agilebits.onepassword", "com.bitwarden.",
+        "com.lastpass.", "com.apple.passwords", "com.apple.keychainaccess"
+    ]
+
     public static func allows(bundleID: String) -> Bool {
-        !TimeInsightsDefaults.alwaysSkipped.contains(bundleID)
+        let id = bundleID.lowercased()
+        return !TimeInsightsDefaults.alwaysSkipped.contains(bundleID)
             && !skippedBundleIDs.contains(bundleID)
+            && !skippedPrefixes.contains(where: { id.hasPrefix($0) })
     }
 
     /// 压缩空白、替换邮箱和六位以上数字、最多保留 120 字符。
     public static func sanitize(_ title: String?) -> String? {
         guard var value = title?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
         value = value.replacingOccurrences(of: "[\r\n\t]+", with: " ", options: .regularExpression)
+        // 有些 App 会把完整网址放进窗口标题；先抹掉网址再做其它脱敏。
+        value = value.replacingOccurrences(of: #"(?i)https?://[^\\s]+"#,
+                                           with: "[网址]", options: .regularExpression)
         value = value.replacingOccurrences(
             of: #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#,
             with: "[邮箱]", options: .regularExpression)
