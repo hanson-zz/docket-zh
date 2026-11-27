@@ -325,6 +325,39 @@ jobs:
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # 时间洞察 1.0 的 Debug 测试版：只在这个分支的拉取请求上打包，给真机验证用，
+      # 不是正式发布。ZIP 名和 artifact 名带拉取请求头部的提交 SHA。
+      - name: Package Time Insights test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/time-insights-pro-1'
+        shell: bash
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          dir=$(xcodebuild -project Docket.xcodeproj -scheme Docket -configuration Debug -showBuildSettings 2>/dev/null \
+            | awk -F' = ' '$1 ~ / BUILT_PRODUCTS_DIR$/ { print $2; exit }')
+          app="$dir/Dockling.app"
+          test -d "$app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          mkdir -p dist
+          zipname="Dockling-TimeInsights-Test-${HEAD_SHA:0:8}.zip"
+          # .app 必须用 ditto，不可用 zip -r（会损坏符号链接及可执行权限）。
+          ditto -c -k --keepParent "$app" "dist/$zipname"
+          (cd dist && shasum -a 256 "$zipname" > SHA256SUMS.txt)
+          echo "### Time Insights test package" >> "$GITHUB_STEP_SUMMARY"
+          echo "SHA: ${HEAD_SHA:0:8}; ad-hoc Debug build, for evaluation only." >> "$GITHUB_STEP_SUMMARY"
+          echo "Download the \`Dockling-TimeInsights-Test\` artifact below. It contains the app ZIP and SHA256SUMS." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Time Insights test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/time-insights-pro-1'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dockling-TimeInsights-Test-${{ github.event.pull_request.head.sha }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
       - name: Full xcodebuild log
         if: failure()
         uses: actions/upload-artifact@v7

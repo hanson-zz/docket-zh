@@ -73,6 +73,10 @@ struct WidgetSettingsSections: View {
                 if pair.instance.kind == .divination {
                     DivinationSettingsSection(instance: pair.instance) { change in write(pair.instance, change) }
                 }
+                // 时间洞察的设置是全局的（暂停、空闲判定、排除、清空、导出），不写进卡片配置。
+                if pair.instance.kind == .timeInsights {
+                    TimeInsightsSettingsSection()
+                }
                 if WidgetTint.offersColor(pair.instance.kind) || WidgetTint.offersBackground(pair.instance.kind) {
                     Section {
                         Text("仅修改当前小组件的颜色和背景，不影响其他小组件。")

@@ -12,6 +12,7 @@ public enum WidgetSearch {
         "world": ["world clock", "timezone", "时区"],
         "stopwatch": ["stopwatch", "计时器"],
         "timer": ["timer", "focus", "pomodoro", "番茄钟", "专注", "倒计时"],
+        "time-insights": ["time insights", "screen time", "activity", "usage", "屏幕使用时间", "活跃时间", "时间统计", "应用使用"],
         "progress": ["progress", "进度", "今年", "本月"],
         "countdown": ["countdown", "倒数"],
         "alarm": ["alarm", "闹铃", "起床"],

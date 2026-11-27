@@ -136,6 +136,8 @@ final class WidgetOptionTests: XCTestCase {
             .divination: [],
             // 柴犬翻翻乐：盘、最佳纪录和音效开关由卡片和面板写，设置页不列（ShibaMatch）。
             .shibaMatch: [],
+            // 时间洞察：暂停、空闲判定、排除和清空是全局设置（TimeInsightsSettings），不在卡片配置里。
+            .timeInsights: [],
             .slacker: ["workdays", "start", "end", "holidays", "payday", "income", "more", "font", "tint", "look"],
         ]
 
