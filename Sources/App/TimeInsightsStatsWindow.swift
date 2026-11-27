@@ -33,6 +33,7 @@ struct TimeInsightsStatsView: View {
 
     @State private var tab: TimeInsightsStatsTab = .day
     @State private var offset = 0
+    @State private var selectedApp: TimeInsightsAppUsage?
 
     private var tracker: TimeInsightsTracker { .shared }
     private var unlocked: Bool { licenseUnlocked || supporter }
@@ -125,6 +126,9 @@ struct TimeInsightsStatsView: View {
         }
         .frame(minWidth: 700, minHeight: 480)
         .background(Color(nsColor: .windowBackgroundColor))
+        .sheet(item: $selectedApp) { app in
+            appDetail(app)
+        }
     }
 
     @ViewBuilder
@@ -286,7 +290,10 @@ struct TimeInsightsStatsView: View {
                 TimeInsightsEmptyNote(text: tr("还没有应用记录。"), symbol: "app.dashed")
             } else {
                 ForEach(visible) { usage in
-                    HStack(alignment: .center, spacing: 10) {
+                    Button {
+                        selectedApp = usage
+                    } label: {
+                        HStack(alignment: .center, spacing: 10) {
                         TimeInsightsAppIcon(bundleID: usage.bundleID)
                             .frame(width: 28, height: 28)
                         VStack(alignment: .leading, spacing: 5) {
@@ -315,10 +322,86 @@ struct TimeInsightsStatsView: View {
                             )
                         }
                     }
-                    .accessibilityElement(children: .combine)
+                        .accessibilityElement(children: .combine)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .help(tr("查看该应用的活动分布"))
                 }
             }
         }
+    }
+
+    /// 只用本机真实前台活动数据展示应用级详情；标题、网站等高级字段尚不读取。
+    private func appDetail(_ usage: TimeInsightsAppUsage) -> some View {
+        let interval = intervalForSelection
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
+                    TimeInsightsAppIcon(bundleID: usage.bundleID)
+                        .frame(width: 42, height: 42)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(usage.appName)
+                            .font(.system(size: 21, weight: .bold))
+                            .foregroundStyle(.panelPrimary)
+                        Text("\(usage.category.title) · \(periodTitle)")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.panelSecondary)
+                    }
+                    Spacer()
+                    Button(tr("关闭")) { selectedApp = nil }
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    Text(TimeInsightsFormat.duration(usage.active))
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundStyle(.panelPrimary)
+                        .monospacedDigit()
+                    Text(tr("有效活跃 · 共 \(usage.segments) 段"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.panelSecondary)
+                }
+
+                if tab != .day && !unlocked {
+                    proPlaceholder
+                } else if let sessions = tracker.sessions(overlapping: interval) {
+                    let matching = sessions.filter { $0.bundleID == usage.bundleID }
+                    if tab == .day {
+                        let day = TimeInsightsDay.make(matching, day: date)
+                        TimeInsightsCard(title: tr("该应用的 24 小时分布")) {
+                            if day.active > 0 {
+                                TimeInsightsHourChart(slices: TimeInsightsChart.byCategory(day), height: 155)
+                            } else {
+                                TimeInsightsEmptyNote(text: tr("这一天没有有效活跃记录。"), symbol: "chart.bar")
+                            }
+                        }
+                    } else {
+                        let period = TimeInsightsPeriod.make(matching, interval: interval)
+                        TimeInsightsCard(title: tr("该应用的每日活动")) {
+                            if period.isEmpty {
+                                TimeInsightsEmptyNote(text: tr("这一段时间没有有效活跃记录。"), symbol: "calendar")
+                            } else {
+                                VStack(spacing: 10) {
+                                    ForEach(period.days) { day in
+                                        periodDayRow(day, maximum: period.days.map(\.active).max() ?? 0)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    TimeInsightsEmptyNote(text: tr("本机记录暂时无法读取，请检查隐私与数据设置。"),
+                                          symbol: "exclamationmark.triangle")
+                }
+
+                Text(tr("这里只显示应用级活动时长。网站域名、窗口标题和页面内容尚未接通。"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.panelSecondary)
+            }
+            .padding(24)
+        }
+        .frame(minWidth: 540, minHeight: 365)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private func categoryBreakdown(_ categories: [TimeInsightsCategoryUsage], total: TimeInterval) -> some View {
