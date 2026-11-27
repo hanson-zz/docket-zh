@@ -20,12 +20,14 @@ struct TimeInsightsSettingsPane: View {
 
     @State private var confirmingClear = false
     @State private var message: String? = nil
+    @State private var permissionChecks = 0
 
     var body: some View {
         Form {
             basicSection
             excludedSection
             advancedSection
+            TimeInsightsRulesEditor()
             privacySection
         }
         .formStyle(.grouped)
@@ -97,9 +99,33 @@ struct TimeInsightsSettingsPane: View {
                        isOn: tracker.settings.windowTitlesOptIn) { on in
                 tracker.update { $0.windowTitlesOptIn = on }
             }
+            if unlocked && tracker.settings.windowTitlesOptIn {
+                let _ = permissionChecks
+                HStack(spacing: 8) {
+                    Image(systemName: tracker.accessibilityTrusted ? "checkmark.shield" : "lock.shield")
+                        .foregroundStyle(tracker.accessibilityTrusted ? Color.green : Color.secondary)
+                    Text(tracker.accessibilityTrusted
+                         ? tr("辅助功能已授权，非敏感 App 的标题可以记录")
+                         : tr("尚未获得 macOS 辅助功能权限，不会读取任何窗口标题"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 6)
+                    if !tracker.accessibilityTrusted {
+                        Button(tr("申请授权…")) {
+                            NativeTimeInsightsWindowTitleSource.requestAccessibilityPermission()
+                            permissionChecks += 1
+                        }
+                    }
+                    Button(tr("检查状态")) { permissionChecks += 1 }
+                        .buttonStyle(.borderless)
+                }
+                Text(tr("出于隐私考虑，浏览器、密码管理器及系统安全窗口不采集标题；标题会先隐藏邮箱和长数字。"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
             consentRow(.websites,
                        title: tr("网站域名统计"),
-                       detail: tr("在 Safari、Chrome、Edge 里只记当前标签页的域名，不记网址路径和查询内容，私密窗口不记。需要自动化权限。"),
+                       detail: tr("在 Safari、Chrome、Edge 里只记当前标签页的域名，不记网址路径和查询内容，私密窗口不记。需要浏览器扩展；扩展尚未接通，不会采集。"),
                        isOn: tracker.settings.websitesOptIn) { on in
                 tracker.update { $0.websitesOptIn = on }
             }

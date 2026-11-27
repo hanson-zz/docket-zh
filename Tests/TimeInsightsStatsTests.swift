@@ -114,6 +114,14 @@ final class TimeInsightsStatsTests: XCTestCase {
         XCTAssertEqual(codeRows.reduce(0) { $0 + $1.duration }, 50 * 60)
         XCTAssertNil(codeRows.last?.windowTitle)
         XCTAssertNil(codeRows.last?.domain)
+        let withTitles = TimeInsightsActivityDetail.recentSessions(
+            all, bundleID: "code", interval: interval, includeTitles: true)
+        XCTAssertEqual(withTitles.last?.windowTitle, "Private document")
+        XCTAssertNil(withTitles.last?.domain, "任何情况下都不展示域名")
+        let withoutTitles = TimeInsightsActivityDetail.recentSessions(
+            all, bundleID: "code", interval: interval)
+        XCTAssertNil(withoutTitles.last?.windowTitle, "不主动请求标题时不展示")
+
         XCTAssertEqual(TimeInsightsActivityDetail.recentSessions(all, bundleID: "code", interval: interval, limit: 1).count, 1)
 
         let webRows = TimeInsightsActivityDetail.recentSessions(all, bundleID: "web", interval: interval)

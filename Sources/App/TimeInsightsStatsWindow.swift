@@ -396,7 +396,7 @@ struct TimeInsightsStatsView: View {
                     // 不读取窗口标题、域名或其他敏感内容；完整跨应用时间轴仍待接通。
                     if unlocked {
                         let rows = TimeInsightsActivityDetail.recentSessions(
-                            sessions, bundleID: usage.bundleID, interval: interval
+                            sessions, bundleID: usage.bundleID, interval: interval, includeTitles: unlocked
                         )
                         TimeInsightsCard(title: tr("最近活动片段 · Pro")) {
                             if rows.isEmpty {
@@ -414,9 +414,17 @@ struct TimeInsightsStatsView: View {
                                                     + row.end.formatted(.dateTime.month().day().hour().minute()))
                                                     .font(.system(size: 12, weight: .medium))
                                                     .foregroundStyle(.panelPrimary)
-                                                Text(row.classification.title)
-                                                    .font(.system(size: 11))
-                                                    .foregroundStyle(.panelSecondary)
+                                                if let windowTitle = row.windowTitle {
+                                                    Text(verbatim: windowTitle)
+                                                        .font(.system(size: 12))
+                                                        .foregroundStyle(.panelSecondary)
+                                                        .lineLimit(2)
+                                                        .truncationMode(.middle)
+                                                } else {
+                                                    Text(row.classification.title)
+                                                        .font(.system(size: 11))
+                                                        .foregroundStyle(.panelSecondary)
+                                                }
                                             }
                                             Spacer(minLength: 4)
                                             Text(TimeInsightsFormat.compactDuration(row.duration))
@@ -435,7 +443,7 @@ struct TimeInsightsStatsView: View {
                                           symbol: "exclamationmark.triangle")
                 }
 
-                Text(tr("这里只显示应用级活动时长。网站域名、窗口标题和页面内容尚未接通。"))
+                Text(tr("窗口标题仅在单独同意并获得系统授权后采集；浏览器及敏感应用不记录标题。网站域名仍待浏览器扩展接通。"))
                     .font(.system(size: 12))
                     .foregroundStyle(.panelSecondary)
             }

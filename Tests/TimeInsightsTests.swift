@@ -447,12 +447,14 @@ final class TimeInsightsTests: XCTestCase {
         XCTAssertEqual(fresh.idleThreshold, 300)
         XCTAssertFalse(fresh.windowTitlesOptIn, "默认不采窗口标题")
         XCTAssertFalse(fresh.websitesOptIn, "默认不采网站")
+        XCTAssertTrue(fresh.customRules.isEmpty, "旧版设置默认没有规则")
         XCTAssertTrue(TimeInsightsSettings.idleChoices.contains(TimeInsightsSettings.defaultIdleMinutes))
 
         let old = TimeInsightsSettings.decode(Data(#"{"paused":true,"idleMinutes":0}"#.utf8))
         XCTAssertTrue(old.paused)
         XCTAssertEqual(old.idleMinutes, 1)
         XCTAssertEqual(old.retentionDays, TimeInsightsSettings.defaultRetentionDays)
+        XCTAssertTrue(old.customRules.isEmpty)
         XCTAssertEqual(TimeInsightsSettings.decode(Data("garbage".utf8)), TimeInsightsSettings())
         XCTAssertEqual(TimeInsightsSettings.decode(nil), TimeInsightsSettings())
 
@@ -462,28 +464,136 @@ final class TimeInsightsTests: XCTestCase {
         settings.exclude("")
         XCTAssertEqual(settings.excludedBundleIDs, ["com.x"])
         XCTAssertTrue(settings.isExcluded("com.x"))
+        settings.customRules = [TimeInsightsRule(.bundleID("com.test.app"), category: .design)]
         let round = TimeInsightsSettings.decode(settings.encoded())
         XCTAssertEqual(round, settings)
         settings.include("com.x")
         XCTAssertTrue(settings.excludedBundleIDs.isEmpty)
     }
 
-    func testProIsNotConsentAndNothingIsCollectedYet() {
+    func testProWindowTitlesRequirePurchaseAndSeparateConsent() {
         var settings = TimeInsightsSettings()
         XCTAssertFalse(TimeInsightsPro.collectsWindowTitles(settings, unlocked: true), "买了 Pro 不等于同意")
         XCTAssertFalse(TimeInsightsPro.collectsWebsites(settings, unlocked: true))
         settings.windowTitlesOptIn = true
         settings.websitesOptIn = true
         XCTAssertFalse(TimeInsightsPro.collectsWindowTitles(settings, unlocked: false), "没解锁时同意了也不采")
-        XCTAssertFalse(TimeInsightsPro.collectsWindowTitles(settings, unlocked: true), "阶段 A 待接通")
+        XCTAssertTrue(TimeInsightsPro.collectsWindowTitles(settings, unlocked: true), "阶段 B 源已接通，还需系统授权")
         XCTAssertFalse(TimeInsightsPro.collectsWebsites(settings, unlocked: true), "阶段 A 待接通")
         XCTAssertTrue(TimeInsightsProFeature.trends.isConnected, "周/月真实统计已接通")
-        XCTAssertTrue(TimeInsightsProFeature.allCases.filter { $0 != .trends }.allSatisfy { !$0.isConnected })
+        XCTAssertTrue(TimeInsightsProFeature.windowTitles.isConnected)
+        XCTAssertTrue(TimeInsightsProFeature.customRules.isConnected)
+        XCTAssertFalse(TimeInsightsProFeature.websites.isConnected)
+        XCTAssertFalse(TimeInsightsProFeature.detailedTimeline.isConnected)
+        XCTAssertFalse(TimeInsightsProFeature.fullExport.isConnected)
         XCTAssertEqual(Set(TimeInsightsProFeature.allCases.filter(\.needsConsent)), [.windowTitles, .websites])
         XCTAssertTrue(TimeInsightsPro.canControlPrivacy(unlocked: false), "暂停、排除、清空、导出免费")
         XCTAssertEqual(UnconnectedBrowserBridge().state, .notConnected)
         XCTAssertNil(UnconnectedBrowserBridge().currentTab(for: "com.apple.Safari"))
         XCTAssertNil(UnconnectedWindowTitleSource().title(forProcess: 1))
+    }
+
+    func testTitlePrivacyAndRuleValidation() {
+        XCTAssertFalse(TimeInsightsTitlePrivacy.allows(bundleID: "com.apple.Safari"))
+        XCTAssertFalse(TimeInsightsTitlePrivacy.allows(bundleID: "com.google.Chrome"))
+        XCTAssertFalse(TimeInsightsTitlePrivacy.allows(bundleID: "com.1password.1password"))
+        XCTAssertTrue(TimeInsightsTitlePrivacy.allows(bundleID: "com.apple.dt.Xcode"))
+        XCTAssertNil(TimeInsightsTitlePrivacy.sanitize("  "))
+        let hidden = TimeInsightsTitlePrivacy.sanitize("文档 a@example.com 123456789")
+        XCTAssertEqual(hidden, "文档 [邮箱] [数字]")
+        XCTAssertEqual(TimeInsightsTitlePrivacy.sanitize(String(repeating: "A", count: 250))?.count, 120)
+        XCTAssertNotNil(TimeInsightsRuleInput.make(kind: .app, text: "com.example.app", category: .design))
+        XCTAssertNil(TimeInsightsRuleInput.make(kind: .app, text: "example", category: .design))
+        XCTAssertNil(TimeInsightsRuleInput.make(kind: .title, text: "\n", category: .design))
+        XCTAssertNil(TimeInsightsRuleInput.make(kind: .domain, text: "https://example.com/path", category: .learning))
+        XCTAssertNotNil(TimeInsightsRuleInput.make(kind: .domain, text: "Example.COM", category: .learning))
+    }
+
+    func testBrowserSamplePrivacyPolicyFailsClosedUntilSeparateConsent() {
+        var settings = TimeInsightsSettings()
+        let now = at(500)
+
+        func evaluate(_ url: String = "https://www.Example.com/work?private_token=secret#fragment",
+                      browser: String = "com.apple.Safari", foreground: String? = "com.apple.Safari",
+                      isPrivate: Bool = false, isSensitive: Bool = false, age: TimeInterval = 1,
+                      unlocked: Bool = true) -> BrowserTabSample? {
+            TimeInsightsBrowserSamplePolicy.accept(
+                browserBundleID: browser, foregroundBundleID: foreground,
+                rawURL: url, isPrivate: isPrivate, isSensitive: isSensitive,
+                capturedAt: now.addingTimeInterval(-age), now: now,
+                settings: settings, unlocked: unlocked)
+        }
+
+        XCTAssertNil(evaluate(), "默认关闭，不得接收浏览器数据")
+        settings.websitesOptIn = true
+        XCTAssertNil(evaluate(unlocked: false), "Pro 未解锁，即使保留了 opt-in 也不得接收")
+        let safe = evaluate()
+        XCTAssertEqual(safe?.domain, "example.com", "不保留 path、query、fragment")
+        XCTAssertEqual(safe?.browserBundleID, "com.apple.Safari")
+        XCTAssertNil(safe?.title, "标签页标题必须有第三项独立授权，不能沿用窗口标题开关")
+        XCTAssertFalse(safe?.isPrivate ?? true)
+
+        settings.windowTitlesOptIn = true
+        XCTAssertNil(evaluate()?.title, "即使允许 AX 窗口标题也不可偷偷采集浏览器标签标题")
+        XCTAssertNil(evaluate(isPrivate: true))
+        XCTAssertNil(evaluate(isSensitive: true))
+        XCTAssertNil(evaluate(age: 25), "过期标签不能归给当前前台应用")
+        XCTAssertNil(evaluate(age: -1), "未来时间戳也不能被接受")
+        XCTAssertNil(evaluate(foreground: "com.apple.dt.Xcode"), "非前台标签必须丢弃")
+        XCTAssertNil(evaluate(browser: "com.unverified.browser"), "未知浏览器不能假冒已核验扩展")
+        XCTAssertNil(evaluate("file:///Users/test/a"))
+        XCTAssertNil(evaluate("https://localhost/test"))
+        XCTAssertNil(evaluate("https://accounts.example.com/home"), "账户和单点登录页直接跳过")
+        XCTAssertNil(evaluate("https://example.com/login"), "登录路径必须跳过")
+        XCTAssertNil(evaluate("https://example.com/oauth2/authorize"), "OAuth 路径必须跳过")
+        XCTAssertNil(evaluate("https://user:password@example.com/work"), "URL 凭据不能被处理")
+
+        settings.exclude("com.apple.Safari")
+        XCTAssertNil(evaluate(), "排除的应用不能通过浏览器桥重新进入")
+        settings.include("com.apple.Safari")
+        settings.paused = true
+        XCTAssertNil(evaluate(), "暂停时桥接不能采集")
+        settings.paused = false
+        XCTAssertEqual(evaluate(browser: "com.google.Chrome.beta", foreground: "com.google.Chrome.beta")?.domain,
+                       "example.com")
+        XCTAssertEqual(UnconnectedBrowserBridge().state, .notConnected,
+                       "纯逻辑协议准备好不代表扩展已经接通")
+        XCTAssertFalse(TimeInsightsProFeature.websites.isConnected)
+    }
+
+    func testBrowserAndPasswordManagerVariantsNeverExposeAccessibilityTitles() {
+        for bundleID in ["com.google.Chrome.beta", "com.google.Chrome.dev",
+                         "com.microsoft.edgemac.Dev", "org.mozilla.firefoxdeveloperedition",
+                         "org.mozilla.nightly", "com.brave.Browser.beta",
+                         "com.1password.beta", "com.bitwarden.desktop.beta"] {
+            XCTAssertFalse(TimeInsightsTitlePrivacy.allows(bundleID: bundleID), bundleID)
+        }
+        XCTAssertTrue(TimeInsightsTitlePrivacy.allows(bundleID: "com.apple.dt.Xcode"))
+        XCTAssertEqual(TimeInsightsTitlePrivacy.sanitize(
+            "设计稿 https://example.com/work?token=secret 联系 a@example.com"),
+                       "设计稿 [网址] 联系 [邮箱]")
+    }
+
+    func testTitleChangeSplitsSegmentsAndReclassifiesWithoutDoubleCounting() {
+        let titleRule = TimeInsightsRule(.titleKeyword("Design"), category: .design)
+        var recorder = TimeInsightsRecorder(rules: [titleRule], heartbeatGap: 100_000)
+        _ = recorder.handle(.foreground(xcode), at: at(0))
+        let before = recorder.updateWindowTitle("Design Notes", at: at(20))
+        XCTAssertEqual(before.count, 1)
+        XCTAssertEqual(before[0].duration, 20)
+        XCTAssertNil(before[0].windowTitle)
+        XCTAssertEqual(recorder.segment?.classification, .design)
+        XCTAssertTrue(recorder.updateWindowTitle("Design Notes", at: at(30)).isEmpty)
+        let after = recorder.updateWindowTitle(nil, at: at(45))
+        XCTAssertEqual(after.count, 1)
+        XCTAssertEqual(after[0].duration, 25)
+        XCTAssertEqual(after[0].windowTitle, "Design Notes")
+        XCTAssertEqual(after[0].classification, .design)
+        let last = recorder.flush(at: at(60))
+        XCTAssertEqual(last.first?.duration, 15)
+        XCTAssertNil(last.first?.windowTitle)
+        XCTAssertEqual(last.first?.classification, .development)
+        XCTAssertEqual(before[0].duration + after[0].duration + (last.first?.duration ?? 0), 60)
     }
 
     func testOnlyTheDomainIsKept() {
