@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SPEC = ROOT / 'docs/integration-beta24-sources.json'
+SPEC = ROOT / 'docs/integration-beta25-sources.json'
 ICONS = ('AmberClaws AstralMage CrimsonArmor EmeraldGiant NightSentinel RedMischief '
          'ShieldGuardian SkyGuardian SkylineAcrobat SpeedRunner StormWielder VioletShadow').split()
 
@@ -21,7 +21,7 @@ def git(*args):
 
 def verify_sources():
     spec = json.loads(SPEC.read_text())
-    for sha in [spec['base_sha']] + [entry['sha'] for entry in spec['sources']]:
+    for sha in [spec['base_sha'], spec['tested_baseline_sha']] + [entry['sha'] for entry in spec['sources']]:
         subprocess.run(['git', '-C', str(ROOT), 'merge-base', '--is-ancestor', sha, 'HEAD'], check=True)
     # Experimental work may add laptop frames; existing character artwork stays intact.
     original_art = git('diff', '--name-only', '--diff-filter=MD', spec['base_sha'], 'HEAD', '--',

@@ -89,9 +89,16 @@ public struct DesktopPetMousePaws: Equatable, Sendable {
         targetRight = buttons & 2 != 0 ? 0.9 : 0
         let elapsed = previous.map { now.timeIntervalSince($0) } ?? 0
         previous = now
-        guard elapsed.isFinite, elapsed >= 0, elapsed <= 0.5 else {
+        guard elapsed.isFinite, elapsed >= 0 else {
             left = 0
             right = 0
+            return
+        }
+        // A coalesced timer still carries freshly sampled button state. Settle
+        // to that state instead of briefly dropping a held paw on every delay.
+        if elapsed > 0.5 {
+            left = targetLeft
+            right = targetRight
             return
         }
         func advance(_ value: Double, toward target: Double) -> Double {

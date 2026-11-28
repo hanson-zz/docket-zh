@@ -334,8 +334,8 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
       # The integrated beta is an Actions artifact, never a published release.
-      - name: Package integrated beta.24 test build
-        if: github.event_name == 'pull_request' && github.head_ref == 'test/integration-beta24-20261128'
+      - name: Package integrated beta.25 test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/pet-insights-polish-beta25-20261129'
         shell: bash
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -345,22 +345,22 @@ jobs:
           dir=$(xcodebuild -project Docket.xcodeproj -scheme Docket -configuration Debug -showBuildSettings 2>/dev/null \
             | awk -F' = ' '$1 ~ / BUILT_PRODUCTS_DIR$/ { print $2; exit }')
           app="$dir/Dockling.app"
-          bundle="$RUNNER_TEMP/Dockling-beta.24-Test"
+          bundle="$RUNNER_TEMP/Dockling-beta.25-Test"
           mkdir -p "$bundle" dist
           python3 scripts/verify-integrated-beta.py --app "$app" --output "$bundle/BUILD-INFO.json"
           ditto "$app" "$bundle/Dockling.app"
           ditto Extensions/TimeInsightsChromium "$bundle/BrowserExtension"
           cp docs/time-insights-chromium-testing.md "$bundle/time-insights-chromium-testing.md"
-          cp docs/integration-beta24-testing.txt "$bundle/README-测试说明.txt"
-          ditto -c -k --keepParent "$bundle" dist/Dockling-v1.1.0-beta.24-Test.zip
-          (cd dist && shasum -a 256 Dockling-v1.1.0-beta.24-Test.zip > SHA256SUMS.txt)
-          echo "Integrated beta.24: all source PRs verified; app, browser extension, setup notes and BUILD-INFO included." >> "$GITHUB_STEP_SUMMARY"
+          cp docs/integration-beta25-testing.txt "$bundle/README-测试说明.txt"
+          ditto -c -k --keepParent "$bundle" dist/Dockling-v1.1.0-beta.25-Test.zip
+          (cd dist && shasum -a 256 Dockling-v1.1.0-beta.25-Test.zip > SHA256SUMS.txt)
+          echo "Integrated beta.25: all source PRs verified; app, browser extension, setup notes and BUILD-INFO included." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload integrated beta.24 test build
-        if: github.event_name == 'pull_request' && github.head_ref == 'test/integration-beta24-20261128'
+      - name: Upload integrated beta.25 test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/pet-insights-polish-beta25-20261129'
         uses: actions/upload-artifact@v7
         with:
-          name: Dockling-beta.24-Integrated-Test-${{ github.event.pull_request.head.sha }}
+          name: Dockling-beta.25-Integrated-Test-${{ github.event.pull_request.head.sha }}
           path: dist/
           if-no-files-found: error
           compression-level: 0
