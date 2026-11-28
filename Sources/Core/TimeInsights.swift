@@ -859,8 +859,8 @@ public protocol TimeInsightsBrowserBridge: Sendable {
 /// 没接通的浏览器通讯：什么都不给。
 public struct UnconnectedBrowserBridge: TimeInsightsBrowserBridge {
     public init() {}
-    public var state: BrowserBridgeState { .notConnected }
-    public func currentTab(for bundleID: String) -> BrowserTabSample? { nil }
+    nonisolated public var state: BrowserBridgeState { .notConnected }
+    nonisolated public func currentTab(for bundleID: String) -> BrowserTabSample? { nil }
 }
 
 /// 仅在明确同意时采集有限的窗口标题。浏览器的私密/无痕窗口无法稳定识别，
