@@ -12,119 +12,117 @@ extension EnvironmentValues {
     }
 }
 
-/// The clear rim and exposed hardware surround opaque, readable player controls.
+/// Separate chassis and tape-shell images contain no UI or transport controls.
+@MainActor
+enum DeckArtwork {
+    private static var cache: [String: NSImage] = [:]
+
+    static func image(_ part: String, theme: CassetteDeckTheme) -> NSImage? {
+        let name = "deck-\(part)-\(theme.rawValue)"
+        if let cached = cache[name] { return cached }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        cache[name] = image
+        return image
+    }
+}
+
+/// The chassis keeps the reference's 3:4 proportions. Its central opening is
+/// transparent; the tape, rotating reels and player controls are separate layers.
 struct DeckAcrylicBody<Content: View>: View {
     var theme: CassetteDeckTheme
     @ViewBuilder var content: () -> Content
 
-    private var palette: DeckPalette { DeckPalette(theme: theme) }
-
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 26, style: .continuous)
-        content()
-            .padding(.leading, 13)
-            .padding(.trailing, 51)
-            .padding(.top, 38)
-            .padding(.bottom, 24)
-            .background {
-                ZStack {
-                    shape.fill(LinearGradient(colors: [palette.bodyTop.opacity(0.94), palette.bodyBottom],
-                                              startPoint: .topLeading, endPoint: .bottomTrailing))
-                    DeckCircuit().padding(7)
-                    DeckHardware(theme: theme)
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                if let chassis = DeckArtwork.image("chassis", theme: theme) {
+                    Image(nsImage: chassis).resizable().interpolation(.high)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
-                .clipShape(shape)
+                content()
+                    .frame(width: geo.size.width * 0.718, height: geo.size.height * 0.748,
+                           alignment: .top)
+                    .offset(x: geo.size.width * 0.074, y: geo.size.height * 0.146)
             }
-            .overlay {
-                shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.88), palette.bodyEdge.opacity(0.4),
-                                                           .white.opacity(0.65), palette.orangeTop.opacity(0.6)],
-                                                  startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
-                    .padding(3)
-                    .overlay(shape.strokeBorder(.white.opacity(0.35), lineWidth: 0.6).padding(7))
-                    .allowsHitTesting(false)
-            }
-            .shadow(color: .black.opacity(theme == .pearl ? 0.18 : 0.4), radius: 12, y: 7)
-            .environment(\.cassetteDeckTheme, theme)
-            .environment(\.colorScheme, theme == .pearl ? .light : .dark)
+        }
+        .aspectRatio(3.0 / 4.0, contentMode: .fit)
+        .shadow(color: .black.opacity(theme == .pearl ? 0.2 : 0.4), radius: 10, y: 6)
+        .environment(\.cassetteDeckTheme, theme)
+        .environment(\.colorScheme, theme == .pearl ? .light : .dark)
     }
 }
 
-/// Static mechanical layers have no timer; only the existing tape reels animate.
-private struct DeckHardware: View {
+/// The lower plate is independent of the photographic chassis, so resizing,
+/// text and every hit target remain native SwiftUI content.
+struct DeckPlayerPlate<Content: View>: View {
+    var theme: CassetteDeckTheme
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        let palette = DeckPalette(theme: theme)
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        content()
+            .padding(10)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(shape.fill(LinearGradient(colors: [palette.tapeTop, palette.tapeBottom],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing)))
+            .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.85), .white.opacity(0.05), .black.opacity(0.3)],
+                                                       startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.8))
+            .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+    }
+}
+
+/// Physical round keys match both themes without changing playback routing.
+struct DeckTransportStyle: ButtonStyle {
+    var theme: CassetteDeckTheme
+    var primary = false
+    var active = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        let palette = DeckPalette(theme: theme)
+        return configuration.label
+            .foregroundStyle(primary ? .white : active ? palette.orangeTop : palette.ink)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                Circle().fill(LinearGradient(colors: primary ? [Color(red: 1, green: 0.59, blue: 0.2), palette.orangeBottom] : [palette.tapeTop, palette.tapeBottom],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .overlay(Circle().strokeBorder(.white.opacity(theme == .pearl ? 0.8 : 0.25), lineWidth: 0.8).padding(0.8))
+                    .overlay(Circle().strokeBorder(.black.opacity(0.2), lineWidth: 0.5))
+            }
+            .shadow(color: primary ? palette.orangeTop.opacity(0.25) : .black.opacity(0.18), radius: primary ? 7 : 2, y: 2)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+    }
+}
+
+/// Only the handle position changes; dragging uses the panel's existing seek handler.
+struct DeckSlider: View {
+    var value: Double
     var theme: CassetteDeckTheme
 
     var body: some View {
-        Canvas { context, size in
-            let metal = CassettePalette.rgb(184, 186, 180)
-            let copper = CassettePalette.rgb(204, 113, 48)
-            let orange = CassettePalette.rgb(255, 139, 35)
-            func disk(_ center: CGPoint, _ radius: CGFloat, _ color: Color) {
-                context.fill(Path(ellipseIn: CGRect(x: center.x-radius, y: center.y-radius,
-                                                   width: radius*2, height: radius*2)), with: .color(color))
+        GeometryReader { geo in
+            let progress = min(1, max(0, value))
+            let palette = DeckPalette(theme: theme)
+            ZStack(alignment: .leading) {
+                Capsule().fill(palette.ink.opacity(0.18)).frame(height: 3)
+                    .overlay(Capsule().strokeBorder(.black.opacity(0.15), lineWidth: 0.5))
+                Capsule().fill(LinearGradient(colors: [palette.orangeBottom, palette.orangeTop],
+                                             startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(0, geo.size.width * progress), height: 3)
+                Circle().fill(LinearGradient(colors: [.white, Color(white: 0.77)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 0.6))
+                    .shadow(color: .black.opacity(0.22), radius: 1.5, y: 1)
+                    .frame(width: 10, height: 10)
+                    .offset(x: max(0, geo.size.width - 10) * progress)
             }
-            func gear(_ center: CGPoint, _ radius: CGFloat, teeth: Int) {
-                var path = Path()
-                for i in 0..<(teeth * 4) {
-                    let angle = CGFloat(i) * .pi * 2 / CGFloat(teeth * 4)
-                    let r = i % 4 < 2 ? radius : radius * 0.81
-                    let point = CGPoint(x: center.x + cos(angle)*r, y: center.y + sin(angle)*r)
-                    if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
-                }
-                path.closeSubpath()
-                context.fill(path, with: .linearGradient(Gradient(colors: [.white, metal, .gray]),
-                             startPoint: CGPoint(x: center.x-radius, y: center.y-radius),
-                             endPoint: CGPoint(x: center.x+radius, y: center.y+radius)))
-                context.stroke(path, with: .color(.black.opacity(0.5)), lineWidth: 0.6)
-                disk(center, radius*0.55, metal.opacity(0.65))
-                disk(center, radius*0.16, .black.opacity(0.75))
-            }
-            let x = size.width - 27
-            for i in 0..<4 {
-                gear(CGPoint(x: x + (i % 2 == 0 ? -2 : 3), y: 66 + CGFloat(i)*29),
-                     CGFloat(i % 2 == 0 ? 15 : 12), teeth: 12)
-            }
-            gear(CGPoint(x: size.width*0.26, y: 24), 24, teeth: 20)
-            var belt = Path()
-            belt.move(to: CGPoint(x: size.width*0.13, y: 12))
-            belt.addLine(to: CGPoint(x: size.width*0.51, y: 26))
-            context.stroke(belt, with: .color(.black.opacity(0.72)), lineWidth: 3)
-            let tube = CGRect(x: x-10, y: 218, width: 20, height: 80)
-            context.fill(Path(roundedRect: tube, cornerRadius: 9),
-                         with: .linearGradient(Gradient(colors: [metal, .black.opacity(0.6), metal]),
-                                               startPoint: CGPoint(x: tube.minX, y: 0), endPoint: CGPoint(x: tube.maxX, y: 0)))
-            context.fill(Path(roundedRect: tube.insetBy(dx: 7, dy: 10), cornerRadius: 3), with: .color(orange))
-            context.stroke(Path(roundedRect: tube.insetBy(dx: 2, dy: 2), cornerRadius: 8),
-                           with: .color(.white.opacity(0.7)), lineWidth: 0.7)
-            for y in stride(from: CGFloat(328), to: size.height-35, by: 52) {
-                let chip = CGRect(x: x-11, y: y, width: 22, height: 27)
-                context.fill(Path(roundedRect: chip, cornerRadius: 2), with: .color(CassettePalette.rgb(32, 34, 33)))
-                var pins = Path()
-                for j in 0..<6 {
-                    let py = y + 3 + CGFloat(j)*4
-                    pins.move(to: CGPoint(x: chip.minX-3, y: py)); pins.addLine(to: CGPoint(x: chip.minX+2, y: py))
-                    pins.move(to: CGPoint(x: chip.maxX-2, y: py)); pins.addLine(to: CGPoint(x: chip.maxX+3, y: py))
-                }
-                context.stroke(pins, with: .color(copper), lineWidth: 1)
-            }
-            var wiring = Path()
-            wiring.move(to: CGPoint(x: size.width*0.5, y: 12))
-            wiring.addLine(to: CGPoint(x: size.width*0.68, y: 12))
-            wiring.addQuadCurve(to: CGPoint(x: x+13, y: 33), control: CGPoint(x: x+13, y: 12))
-            wiring.addLine(to: CGPoint(x: x+13, y: size.height-15))
-            wiring.addLine(to: CGPoint(x: size.width*0.6, y: size.height-15))
-            context.stroke(wiring, with: .color(orange.opacity(0.9)),
-                           style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
-            for start in [size.width*0.23, size.width*0.43] {
-                for j in 0..<14 {
-                    let coil = CGRect(x: start + CGFloat(j)*2, y: size.height-22, width: 2, height: 12)
-                    context.fill(Path(roundedRect: coil, cornerRadius: 1),
-                                 with: .linearGradient(Gradient(colors: [copper, orange, copper]),
-                                                       startPoint: coil.origin, endPoint: CGPoint(x: coil.minX, y: coil.maxY)))
-                }
-            }
+            .frame(height: 14)
+            .contentShape(Rectangle())
         }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        .frame(height: 14)
     }
 }
 
@@ -301,49 +299,31 @@ struct DeckTape: View {
 
 
     var body: some View {
-        let corner: CGFloat = compact ? 7 : 11
-        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
         GeometryReader { geo in
+            let w = geo.size.width
             let h = geo.size.height
-            let labelH: CGFloat = compact ? 3 : 12
-            let trapH = compact ? max(5, h * 0.12) : min(28, max(12, h * 0.17))
-            let reelH = max(10, h - labelH - trapH - (compact ? 1 : 6))
-            VStack(spacing: 0) {
-                Spacer(minLength: 0).frame(height: labelH)
-                reelWindow(height: reelH)
-                    .frame(height: reelH)
-                Spacer(minLength: 0)
-                DeckTrapezoid(compact: compact)
-                    .frame(width: geo.size.width * 0.74, height: trapH)
+            ZStack(alignment: .topLeading) {
+                if let shell = DeckArtwork.image("shell", theme: deckTheme) {
+                    Image(nsImage: shell).resizable().interpolation(.high)
+                } else {
+                    RoundedRectangle(cornerRadius: compact ? 5 : 10)
+                        .fill(palette.tapeTop)
+                }
+                DeckReels(playing: track.isPlaying, visible: visible, tapeVisible: true)
+                    .frame(width: w * 0.63, height: h * 0.30)
+                    .offset(x: w * 0.225, y: h * 0.30)
+                Text(verbatim: deckTheme.side)
+                    .font(.system(size: compact ? 9 : max(13, w * 0.065), weight: .medium))
+                    .foregroundStyle(palette.highlightInk)
+                    .frame(width: w * 0.085, height: w * 0.10)
+                    .background(RoundedRectangle(cornerRadius: 2).fill(palette.highlight))
+                    .offset(x: w * 0.105, y: h * 0.20)
             }
-            .frame(width: geo.size.width, height: h)
         }
-        .background(shape.fill(LinearGradient(colors: [palette.tapeTop, palette.tapeBottom],
-                                               startPoint: .top, endPoint: .bottom)))
-        .overlay(shape.strokeBorder(.white.opacity(0.06), lineWidth: 0.6))
-        .clipShape(shape)
-        // 光叠在磁带仓外层，不被里面的东西盖住；不拦点击、读屏不读。
-        .edgeBeam(active: track.isPlaying && visible, shape: .rounded(Double(corner)), tint: palette.beam)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(deckTheme.title)
     }
 
-    /// 转轮窗：左边 A / B 面小方块，两个转轮。
-    private func reelWindow(height: CGFloat) -> some View {
-        let window = RoundedRectangle(cornerRadius: compact ? 4 : 7, style: .continuous)
-        return HStack(spacing: compact ? 4 : 8) {
-            Text(verbatim: deckTheme.side)
-                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundStyle(palette.highlightInk)
-                .frame(width: compact ? 16 : 22, height: compact ? 16 : 22)
-                .background(RoundedRectangle(cornerRadius: 2, style: .continuous).fill(palette.highlight.opacity(0.9)))
-            DeckReels(playing: track.isPlaying, visible: visible)
-                .background(window.fill(palette.window))
-                .overlay(window.strokeBorder(.black.opacity(0.5), lineWidth: 0.6))
-                .clipShape(window)
-        }
-        .padding(.horizontal, compact ? 6 : 12)
-    }
 }
 
 /// 两个转轮：黑色轴座里一圈浅灰带齿的轮毂，播放时转、暂停停在原地。
@@ -353,6 +333,7 @@ struct DeckReels: View {
 
     var playing: Bool
     var visible: Bool
+    var tapeVisible = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var spins = DeckSpins()
@@ -362,10 +343,22 @@ struct DeckReels: View {
         TimelineView(.animation(minimumInterval: 1 / (fps ?? CassetteMotion.fps), paused: fps == nil)) { timeline in
             let degrees = spins.angle(at: timeline.date.timeIntervalSinceReferenceDate, moving: fps != nil)
             Canvas { ctx, size in
-                let r = max(3, min(size.height * 0.44, size.width * 0.15))
+                let r = max(3, min(size.height * 0.49, size.width * 0.19))
                 let cy = size.height / 2
-                drawReel(ctx, center: CGPoint(x: size.width * 0.27, y: cy), radius: r, degrees: degrees)
-                drawReel(ctx, center: CGPoint(x: size.width * 0.73, y: cy), radius: r, degrees: degrees + 23)
+                if tapeVisible {
+                    let tape = CGRect(x: size.width * 0.39, y: size.height * 0.16,
+                                      width: size.width * 0.22, height: size.height * 0.68)
+                    ctx.fill(Path(roundedRect: tape, cornerRadius: 2),
+                             with: .linearGradient(Gradient(colors: [Color(red: 0.17, green: 0.10, blue: 0.07), Color(red: 0.37, green: 0.21, blue: 0.12), Color(red: 0.12, green: 0.10, blue: 0.09)]),
+                                                   startPoint: tape.origin, endPoint: CGPoint(x: tape.maxX, y: tape.minY)))
+                    var bands = Path()
+                    for x in stride(from: tape.minX + 1, to: tape.maxX, by: 2) {
+                        bands.move(to: CGPoint(x: x, y: tape.minY)); bands.addLine(to: CGPoint(x: x, y: tape.maxY))
+                    }
+                    ctx.stroke(bands, with: .color(.black.opacity(0.16)), lineWidth: 0.4)
+                }
+                drawReel(ctx, center: CGPoint(x: size.width * 0.18, y: cy), radius: r, degrees: degrees)
+                drawReel(ctx, center: CGPoint(x: size.width * 0.82, y: cy), radius: r, degrees: degrees + 23)
             }
         }
         .accessibilityHidden(true)
@@ -375,18 +368,24 @@ struct DeckReels: View {
         func circle(_ radius: CGFloat) -> Path {
             Path(ellipseIn: CGRect(x: c.x - radius, y: c.y - radius, width: radius * 2, height: radius * 2))
         }
-        ctx.fill(circle(r), with: .color(palette.socket))
-        ctx.stroke(circle(r), with: .color(.white.opacity(0.06)), lineWidth: 0.6)
-        ctx.fill(circle(r * 0.72), with: .color(palette.hubRing))
-        ctx.fill(circle(r * 0.5), with: .color(palette.socket))
+        let edge = Gradient(colors: [Color(white: 0.18), Color(white: 0.78), Color(white: 0.3), Color(white: 0.94), Color(white: 0.18)])
+        ctx.fill(circle(r), with: .linearGradient(edge,
+                 startPoint: CGPoint(x: c.x-r, y: c.y-r), endPoint: CGPoint(x: c.x+r, y: c.y+r)))
+        ctx.fill(circle(r * 0.88), with: .color(Color(white: 0.055)))
+        ctx.fill(circle(r * 0.77), with: .linearGradient(Gradient(colors: [Color(white: 0.96), Color(white: 0.48), Color(white: 0.82)]),
+                 startPoint: CGPoint(x: c.x-r, y: c.y-r), endPoint: CGPoint(x: c.x+r, y: c.y+r)))
+        ctx.fill(circle(r * 0.55), with: .color(Color(white: 0.045)))
         var teeth = Path()
-        for i in 0..<6 {
-            let a = CGFloat((degrees + Double(i) * 60) * .pi / 180)
-            teeth.move(to: CGPoint(x: c.x + cos(a) * r * 0.46, y: c.y + sin(a) * r * 0.46))
-            teeth.addLine(to: CGPoint(x: c.x + cos(a) * r * 0.74, y: c.y + sin(a) * r * 0.74))
+        for i in 0..<8 {
+            let a = CGFloat((degrees + Double(i) * 45) * .pi / 180)
+            teeth.move(to: CGPoint(x: c.x + cos(a) * r * 0.53, y: c.y + sin(a) * r * 0.53))
+            teeth.addLine(to: CGPoint(x: c.x + cos(a) * r * 0.79, y: c.y + sin(a) * r * 0.79))
         }
-        ctx.stroke(teeth, with: .color(palette.socket), lineWidth: max(0.8, r * 0.14))
-        ctx.fill(circle(max(1, r * 0.15)), with: .color(palette.hubCenter))
+        ctx.stroke(teeth, with: .color(Color(white: 0.045)), lineWidth: max(1, r * 0.16))
+        ctx.fill(circle(r * 0.19), with: .linearGradient(Gradient(colors: [.white, Color(white: 0.52)]),
+                 startPoint: CGPoint(x: c.x, y: c.y-r), endPoint: CGPoint(x: c.x, y: c.y+r)))
+        ctx.stroke(circle(r * 0.19), with: .color(.black.opacity(0.5)), lineWidth: 0.5)
+
     }
 }
 

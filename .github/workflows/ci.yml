@@ -332,6 +332,11 @@ jobs:
             | awk -F' = ' '$1 ~ / BUILT_PRODUCTS_DIR$/ { print $2; exit }')
           app="$dir/Dockling.app"
           test -d "$app"
+          for part in chassis shell; do
+            for theme in pearl mechanical; do
+              test -s "$app/Contents/Resources/deck-$part-$theme.png"
+            done
+          done
           codesign --verify --deep --strict --verbose=2 "$app"
           mkdir -p dist
           ditto -c -k --keepParent "$app" "dist/Dockling-CassetteAB-Test-${GITHUB_SHA:0:8}.zip"
