@@ -283,6 +283,8 @@ public enum WidgetKind: String, Codable, Sendable, CaseIterable {
     case pullTooth = "pull-tooth"
     case divination
     case shibaMatch = "shiba-match"
+    /// 时间洞察：今天各个 App 的有效活跃时长，只存在本机（见 `TimeInsights`）。
+    case timeInsights = "time-insights"
 }
 
 /// What a widget opens when its card is clicked.

@@ -1,37 +1,163 @@
 import AppKit
 import SwiftUI
 
+private struct CassetteDeckThemeKey: EnvironmentKey {
+    static let defaultValue: CassetteDeckTheme = .mechanical
+}
+
+extension EnvironmentValues {
+    var cassetteDeckTheme: CassetteDeckTheme {
+        get { self[CassetteDeckThemeKey.self] }
+        set { self[CassetteDeckThemeKey.self] = newValue }
+    }
+}
+
+/// Separate chassis and tape-shell images contain no UI or transport controls.
+@MainActor
+enum DeckArtwork {
+    private static var cache: [String: NSImage] = [:]
+
+    static func image(_ part: String, theme: CassetteDeckTheme) -> NSImage? {
+        let name = "deck-\(part)-\(theme.rawValue)"
+        if let cached = cache[name] { return cached }
+        guard let url = Bundle.main.url(forResource: name, withExtension: "png"),
+              let image = NSImage(contentsOf: url) else { return nil }
+        cache[name] = image
+        return image
+    }
+}
+
+/// The chassis keeps the reference's 3:4 proportions. Its central opening is
+/// transparent; the tape, rotating reels and player controls are separate layers.
+struct DeckAcrylicBody<Content: View>: View {
+    var theme: CassetteDeckTheme
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .topLeading) {
+                if let chassis = DeckArtwork.image("chassis", theme: theme) {
+                    Image(nsImage: chassis).resizable().interpolation(.high)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                content()
+                    .frame(width: geo.size.width * 0.718, height: geo.size.height * 0.748,
+                           alignment: .top)
+                    .offset(x: geo.size.width * 0.074, y: geo.size.height * 0.146)
+            }
+        }
+        .aspectRatio(3.0 / 4.0, contentMode: .fit)
+        .shadow(color: .black.opacity(theme == .pearl ? 0.2 : 0.4), radius: 10, y: 6)
+        .environment(\.cassetteDeckTheme, theme)
+        .environment(\.colorScheme, theme == .pearl ? .light : .dark)
+    }
+}
+
+/// The lower plate is independent of the photographic chassis, so resizing,
+/// text and every hit target remain native SwiftUI content.
+struct DeckPlayerPlate<Content: View>: View {
+    var theme: CassetteDeckTheme
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        let palette = DeckPalette(theme: theme)
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        content()
+            .padding(10)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(shape.fill(LinearGradient(colors: [palette.tapeTop, palette.tapeBottom],
+                                                 startPoint: .topLeading, endPoint: .bottomTrailing)))
+            .overlay(shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.85), .white.opacity(0.05), .black.opacity(0.3)],
+                                                       startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.8))
+            .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
+    }
+}
+
+/// Physical round keys match both themes without changing playback routing.
+struct DeckTransportStyle: ButtonStyle {
+    var theme: CassetteDeckTheme
+    var primary = false
+    var active = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        let palette = DeckPalette(theme: theme)
+        return configuration.label
+            .foregroundStyle(primary ? .white : active ? palette.orangeTop : palette.ink)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                Circle().fill(LinearGradient(colors: primary ? [Color(red: 1, green: 0.59, blue: 0.2), palette.orangeBottom] : [palette.tapeTop, palette.tapeBottom],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .overlay(Circle().strokeBorder(.white.opacity(theme == .pearl ? 0.8 : 0.25), lineWidth: 0.8).padding(0.8))
+                    .overlay(Circle().strokeBorder(.black.opacity(0.2), lineWidth: 0.5))
+            }
+            .shadow(color: primary ? palette.orangeTop.opacity(0.25) : .black.opacity(0.18), radius: primary ? 7 : 2, y: 2)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+    }
+}
+
+/// Only the handle position changes; dragging uses the panel's existing seek handler.
+struct DeckSlider: View {
+    var value: Double
+    var theme: CassetteDeckTheme
+
+    var body: some View {
+        GeometryReader { geo in
+            let progress = min(1, max(0, value))
+            let palette = DeckPalette(theme: theme)
+            ZStack(alignment: .leading) {
+                Capsule().fill(palette.ink.opacity(0.18)).frame(height: 3)
+                    .overlay(Capsule().strokeBorder(.black.opacity(0.15), lineWidth: 0.5))
+                Capsule().fill(LinearGradient(colors: [palette.orangeBottom, palette.orangeTop],
+                                             startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(0, geo.size.width * progress), height: 3)
+                Circle().fill(LinearGradient(colors: [.white, Color(white: 0.77)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .overlay(Circle().strokeBorder(.white.opacity(0.7), lineWidth: 0.6))
+                    .shadow(color: .black.opacity(0.22), radius: 1.5, y: 1)
+                    .frame(width: 10, height: 10)
+                    .offset(x: max(0, geo.size.width - 10) * progress)
+            }
+            .frame(height: 14)
+            .contentShape(Rectangle())
+        }
+        .frame(height: 14)
+    }
+}
+
 // 「复古卡带」第四种机型「机芯卡座」（`CassetteModel.deck`）的零件：深炭黑哑光机身、
 // 露出来的电路板走线和小螺丝、圆旋钮、橙色拨动开关、三个圆玻璃键，中间一盒黑磁带
-// （等宽字标签、A 面小方块、两个转轮、下沿梯形带竖纹和四个小孔），磁带仓边缘一道细白光。
+// （A/B 面小方块、两个转轮、下沿梯形带竖纹和四个小孔），曲目只放在操作区。
 //
 // 机身是实物，颜色写死，不随浅深色变（整块按深色画，沿边流光也按深色的样子画）。
 // 转轮只在「在播 + 看得见 + 没开减少动态效果」时转（`CassetteMotion.framesPerSecond`）；
 // 沿边流光播放时绕、暂停时淡出，减弱动态效果时只留一道静止的光（`.edgeBeam`）。
-// 最小字 13pt；标签放不下就截断成一行。
+// 最小字 13pt；A/B 外观由对应小组件的配置决定。
 
 /// 机芯卡座的配色：全是低对比的深灰，只有拨动开关是橙色。
-enum DeckPalette {
-    static let bodyTop = CassettePalette.rgb(38, 38, 40)
-    static let bodyBottom = CassettePalette.rgb(25, 25, 27)
-    static let bodyEdge = CassettePalette.rgb(10, 10, 11)
-    static let trace = CassettePalette.rgb(56, 56, 60)
-    static let pad = CassettePalette.rgb(68, 68, 72)
-    static let chip = CassettePalette.rgb(46, 46, 49)
-    static let screw = CassettePalette.rgb(62, 62, 66)
-    static let screwSlot = CassettePalette.rgb(26, 26, 28)
-    static let tapeTop = CassettePalette.rgb(24, 24, 26)
-    static let tapeBottom = CassettePalette.rgb(15, 15, 16)
-    static let window = CassettePalette.rgb(30, 30, 32)
-    static let socket = CassettePalette.rgb(18, 18, 19)
-    static let hubRing = CassettePalette.rgb(156, 156, 152)
-    static let hubCenter = CassettePalette.rgb(206, 206, 200)
-    static let ink = CassettePalette.rgb(204, 204, 198)
-    static let highlight = CassettePalette.rgb(226, 224, 216)
-    static let highlightInk = CassettePalette.rgb(14, 14, 14)
-    static let orangeTop = CassettePalette.rgb(242, 126, 44)
-    static let orangeBottom = CassettePalette.rgb(214, 96, 24)
-    static let beam = CassettePalette.rgb(240, 238, 230)
+struct DeckPalette {
+    var theme: CassetteDeckTheme
+    var bodyTop: Color { theme == .pearl ? CassettePalette.rgb(237, 233, 226) : CassettePalette.rgb(38, 38, 40) }
+    var bodyBottom: Color { theme == .pearl ? CassettePalette.rgb(202, 200, 194) : CassettePalette.rgb(25, 25, 27) }
+    var bodyEdge: Color { theme == .pearl ? CassettePalette.rgb(132, 132, 129) : CassettePalette.rgb(10, 10, 11) }
+    var trace: Color { theme == .pearl ? CassettePalette.rgb(175, 103, 53) : CassettePalette.rgb(56, 56, 60) }
+    var pad: Color { theme == .pearl ? CassettePalette.rgb(203, 139, 74) : CassettePalette.rgb(68, 68, 72) }
+    var chip: Color { theme == .pearl ? CassettePalette.rgb(62, 65, 65) : CassettePalette.rgb(46, 46, 49) }
+    var screw: Color { theme == .pearl ? CassettePalette.rgb(193, 195, 192) : CassettePalette.rgb(62, 62, 66) }
+    var screwSlot: Color { theme == .pearl ? CassettePalette.rgb(61, 65, 65) : CassettePalette.rgb(26, 26, 28) }
+    var tapeTop: Color { theme == .pearl ? CassettePalette.rgb(249, 246, 240) : CassettePalette.rgb(24, 24, 26) }
+    var tapeBottom: Color { theme == .pearl ? CassettePalette.rgb(220, 214, 204) : CassettePalette.rgb(15, 15, 16) }
+    var window: Color { theme == .pearl ? CassettePalette.rgb(73, 71, 68) : CassettePalette.rgb(30, 30, 32) }
+    var socket: Color { theme == .pearl ? CassettePalette.rgb(25, 26, 28) : CassettePalette.rgb(18, 18, 19) }
+    var hubRing: Color { theme == .pearl ? CassettePalette.rgb(202, 204, 199) : CassettePalette.rgb(156, 156, 152) }
+    var hubCenter: Color { theme == .pearl ? CassettePalette.rgb(235, 233, 225) : CassettePalette.rgb(206, 206, 200) }
+    var ink: Color { theme == .pearl ? CassettePalette.rgb(37, 39, 40) : CassettePalette.rgb(204, 204, 198) }
+    var highlight: Color { theme == .pearl ? CassettePalette.rgb(69, 71, 71) : CassettePalette.rgb(226, 224, 216) }
+    var highlightInk: Color { theme == .pearl ? CassettePalette.rgb(248, 245, 237) : CassettePalette.rgb(14, 14, 14) }
+    var orangeTop: Color { CassettePalette.rgb(242, 126, 44) }
+    var orangeBottom: Color { CassettePalette.rgb(214, 96, 24) }
+    var beam: Color { theme == .pearl ? CassettePalette.rgb(255, 148, 55) : CassettePalette.rgb(240, 238, 230) }
 }
 
 // MARK: - 整台机器
@@ -41,6 +167,9 @@ enum DeckPalette {
 ///   （标签一行），右边三个玻璃键（`actions` 为 nil 时不画键）。
 /// - `full`：面板、桌面大号：顶上一排旋钮、拨动开关、三个玻璃键，下面整盒磁带。
 struct DeckMachine: View {
+    var theme: CassetteDeckTheme = .mechanical
+    private var palette: DeckPalette { DeckPalette(theme: theme) }
+
     enum Layout { case strip, full }
 
     var track: CassetteTrack
@@ -63,12 +192,13 @@ struct DeckMachine: View {
             }
         }
         .background(DeckCircuit().clipShape(shape))
-        .background(shape.fill(LinearGradient(colors: [DeckPalette.bodyTop, DeckPalette.bodyBottom],
+        .background(shape.fill(LinearGradient(colors: [palette.bodyTop, palette.bodyBottom],
                                                startPoint: .top, endPoint: .bottom)))
         .overlay(shape.strokeBorder(.white.opacity(0.07), lineWidth: 0.6).padding(1))
-        .overlay(shape.strokeBorder(DeckPalette.bodyEdge, lineWidth: 0.8))
+        .overlay(shape.strokeBorder(palette.bodyEdge, lineWidth: 0.8))
         .shadow(color: .black.opacity(0.3), radius: 3, y: 1.5)
-        .environment(\.colorScheme, .dark)
+        .environment(\.cassetteDeckTheme, theme)
+        .environment(\.colorScheme, theme == .pearl ? .light : .dark)
     }
 
     private var strip: some View {
@@ -111,6 +241,9 @@ struct DeckMachine: View {
 
 /// 扩展栏在左右两侧的竖条：一小块卡座机身（两个转轮、A 面小方块）、歌名一行、圆玻璃播放键。
 struct DeckColumnFace: View {
+    var theme: CassetteDeckTheme = .mechanical
+    private var palette: DeckPalette { DeckPalette(theme: theme) }
+
     var track: CassetteTrack
     var actions: CassetteActions
     var visible: Bool
@@ -128,21 +261,23 @@ struct DeckColumnFace: View {
                             label: track.isPlaying ? tr("暂停") : tr("播放"), size: 28, action: actions.toggle)
         }
         .padding(.vertical, 4)
+        .environment(\.cassetteDeckTheme, theme)
     }
 
     private var mini: some View {
         let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
         let window = RoundedRectangle(cornerRadius: 5, style: .continuous)
         return DeckReels(playing: track.isPlaying, visible: visible)
-            .background(window.fill(DeckPalette.window))
+            .background(window.fill(palette.window))
             .clipShape(window)
             .padding(4)
             .background(DeckCircuit().clipShape(shape))
-            .background(shape.fill(LinearGradient(colors: [DeckPalette.bodyTop, DeckPalette.bodyBottom],
+            .background(shape.fill(LinearGradient(colors: [palette.bodyTop, palette.bodyBottom],
                                                   startPoint: .top, endPoint: .bottom)))
-            .overlay(shape.strokeBorder(DeckPalette.bodyEdge, lineWidth: 0.8))
-            .edgeBeam(active: track.isPlaying && visible, shape: .rounded(8), tint: DeckPalette.beam)
-            .environment(\.colorScheme, .dark)
+            .overlay(shape.strokeBorder(palette.bodyEdge, lineWidth: 0.8))
+            .edgeBeam(active: track.isPlaying && visible, shape: .rounded(8), tint: palette.beam)
+            .environment(\.cassetteDeckTheme, theme)
+        .environment(\.colorScheme, theme == .pearl ? .light : .dark)
             .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
             .accessibilityHidden(true)
     }
@@ -150,91 +285,55 @@ struct DeckColumnFace: View {
 
 // MARK: - 磁带
 
-/// 一盒黑磁带：上面等宽字标签（正在放的反白），中间 A 面小方块和两个转轮，
+/// 磁带本体只保留面标识、双卷轴和机械装饰，不绘制曲目信息。
 /// 下沿梯形带竖纹和四个小孔。沿边一道细白光叠在最外层，播放时流动、暂停时淡出。
 struct DeckTape: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var track: CassetteTrack
     var lines: [CassetteDeck.Line]
-    /// 矮条（扩展栏、桌面中号）：标签一行，梯形压得很扁。
+    /// 矮条（扩展栏、桌面中号）：梯形压得很扁。
     var compact: Bool
     var visible: Bool
 
-    private static let lineHeight: CGFloat = 17
 
     var body: some View {
-        let corner: CGFloat = compact ? 7 : 11
-        let shape = RoundedRectangle(cornerRadius: corner, style: .continuous)
         GeometryReader { geo in
+            let w = geo.size.width
             let h = geo.size.height
-            let labelH = CGFloat(max(lines.count, 1)) * Self.lineHeight + (compact ? 3 : 10)
-            let trapH = compact ? max(5, h * 0.12) : min(28, max(12, h * 0.17))
-            let reelH = max(10, h - labelH - trapH - (compact ? 1 : 6))
-            VStack(spacing: 0) {
-                label
-                    .frame(height: labelH)
-                reelWindow(height: reelH)
-                    .frame(height: reelH)
-                Spacer(minLength: 0)
-                DeckTrapezoid(compact: compact)
-                    .frame(width: geo.size.width * 0.74, height: trapH)
+            ZStack(alignment: .topLeading) {
+                if let shell = DeckArtwork.image("shell", theme: deckTheme) {
+                    Image(nsImage: shell).resizable().interpolation(.high)
+                } else {
+                    RoundedRectangle(cornerRadius: compact ? 5 : 10)
+                        .fill(palette.tapeTop)
+                }
+                DeckReels(playing: track.isPlaying, visible: visible, tapeVisible: true)
+                    .frame(width: w * 0.63, height: h * 0.30)
+                    .offset(x: w * 0.225, y: h * 0.30)
+                Text(verbatim: deckTheme.side)
+                    .font(.system(size: compact ? 9 : max(13, w * 0.065), weight: .medium))
+                    .foregroundStyle(palette.highlightInk)
+                    .frame(width: w * 0.085, height: w * 0.10)
+                    .background(RoundedRectangle(cornerRadius: 2).fill(palette.highlight))
+                    .offset(x: w * 0.105, y: h * 0.20)
             }
-            .frame(width: geo.size.width, height: h)
         }
-        .background(shape.fill(LinearGradient(colors: [DeckPalette.tapeTop, DeckPalette.tapeBottom],
-                                               startPoint: .top, endPoint: .bottom)))
-        .overlay(shape.strokeBorder(.white.opacity(0.06), lineWidth: 0.6))
-        .clipShape(shape)
-        // 光叠在磁带仓外层，不被里面的东西盖住；不拦点击、读屏不读。
-        .edgeBeam(active: track.isPlaying && visible, shape: .rounded(Double(corner)), tint: DeckPalette.beam)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(CassetteDeck.text(title: track.title, artist: track.artist))
+        .accessibilityLabel(deckTheme.title)
     }
 
-    /// 标签：一行一首，13pt 等宽字，放不下截断。
-    private var label: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                Text(verbatim: line.text)
-                    .font(.system(size: 13, weight: line.current ? .semibold : .medium, design: .monospaced))
-                    .foregroundStyle(line.current ? DeckPalette.highlightInk : DeckPalette.ink.opacity(0.8))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .padding(.horizontal, 3)
-                    .frame(height: Self.lineHeight - 1)
-                    .background {
-                        if line.current {
-                            RoundedRectangle(cornerRadius: 2, style: .continuous).fill(DeckPalette.highlight)
-                        }
-                    }
-            }
-        }
-        .padding(.horizontal, compact ? 6 : 12)
-        .padding(.top, compact ? 2 : 7)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-
-    /// 转轮窗：左边 A / B 面小方块，两个转轮。
-    private func reelWindow(height: CGFloat) -> some View {
-        let window = RoundedRectangle(cornerRadius: compact ? 4 : 7, style: .continuous)
-        return HStack(spacing: compact ? 4 : 8) {
-            Text(verbatim: CassetteDeck.side(lines))
-                .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundStyle(DeckPalette.highlightInk)
-                .frame(width: compact ? 16 : 22, height: compact ? 16 : 22)
-                .background(RoundedRectangle(cornerRadius: 2, style: .continuous).fill(DeckPalette.highlight.opacity(0.9)))
-            DeckReels(playing: track.isPlaying, visible: visible)
-                .background(window.fill(DeckPalette.window))
-                .overlay(window.strokeBorder(.black.opacity(0.5), lineWidth: 0.6))
-                .clipShape(window)
-        }
-        .padding(.horizontal, compact ? 6 : 12)
-    }
 }
 
 /// 两个转轮：黑色轴座里一圈浅灰带齿的轮毂，播放时转、暂停停在原地。
 struct DeckReels: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var playing: Bool
     var visible: Bool
+    var tapeVisible = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var spins = DeckSpins()
@@ -244,10 +343,22 @@ struct DeckReels: View {
         TimelineView(.animation(minimumInterval: 1 / (fps ?? CassetteMotion.fps), paused: fps == nil)) { timeline in
             let degrees = spins.angle(at: timeline.date.timeIntervalSinceReferenceDate, moving: fps != nil)
             Canvas { ctx, size in
-                let r = max(3, min(size.height * 0.44, size.width * 0.15))
+                let r = max(3, min(size.height * 0.49, size.width * 0.19))
                 let cy = size.height / 2
-                drawReel(ctx, center: CGPoint(x: size.width * 0.27, y: cy), radius: r, degrees: degrees)
-                drawReel(ctx, center: CGPoint(x: size.width * 0.73, y: cy), radius: r, degrees: degrees + 23)
+                if tapeVisible {
+                    let tape = CGRect(x: size.width * 0.39, y: size.height * 0.16,
+                                      width: size.width * 0.22, height: size.height * 0.68)
+                    ctx.fill(Path(roundedRect: tape, cornerRadius: 2),
+                             with: .linearGradient(Gradient(colors: [Color(red: 0.17, green: 0.10, blue: 0.07), Color(red: 0.37, green: 0.21, blue: 0.12), Color(red: 0.12, green: 0.10, blue: 0.09)]),
+                                                   startPoint: tape.origin, endPoint: CGPoint(x: tape.maxX, y: tape.minY)))
+                    var bands = Path()
+                    for x in stride(from: tape.minX + 1, to: tape.maxX, by: 2) {
+                        bands.move(to: CGPoint(x: x, y: tape.minY)); bands.addLine(to: CGPoint(x: x, y: tape.maxY))
+                    }
+                    ctx.stroke(bands, with: .color(.black.opacity(0.16)), lineWidth: 0.4)
+                }
+                drawReel(ctx, center: CGPoint(x: size.width * 0.18, y: cy), radius: r, degrees: degrees)
+                drawReel(ctx, center: CGPoint(x: size.width * 0.82, y: cy), radius: r, degrees: degrees + 23)
             }
         }
         .accessibilityHidden(true)
@@ -257,18 +368,24 @@ struct DeckReels: View {
         func circle(_ radius: CGFloat) -> Path {
             Path(ellipseIn: CGRect(x: c.x - radius, y: c.y - radius, width: radius * 2, height: radius * 2))
         }
-        ctx.fill(circle(r), with: .color(DeckPalette.socket))
-        ctx.stroke(circle(r), with: .color(.white.opacity(0.06)), lineWidth: 0.6)
-        ctx.fill(circle(r * 0.72), with: .color(DeckPalette.hubRing))
-        ctx.fill(circle(r * 0.5), with: .color(DeckPalette.socket))
+        let edge = Gradient(colors: [Color(white: 0.18), Color(white: 0.78), Color(white: 0.3), Color(white: 0.94), Color(white: 0.18)])
+        ctx.fill(circle(r), with: .linearGradient(edge,
+                 startPoint: CGPoint(x: c.x-r, y: c.y-r), endPoint: CGPoint(x: c.x+r, y: c.y+r)))
+        ctx.fill(circle(r * 0.88), with: .color(Color(white: 0.055)))
+        ctx.fill(circle(r * 0.77), with: .linearGradient(Gradient(colors: [Color(white: 0.96), Color(white: 0.48), Color(white: 0.82)]),
+                 startPoint: CGPoint(x: c.x-r, y: c.y-r), endPoint: CGPoint(x: c.x+r, y: c.y+r)))
+        ctx.fill(circle(r * 0.55), with: .color(Color(white: 0.045)))
         var teeth = Path()
-        for i in 0..<6 {
-            let a = CGFloat((degrees + Double(i) * 60) * .pi / 180)
-            teeth.move(to: CGPoint(x: c.x + cos(a) * r * 0.46, y: c.y + sin(a) * r * 0.46))
-            teeth.addLine(to: CGPoint(x: c.x + cos(a) * r * 0.74, y: c.y + sin(a) * r * 0.74))
+        for i in 0..<8 {
+            let a = CGFloat((degrees + Double(i) * 45) * .pi / 180)
+            teeth.move(to: CGPoint(x: c.x + cos(a) * r * 0.53, y: c.y + sin(a) * r * 0.53))
+            teeth.addLine(to: CGPoint(x: c.x + cos(a) * r * 0.79, y: c.y + sin(a) * r * 0.79))
         }
-        ctx.stroke(teeth, with: .color(DeckPalette.socket), lineWidth: max(0.8, r * 0.14))
-        ctx.fill(circle(max(1, r * 0.15)), with: .color(DeckPalette.hubCenter))
+        ctx.stroke(teeth, with: .color(Color(white: 0.045)), lineWidth: max(1, r * 0.16))
+        ctx.fill(circle(r * 0.19), with: .linearGradient(Gradient(colors: [.white, Color(white: 0.52)]),
+                 startPoint: CGPoint(x: c.x, y: c.y-r), endPoint: CGPoint(x: c.x, y: c.y+r)))
+        ctx.stroke(circle(r * 0.19), with: .color(.black.opacity(0.5)), lineWidth: 0.5)
+
     }
 }
 
@@ -288,6 +405,9 @@ private final class DeckSpins {
 
 /// 磁带下沿的梯形：竖纹和四个小孔（外面两个低一点）。
 private struct DeckTrapezoid: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var compact: Bool
 
     var body: some View {
@@ -300,7 +420,7 @@ private struct DeckTrapezoid: View {
             shape.addLine(to: CGPoint(x: w, y: h))
             shape.addLine(to: CGPoint(x: 0, y: h))
             shape.closeSubpath()
-            ctx.fill(shape, with: .color(CassettePalette.rgb(30, 30, 32)))
+            ctx.fill(shape, with: .color(palette.tapeBottom))
             ctx.stroke(shape, with: .color(.white.opacity(0.05)), lineWidth: 0.6)
             if h >= 8 {
                 var ribs = Path()
@@ -322,7 +442,7 @@ private struct DeckTrapezoid: View {
                 let outer = Path(ellipseIn: CGRect(x: c.x - hole * 1.5, y: c.y - hole * 1.5,
                                                    width: hole * 3, height: hole * 3))
                 let inner = Path(ellipseIn: CGRect(x: c.x - hole, y: c.y - hole, width: hole * 2, height: hole * 2))
-                if !compact { ctx.fill(outer, with: .color(DeckPalette.socket)) }
+                if !compact { ctx.fill(outer, with: .color(palette.socket)) }
                 ctx.fill(inner, with: .color(CassettePalette.rgb(120, 120, 118)))
             }
         }
@@ -334,6 +454,9 @@ private struct DeckTrapezoid: View {
 
 /// 露出来的电路板：几道走线、焊盘、小芯片和四颗小螺丝，低对比深灰，只当底纹。
 struct DeckCircuit: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var body: some View {
         Canvas { ctx, size in
             let w = size.width, h = size.height
@@ -357,8 +480,8 @@ struct DeckCircuit: View {
                     pads.addRect(CGRect(x: c.x - 1.5, y: c.y - 1.5, width: 3, height: 3))
                 }
             }
-            ctx.stroke(traces, with: .color(DeckPalette.trace), lineWidth: 0.8)
-            ctx.fill(pads, with: .color(DeckPalette.pad))
+            ctx.stroke(traces, with: .color(palette.trace), lineWidth: 0.8)
+            ctx.fill(pads, with: .color(palette.pad))
             // 小芯片和贴片元件。
             let chips: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
                 (0.42, 0.04, 8, 6), (0.86, 0.06, 5, 4), (0.015, 0.6, 4, 7), (0.965, 0.75, 4, 6), (0.64, 0.965, 7, 3),
@@ -366,8 +489,8 @@ struct DeckCircuit: View {
             for chip in chips {
                 let c = p(chip.0, chip.1)
                 let rect = CGRect(x: c.x - chip.2 / 2, y: c.y - chip.3 / 2, width: chip.2, height: chip.3)
-                ctx.fill(Path(roundedRect: rect, cornerRadius: 1), with: .color(DeckPalette.chip))
-                ctx.stroke(Path(roundedRect: rect, cornerRadius: 1), with: .color(DeckPalette.trace), lineWidth: 0.5)
+                ctx.fill(Path(roundedRect: rect, cornerRadius: 1), with: .color(palette.chip))
+                ctx.stroke(Path(roundedRect: rect, cornerRadius: 1), with: .color(palette.trace), lineWidth: 0.5)
             }
             // 四角小螺丝。
             let inset: CGFloat = 5
@@ -375,12 +498,12 @@ struct DeckCircuit: View {
                       CGPoint(x: inset, y: h - inset), CGPoint(x: w - inset, y: h - inset)] {
                 let r: CGFloat = 2.4
                 let head = Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2))
-                ctx.fill(head, with: .color(DeckPalette.screw))
-                ctx.stroke(head, with: .color(DeckPalette.screwSlot), lineWidth: 0.5)
+                ctx.fill(head, with: .color(palette.screw))
+                ctx.stroke(head, with: .color(palette.screwSlot), lineWidth: 0.5)
                 var slot = Path()
                 slot.move(to: CGPoint(x: c.x - r * 0.6, y: c.y - r * 0.6))
                 slot.addLine(to: CGPoint(x: c.x + r * 0.6, y: c.y + r * 0.6))
-                ctx.stroke(slot, with: .color(DeckPalette.screwSlot), lineWidth: 0.7)
+                ctx.stroke(slot, with: .color(palette.screwSlot), lineWidth: 0.7)
             }
         }
         .allowsHitTesting(false)
@@ -390,13 +513,16 @@ struct DeckCircuit: View {
 
 /// 左上角的圆旋钮（只是样子，不能拧）。
 struct DeckKnob: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var diameter: CGFloat
 
     var body: some View {
         ZStack {
-            Circle().fill(DeckPalette.bodyEdge)
+            Circle().fill(palette.bodyEdge)
             Circle()
-                .fill(RadialGradient(colors: [CassettePalette.rgb(66, 66, 70), CassettePalette.rgb(28, 28, 30)],
+                .fill(RadialGradient(colors: [palette.hubCenter, palette.screw],
                                      center: UnitPoint(x: 0.4, y: 0.32), startRadius: 0, endRadius: diameter * 0.6))
                 .padding(1.5)
             Circle().strokeBorder(.white.opacity(0.08), lineWidth: 0.6).padding(2)
@@ -410,6 +536,9 @@ struct DeckKnob: View {
 
 /// 橙色拨动开关：播放中拨到开（橙色、拨块在右），暂停拨到关（深灰、拨块在左）。只是指示。
 struct DeckSwitch: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var on: Bool
     var width: CGFloat
 
@@ -419,7 +548,7 @@ struct DeckSwitch: View {
         let height = width * 0.5
         ZStack(alignment: on ? .trailing : .leading) {
             Capsule()
-                .fill(LinearGradient(colors: on ? [DeckPalette.orangeTop, DeckPalette.orangeBottom]
+                .fill(LinearGradient(colors: on ? [palette.orangeTop, palette.orangeBottom]
                                                 : [CassettePalette.rgb(64, 64, 68), CassettePalette.rgb(44, 44, 47)],
                                      startPoint: .top, endPoint: .bottom))
             Capsule().strokeBorder(.black.opacity(0.45), lineWidth: 0.6)
@@ -432,7 +561,7 @@ struct DeckSwitch: View {
         }
         .frame(width: width, height: height)
         .padding(2)
-        .background(Capsule().fill(DeckPalette.bodyEdge))
+        .background(Capsule().fill(palette.bodyEdge))
         .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: on)
         .accessibilityHidden(true)
     }
@@ -457,6 +586,9 @@ struct DeckKeys: View {
 
 /// 一个圆玻璃键：黑色外圈、深色玻璃面、上沿一道弧形高光，按下微微缩小。
 struct DeckGlassButton: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var symbol: String
     var label: String
     var size: CGFloat
@@ -466,7 +598,7 @@ struct DeckGlassButton: View {
         Button(action: { action?() }) {
             Image(systemName: symbol)
                 .font(.system(size: max(10, size * 0.36), weight: .bold))
-                .foregroundStyle(DeckPalette.ink)
+                .foregroundStyle(palette.ink)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: size, height: size)
                 .contentShape(Circle())
@@ -485,6 +617,9 @@ private struct DeckGlassStyle: ButtonStyle {
 }
 
 private struct DeckGlassCap<Label: View>: View {
+    @Environment(\.cassetteDeckTheme) private var deckTheme
+    private var palette: DeckPalette { DeckPalette(theme: deckTheme) }
+
     var label: Label
     var down: Bool
 
@@ -494,9 +629,9 @@ private struct DeckGlassCap<Label: View>: View {
         label
             .background {
                 ZStack {
-                    Circle().fill(DeckPalette.bodyEdge)
+                    Circle().fill(palette.bodyEdge)
                     Circle()
-                        .fill(RadialGradient(colors: [CassettePalette.rgb(64, 64, 68), CassettePalette.rgb(18, 18, 20)],
+                        .fill(RadialGradient(colors: [palette.tapeTop, palette.tapeBottom],
                                              center: UnitPoint(x: 0.5, y: 0.28), startRadius: 0, endRadius: 22))
                         .padding(2.5)
                 }

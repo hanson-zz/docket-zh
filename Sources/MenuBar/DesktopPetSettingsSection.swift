@@ -85,6 +85,64 @@ struct DesktopPetSettingsSection: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
+                if settings.livelyFace {
+                    Toggle(isOn: $settings.headParallax) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("头部立体跟随（实验）")
+                            Text("跟着指针轻微倾头。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。使用现有图片分层，不改变原有脸型；低电量或减弱动态效果时关闭。默认关闭。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Toggle(isOn: $settings.typingCompanion) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("打字陪伴")
+                            Text("跟着打字节奏点头、前爪轻敲。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只读取系统提供的“距上次按键时间”，不读取、记录或上传按键内容；低电量或减弱动态效果时不动。默认关闭。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    if settings.typingCompanion {
+                        HStack {
+                            Button("预览打字动作（3 秒）") {
+                                DesktopPetController.shared.previewTyping()
+                            }
+                            .disabled(NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+                                      || ProcessInfo.processInfo.isLowPowerModeEnabled)
+                            .help("独立播放动作，不依赖系统键盘检测；需要小熊猫位于程序坞上或随意摆放的位置。")
+                            Spacer(minLength: 8)
+                        }
+                        TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                            Text(keyboardActivityStatus)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("测试说明：先点预览，确认小熊猫能点头和交替轻敲前爪；再正常输入文字。如果预览会动、打字不动，请看上方键盘活动状态。系统开启低电量或减弱动态效果时暂停动画。")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Toggle(isOn: $settings.mouseButtonCompanion) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("鼠标双爪联动（实验）")
+                            Text("按住鼠标左键时左爪轻敲，按住右键时右爪轻敲；两键一起按时双爪同时响应。只在正面小熊猫静坐、没有其他表情时生效。只读鼠标当前是否按住，不记录点击位置或轨迹；减弱动态效果与低电量时停用。默认关闭。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Toggle(isOn: $settings.mouseHunt) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("鼠标掠过反应")
+                            Text("指针快速经过附近时小熊猫会短暂惊讶，约 7 秒冷却。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只使用即时坐标，不记录轨迹。减弱动态效果时不触发。")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
                 Toggle(isOn: $settings.quietInCalls) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("通话时藏起")
@@ -146,6 +204,17 @@ struct DesktopPetSettingsSection: View {
         } message: {
             Text("完全磁盘访问权限：看见刚放进废纸篓的文件和它原来的位置。自动化里允许码头控制访达：请访达把文件放回原处，第一次放回时系统会问。没有自动化权限时，小熊猫只把文件叼回来，给一个「放回原处」的按钮。")
         }
+    }
+
+    /// 状态只显示“距上一次按键的时间”是否新鲜，不接收键值、文本或按键历史。
+    private var keyboardActivityStatus: String {
+        let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown)
+        guard idle.isFinite, idle >= 0 else {
+            return "键盘活动：系统当前无法读取（预览按钮仍可测试动画）"
+        }
+        return idle <= DesktopPetCompanionState.keyFreshWindow
+            ? "键盘活动：已检测到输入"
+            : "键盘活动：等待输入"
     }
 
     /// 停靠位置下面的一行说明，随选项变。

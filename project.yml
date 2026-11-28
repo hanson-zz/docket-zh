@@ -13,8 +13,8 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
-    MARKETING_VERSION: "1.0.0" # x-release-please-version
-    CURRENT_PROJECT_VERSION: "6"
+    MARKETING_VERSION: "1.1.0-beta.24" # x-release-please-version
+    CURRENT_PROJECT_VERSION: "24"
     DEAD_CODE_STRIPPING: YES
     # 中文本地化分支：默认使用 ad-hoc 签名（"-"），不需要任何 Apple 开发者证书或团队，
     # 任何人 clone 后都能直接构建。上游使用的个人证书和 DEVELOPMENT_TEAM 已移除。
@@ -48,6 +48,8 @@ targets:
       - path: Resources/Sponsor
         buildPhase: resources
       # 收音机小组件的图标（阿喵收音机 meowRadio 的猫耳复古收音机，MIT），作为普通资源打包。
+      - path: Resources/CassetteDeck
+        buildPhase: resources
       - path: Resources/Radio
         buildPhase: resources
       # 收音机面板右上角的插画（radio-art-<外观 rawValue>.png，约 64pt，可带 @2x），作者之后补，
@@ -143,9 +145,16 @@ targets:
     # one less thing for that step to infer.
     dependencies:
       - sdk: AppIntents.framework
+      # 时间洞察的本机数据库用系统自带的 SQLite（Sources/Core/TimeInsightsDatabase.swift）。
+      - sdk: libsqlite3.tbd
       # 充电上限助手：放进 Contents/MacOS，用户在电池面板点“安装助手”时
       # 以管理员身份复制到 /Library/PrivilegedHelperTools 并交给 launchd。
       - target: ChargeHelper
+        embed: true
+        codeSign: false
+        copy:
+          destination: executables
+      - target: TimeInsightsBrowserHost
         embed: true
         codeSign: false
         copy:
@@ -242,12 +251,24 @@ targets:
           # tool that renders screenshots, and only DocketApp.swift uses it.
           - "App/LayoutIntents.swift"
       - path: Tools/Shots
+    dependencies:
+      - sdk: libsqlite3.tbd
     settings:
       base:
         PRODUCT_NAME: Shots
         PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.shots
         CODE_SIGN_ENTITLEMENTS: Resources/Docket.entitlements
         ENABLE_APP_SANDBOX: NO
+
+  TimeInsightsBrowserHost:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Tools/TimeInsightsBrowserHost
+    settings:
+      base:
+        PRODUCT_NAME: DocklingBrowserHost
+        PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.browser-host
 
   DocketTests:
     type: bundle.unit-test
@@ -263,6 +284,9 @@ targets:
       - path: Sources/DockPanel/ScrollRelay.swift
       - path: Sources/DockPanel/MissionControlGesture.swift
       - path: Sources/Services/PagePreview.swift
+    # 时间洞察的数据库测试直接读写临时目录里的 SQLite 文件。
+    dependencies:
+      - sdk: libsqlite3.tbd
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.tests

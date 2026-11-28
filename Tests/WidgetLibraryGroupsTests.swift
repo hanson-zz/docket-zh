@@ -51,6 +51,7 @@ final class WidgetLibraryGroupsTests: XCTestCase {
         XCTAssertEqual(category(.lunar), .time)
         XCTAssertEqual(category(.notes), .todo)
         XCTAssertEqual(category(.timer), .health)
+        XCTAssertEqual(category(.timeInsights), .health, "和专注计时同一类")
         XCTAssertEqual(category(.perfectDay), .health)
         XCTAssertEqual(category(.aiUsage), .ai)
         XCTAssertEqual(category(.mail), .ai)

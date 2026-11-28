@@ -54,7 +54,7 @@ struct CassetteTile: View {
         WidgetSurface {
             if context.position.isVertical {
                 if model == .deck {
-                    DeckColumnFace(track: deck, actions: actions, visible: visible)
+                    DeckColumnFace(theme: CassetteDeckTheme.stored(config), track: deck, actions: actions, visible: visible)
                 } else {
                     CassetteColumnFace(track: deck, actions: actions, visible: visible)
                 }
@@ -65,7 +65,7 @@ struct CassetteTile: View {
                 case .tape: TapeCardFace(track: deck, actions: actions, visible: visible)
                 case .portable: PortableCardFace(track: deck, actions: actions, visible: visible)
                 case .boombox: BoomboxCardFace(track: deck, actions: actions, visible: visible)
-                case .deck: DeckCardFace(track: deck, actions: actions, visible: visible)
+                case .deck: DeckCardFace(track: deck, actions: actions, visible: visible, theme: CassetteDeckTheme.stored(config))
                 }
             }
         }
@@ -402,9 +402,10 @@ private struct DeckCardFace: View {
     var track: CassetteTrack
     var actions: CassetteActions
     var visible: Bool
+    var theme: CassetteDeckTheme
 
     var body: some View {
-        DeckMachine(track: track,
+        DeckMachine(theme: theme, track: track,
                     lines: CassetteDeck.lines(title: track.title, artist: track.artist, upNext: [],
                                               limit: CassetteDeck.cardLines),
                     layout: .strip, visible: visible, actions: actions, keySize: 30, corner: 11)
