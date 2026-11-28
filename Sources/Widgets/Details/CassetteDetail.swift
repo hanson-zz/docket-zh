@@ -281,7 +281,7 @@ struct CassetteDetail: View {
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text(track.title)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: model == .deck ? 17 : 20, weight: .bold))
                 Text([track.artist, track.album].filter { !$0.isEmpty }.joined(separator: " · "))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.panelSecondary)
@@ -289,8 +289,9 @@ struct CassetteDetail: View {
             .lineLimit(1)
             .truncationMode(.tail)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // A 面：正在放的这一面；「接下来」是 B 面。
-            Text(model == .deck ? deckTheme.side : tr("A 面"))
+            // 机芯卡座在磁带上标记外观，这里把空间留给曲目信息。
+            if model != .deck {
+                Text(tr("A 面"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
@@ -298,6 +299,7 @@ struct CassetteDetail: View {
                 .padding(.horizontal, 10)
                 .frame(height: 26)
                 .glassPane(cornerRadius: 13)
+            }
         }
     }
 
@@ -508,7 +510,7 @@ struct CassetteDetail: View {
                 .font(.system(size: 15, weight: .bold))
             Spacer(minLength: 6)
             if let summary = CassetteWidget.upNextSummary(count: count) {
-                Text(summary)
+                Text(model == .deck ? tr("\(count) 首") : summary)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
                     .lineLimit(1)
