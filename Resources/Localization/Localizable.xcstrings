@@ -1,6 +1,39 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+  "A 面 · 浅色透明": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Side A · Pearl"
+        }
+      }
+    }
+  },
+  "B 面 · 深色机械": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Side B · Mechanical"
+        }
+      }
+    }
+  },
+  "机芯卡座外观": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Deck appearance"
+        }
+      }
+    }
+  },
     "\n\n\n---\n码头 %@ · macOS %@ · %@" : {
       "extractionState" : "manual",
       "localizations" : {

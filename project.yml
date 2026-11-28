@@ -48,6 +48,8 @@ targets:
       - path: Resources/Sponsor
         buildPhase: resources
       # 收音机小组件的图标（阿喵收音机 meowRadio 的猫耳复古收音机，MIT），作为普通资源打包。
+      - path: Resources/CassetteDeck
+        buildPhase: resources
       - path: Resources/Radio
         buildPhase: resources
       # 收音机面板右上角的插画（radio-art-<外观 rawValue>.png，约 64pt，可带 @2x），作者之后补，

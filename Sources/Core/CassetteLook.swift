@@ -126,7 +126,7 @@ public enum CassetteModel: String, CaseIterable, Sendable {
     /// 收录机：苔绿色横机身，左右喇叭网罩，中间调台条和磁带仓。
     case boombox
     /// 机芯卡座：深炭黑机身露出电路板，顶上旋钮、橙色拨动开关和三个圆玻璃键，
-    /// 中间一盒黑磁带，标签用等宽字写曲目。和随身听、收录机一样不支持紧凑。
+    /// 中间一盒磁带，只显示 A/B 标识与机械结构。和随身听、收录机一样不支持紧凑。
     case deck
 
     public static let key = "model"
@@ -146,6 +146,31 @@ public enum CassetteModel: String, CaseIterable, Sendable {
         CassetteModel(rawValue: config.string(key, default: fallback.rawValue)) ?? fallback
     }
 }
+
+/// Manual A/B appearance belongs to the deck, never to the playback service.
+public enum CassetteDeckTheme: String, CaseIterable, Sendable {
+    case pearl, mechanical
+
+    public static let key = "deckTheme"
+    public static let fallback: Self = .mechanical
+
+    public var side: String { self == .pearl ? "A" : "B" }
+    public var title: String { self == .pearl ? tr("A 面 · 浅色透明") : tr("B 面 · 深色机械") }
+
+    /// Missing and unknown values retain the original dark deck appearance.
+    public static func stored(_ config: WidgetConfig) -> Self {
+        Self(rawValue: config.string(key)) ?? fallback
+    }
+
+    /// A visual preference must not replace playback source or transport settings.
+    public static func choosing(_ theme: Self, in config: WidgetConfig) -> WidgetConfig {
+        guard CassetteModel.stored(config) == .deck else { return config }
+        var copy = config
+        copy.set(key, .string(theme.rawValue))
+        return copy
+    }
+}
+
 
 /// 「复古卡带」小组件（Pro）：播放数据和控制都走正在播放的同一套服务，这里只管
 /// 卡片尺寸、机型、紧凑和面板上要显示的几样东西。

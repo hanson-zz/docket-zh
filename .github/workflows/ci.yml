@@ -325,6 +325,33 @@ jobs:
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Package Cassette A/B test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/cassette-deck-ab-20261128'
+        run: |
+          dir=$(xcodebuild -project Docket.xcodeproj -scheme Docket -configuration Debug -showBuildSettings 2>/dev/null \
+            | awk -F' = ' '$1 ~ / BUILT_PRODUCTS_DIR$/ { print $2; exit }')
+          app="$dir/Dockling.app"
+          test -d "$app"
+          for part in chassis shell; do
+            for theme in pearl mechanical; do
+              test -s "$app/Contents/Resources/deck-$part-$theme.png"
+            done
+          done
+          codesign --verify --deep --strict --verbose=2 "$app"
+          mkdir -p dist
+          ditto -c -k --keepParent "$app" "dist/Dockling-CassetteAB-Test-${GITHUB_SHA:0:8}.zip"
+          (cd dist && shasum -a 256 *.zip > SHA256SUMS.txt)
+
+      - name: Upload Cassette A/B test build
+        if: github.event_name == 'pull_request' && github.head_ref == 'feature/cassette-deck-ab-20261128'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dockling-CassetteAB-Test-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
       - name: Full xcodebuild log
         if: failure()
         uses: actions/upload-artifact@v7
