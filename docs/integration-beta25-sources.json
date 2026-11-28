@@ -1,0 +1,60 @@
+{
+  "version": "1.1.0-beta.25",
+  "build": "25",
+  "minimum_macos": "26.0",
+  "architecture": "arm64",
+  "branch": "feature/pet-insights-polish-beta25-20261129",
+  "base_sha": "5d79dc579ee74796963fe4ea5ab8ad040096749f",
+  "sources": [
+    {
+      "pr": 19,
+      "feature": "Desktop companion 2.0",
+      "sha": "d0c76c80e2086ab0b95b02eb355c592daaf35364"
+    },
+    {
+      "pr": 23,
+      "feature": "Desktop companion 2.1",
+      "sha": "a15a3ce268cc8b55cfd0b6ff400d678da2e0c9b2"
+    },
+    {
+      "pr": 21,
+      "feature": "Time Insights phase A",
+      "sha": "ec9dd514203ef31441ee0a2b55e005459505763f"
+    },
+    {
+      "pr": 22,
+      "feature": "Time Insights phase B",
+      "sha": "15c8bf5b0d272d1fb9d46b718a37d3797941ad28"
+    },
+    {
+      "pr": 26,
+      "feature": "Time Insights Chrome and Edge websites",
+      "sha": "7e73746f9d8410a8ddce91bb1f5b9595fbd457a9"
+    },
+    {
+      "pr": 24,
+      "feature": "Cassette deck A/B themes",
+      "sha": "6007018766e6e2cd1b0eb6e36556c97f5466dad4"
+    },
+    {
+      "pr": 25,
+      "feature": "Centered weather tile, tips in details",
+      "sha": "23432cbf7f7b3cc38c0967e6181ef6660eefb61d"
+    }
+  ],
+  "pending_acceptance": [
+    "Desktop pet live animation, hit testing, drag/drop, sleep and input transitions",
+    "Browser extension installation, permissions, private windows and disconnect recovery",
+    "Live music continuity and reopening saved deck theme",
+    "System appearance, multiple displays and runtime CPU/memory/energy measurements"
+  ],
+  "original_branches_unchanged": true,
+  "formal_release": false,
+  "tested_baseline_sha": "5368b7a0b388f12ac237fc0f606f84f79da4b151",
+  "baseline_feedback": "User reported no issues in beta.24 trial; not a quantitative performance or exhaustive acceptance result.",
+  "round_changes": [
+    "Preserve freshly sampled held paw posture across delayed refreshes without restarting high-frequency refreshes.",
+    "Normalize and clip period summaries consistently with daily, application and website details.",
+    "Distinguish website recording, application-only recording and waiting for the foreground browser."
+  ]
+}
