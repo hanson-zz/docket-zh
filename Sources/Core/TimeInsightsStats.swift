@@ -323,8 +323,10 @@ public struct TimeInsightsPeriod: Equatable, Sendable {
         var apps: [String: TimeInsightsAppUsage] = [:]
         var categories: [TimeInsightsCategory: TimeInterval] = [:]
         var active: TimeInterval = 0, work: TimeInterval = 0, uncategorized: TimeInterval = 0
-        // 先按区间裁一遍，后面每天只看和这一天有重叠的。
-        let relevant = sessions.filter { $0.end > interval.start && $0.start < interval.end }
+        // Use the same global normalization as the day and website summaries.
+        // Filtering by date first can choose a different duplicate checkpoint.
+        let counted = sessions.filter { !TimeInsightsDefaults.alwaysSkipped.contains($0.bundleID) }
+        let relevant = TimeInsightsMath.clipped(TimeInsightsMath.normalized(counted), to: interval)
         var cursor = calendar.startOfDay(for: interval.start)
         var guardCount = 0
         while cursor < interval.end, guardCount < 400 {
