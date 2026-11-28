@@ -645,7 +645,7 @@ private struct DMCassetteCard: View {
             .overlay(casing.strokeBorder(.black.opacity(0.25), lineWidth: 0.5))
             .shadow(color: .black.opacity(0.25), radius: 3, y: 2)
         case .deck:
-            DeckMachine(track: deck,
+            DeckMachine(theme: CassetteDeckTheme.stored(config), track: deck,
                         lines: CassetteDeck.lines(title: deck.title, artist: deck.artist, upNext: [],
                                                   limit: CassetteDeck.cardLines),
                         layout: height < 100 ? .strip : .full, visible: true, actions: actions,
