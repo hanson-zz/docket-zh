@@ -50,16 +50,23 @@ function request(message) {
   });
 }
 
+const protectedHosts = ["paypal.com", "stripe.com", "alipay.com", "1password.com", "bitwarden.com",
+  "mail.google.com", "outlook.live.com", "outlook.office.com", "icloud.com"];
 const protectedWord = /(?:^|[^a-z0-9])(?:log[\s_-]?(?:in|on)|sign[\s_-]?(?:in|up|on)|auth(?:entication|orize)?|accounts?|oauth2?|sso|register|password|passkey|checkout|billing|payments?|wallet|banking|finance|medical|health|patient|verify|verification|2fa|mfa)(?:$|[^a-z0-9])/i;
 function safeHost(raw) {
   if (!raw || raw.length > 8192) return;
   try {
     const url = new URL(raw);
     if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) return;
+    const host = url.hostname.replace(/\.$/, "");
+    if (!/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]*[a-z0-9]$/i.test(host) ||
+        /\.(?:local|localhost|internal|onion|test|invalid)$/.test(host) ||
+        protectedHosts.some(blocked => host === blocked || host.endsWith("." + blocked))) return;
     const surface = decodeURIComponent(url.pathname + url.search + url.hash);
-    if (protectedWord.test(url.hostname) || protectedWord.test(surface) ||
+    if (protectedWord.test(host) || protectedWord.test(surface) ||
+        /登录|注册|密码|支付|付款|结账|银行卡|账单|病历/.test(surface) ||
         /(?:token|session|credential|secret|api[_-]?key)[^&=]*=/i.test(surface)) return;
-    return url.hostname;
+    return host;
   } catch {
     return undefined;
   }

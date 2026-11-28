@@ -214,25 +214,32 @@ final class TimeInsightsTracker {
     }
 
     private func settleWebsiteIdle(at now: Date) {
-        guard recorder.hasWebsiteSlices else { return }
-        persist(recorder.handle(.idle(Self.idleSeconds()), at: now))
+        let seconds = Self.idleSeconds()
+        let browserResumed = recorder.isIdle && seconds < recorder.idleAfter
+            && TimeInsightsPro.collectsWebsites(settings, unlocked: ProAccess.isUnlocked)
+            && TimeInsightsBrowserSamplePolicy.chromiumBrowsers.contains(recorder.eligibleApp?.bundleID ?? "")
+        guard recorder.hasWebsiteSlices || browserResumed else { return }
+        persist(recorder.handle(.idle(seconds), at: now))
     }
 
     private func synchronizeBrowser(at now: Date) {
         let bundleID = recorder.eligibleApp?.bundleID
         let unlocked = ProAccess.isUnlocked
         let eligible = TimeInsightsPro.collectsWebsites(settings, unlocked: unlocked)
-            && isPlaced && !recorder.isIdle
+            && isPlaced && recorder.segment != nil && !recorder.isIdle
             && Self.idleSeconds() < recorder.idleAfter
             && bundleID == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
             && TimeInsightsBrowserSamplePolicy.chromiumBrowsers.contains(bundleID ?? "")
-        let edge = bundleID.map { browserBridge.boundary(for: $0, now: now) } ?? now
+        let observation = bundleID.flatMap { browserBridge.lastObservation(for: $0) }
         browserBridge.authorize(eligible ? bundleID : nil)
         guard let bundleID, TimeInsightsBrowserSamplePolicy.chromiumBrowsers.contains(bundleID) else { return }
         let tab = browserBridge.currentTab(for: bundleID)
         guard tab != nil || recorder.hasWebsiteSlices else { return }
-        // Consent, foreground and lock changes take effect at the system event.
-        recorder.updateWebsite(tab?.domain, at: eligible ? edge : now, observedAt: now)
+        // When the bridge expires, fall back from the last verified sample.
+        // Consent and foreground changes otherwise take effect at the system event.
+        let expired = observation.map { now.timeIntervalSince($0) > TimeInsightsChromiumBridge.expiry } ?? false
+        let edge = eligible || expired ? (observation ?? now) : now
+        recorder.updateWebsite(tab?.domain, at: edge, observedAt: now)
     }
 
     private func receiveBrowserReport(_ report: TimeInsightsChromiumBridge.Report) -> UUID? {

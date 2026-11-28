@@ -202,7 +202,8 @@ public struct TimeInsightsWebsiteUsage: Equatable, Sendable, Identifiable {
     public var id: String { domain }
 
     public static func ranking(_ sessions: [ActivitySession], interval: DateInterval) -> [Self] {
-        let slices = TimeInsightsMath.normalized(TimeInsightsMath.clipped(sessions, to: interval))
+        let counted = sessions.filter { !TimeInsightsDefaults.alwaysSkipped.contains($0.bundleID) }
+        let slices = TimeInsightsMath.clipped(TimeInsightsMath.normalized(counted), to: interval)
         var totals: [String: TimeInterval] = [:]
         for slice in slices where slice.source == .browserBridge {
             guard let domain = slice.domain else { continue }

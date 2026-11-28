@@ -49,10 +49,8 @@ final class TimeInsightsChromiumBridge: TimeInsightsBrowserBridge {
         return reading.tab
     }
 
-    func boundary(for bundleID: String, now: Date) -> Date {
-        guard bundleID == eligibleBrowser, let reading else { return now }
-        return now.timeIntervalSince(reading.seen) > Self.expiry
-            ? reading.seen.addingTimeInterval(Self.expiry) : reading.seen
+    func lastObservation(for bundleID: String) -> Date? {
+        eligibleBrowser == bundleID ? reading?.seen : nil
     }
 
     func authorize(_ bundleID: String?) {
@@ -71,7 +69,10 @@ final class TimeInsightsChromiumBridge: TimeInsightsBrowserBridge {
             return eligibleBrowser == report.browser ? lease : nil
         case "permission":
             presence[report.browser] = Presence(status: .permissionRequired, lastSeen: now)
-            if reading?.sender == report.sender { reading = nil }
+            if reading?.sender == report.sender {
+                lease = UUID()
+                reading = nil
+            }
         case "tab", "unfocused":
             guard eligibleBrowser == report.browser, report.lease == lease,
                   let observed = report.observed, observed.isFinite else { return nil }
