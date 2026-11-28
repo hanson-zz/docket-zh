@@ -152,6 +152,11 @@ targets:
         codeSign: false
         copy:
           destination: executables
+      - target: TimeInsightsBrowserHost
+        embed: true
+        codeSign: false
+        copy:
+          destination: executables
       # 系统小组件扩展（桌面右键「编辑小组件」里的「码头」），嵌进 Contents/PlugIns。
       - target: DocklingWidgets
         embed: true
@@ -252,6 +257,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.shots
         CODE_SIGN_ENTITLEMENTS: Resources/Docket.entitlements
         ENABLE_APP_SANDBOX: NO
+
+  TimeInsightsBrowserHost:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Tools/TimeInsightsBrowserHost
+    settings:
+      base:
+        PRODUCT_NAME: DocklingBrowserHost
+        PRODUCT_BUNDLE_IDENTIFIER: com.docket-zh.app.browser-host
 
   DocketTests:
     type: bundle.unit-test

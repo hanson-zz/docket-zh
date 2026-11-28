@@ -1,6 +1,83 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "这个时段没有网站记录。请在隐私与设置中检查记录授权和扩展连接。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No website activity for this period. Check consent and the extension connection under Privacy and Settings."
+          }
+        }
+      }
+    },
+    "每段时间都由本机活动记录计算。完整时间轴仍在开发中。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totals use activity recorded on this Mac. The full timeline is in development."
+          }
+        }
+      }
+    },
+    "扩展缺少权限。仅记录应用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension needs permission. App activity only."
+          }
+        }
+      }
+    },
+    "扩展已断开。仅记录应用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension disconnected. App activity only."
+          }
+        }
+      }
+    },
+    "扩展未连接，请检查安装。仅记录应用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension not connected. Check installation. App activity only."
+          }
+        }
+      }
+    },
+    "扩展已连接" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension connected"
+          }
+        }
+      }
+    },
+    "需要 Chrome 或 Edge 扩展。只记录符合条件的前台网站域名，跳过私密窗口和敏感页面。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requires the Chrome or Edge extension. Records eligible foreground domains and skips private windows and sensitive pages."
+          }
+        }
+      }
+    },
     "\n\n\n---\n码头 %@ · macOS %@ · %@" : {
       "extractionState" : "manual",
       "localizations" : {

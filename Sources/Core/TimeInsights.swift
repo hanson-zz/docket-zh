@@ -98,7 +98,7 @@ public struct ActivityPrivacyFlags: OptionSet, Codable, Hashable, Sendable {
 }
 
 /// 一段连续的前台活动。时间是绝对时刻（存成 Unix 秒），显示和按天拆分时才用本地日历。
-public struct ActivitySession: Identifiable, Equatable, Hashable, Sendable {
+public struct ActivitySession: Identifiable, Equatable, Hashable, Codable, Sendable {
     public var id: String
     public var start: Date
     public var end: Date
@@ -715,7 +715,7 @@ public enum TimeInsightsProFeature: String, CaseIterable, Sendable {
     /// 周/月趋势现已接入本机数据；其他 Pro 功能仍需单独开发与授权。
     public var isConnected: Bool {
         switch self {
-        case .windowTitles, .customRules, .trends: true
+        case .windowTitles, .websites, .customRules, .trends: true
         default: false
         }
     }
@@ -738,9 +738,9 @@ public enum TimeInsightsPro {
         unlocked && settings.windowTitlesOptIn && TimeInsightsProFeature.windowTitles.isConnected
     }
 
-    /// 现在采不采网站域名：同上，阶段 A 恒为假。
+    /// 网站域名需要 Pro 与独立同意。
     public static func collectsWebsites(_ settings: TimeInsightsSettings, unlocked: Bool) -> Bool {
-        unlocked && settings.websitesOptIn && TimeInsightsProFeature.websites.isConnected
+        unlocked && settings.websitesOptIn && !settings.paused && TimeInsightsProFeature.websites.isConnected
     }
 
     /// 免费层能看几个 App。
@@ -769,8 +769,8 @@ public struct BrowserTabSample: Equatable, Sendable {
     }
 }
 
-/// 阶段 B 浏览器扩展接入前的纯逻辑隐私闸门。
-/// 原始网址仅在内存中传入，结果只保留域名；目前未连接任何扩展，也不触发采集。
+/// 域名采集的隐私闸门。Chromium 扩展先在浏览器内筛查完整网址和页面，
+/// 再通过 acceptDomain 验证只含域名的样本。
 /// 浏览器标签标题需要第三个独立的 opt-in；现阶段故意永远不接收标题。
 public enum TimeInsightsBrowserSamplePolicy {
     public static let supportedBrowsers: Set<String> = [
@@ -780,7 +780,26 @@ public enum TimeInsightsBrowserSamplePolicy {
         "org.mozilla.firefox", "org.mozilla.firefoxdeveloperedition", "org.mozilla.nightly",
         "com.brave.Browser", "com.vivaldi.Vivaldi", "com.operasoftware.Opera"
     ]
+    public static let chromiumBrowsers = ["com.google.Chrome", "com.microsoft.edgemac"]
     public static let maximumAge: TimeInterval = 20
+
+    public static func acceptDomain(
+        _ host: String, browserBundleID: String, foregroundBundleID: String?,
+        capturedAt: Date, now: Date, settings: TimeInsightsSettings, unlocked: Bool
+    ) -> BrowserTabSample? {
+        guard chromiumBrowsers.contains(browserBundleID),
+              host.utf8.count <= 253, host.contains("."),
+              host.utf8.allSatisfy({ (97...122).contains($0) || (48...57).contains($0) || $0 == 45 || $0 == 46 })
+        else { return nil }
+        let labels = host.split(separator: ".", omittingEmptySubsequences: false)
+        guard labels.allSatisfy({ !$0.isEmpty && $0.count <= 63 && $0.first != "-" && $0.last != "-" }),
+              labels.last?.utf8.contains(where: { (97...122).contains($0) }) == true,
+              !["local", "localhost", "internal", "onion", "test", "invalid"].contains(String(labels.last ?? ""))
+        else { return nil }
+        return accept(browserBundleID: browserBundleID, foregroundBundleID: foregroundBundleID,
+                      rawURL: "https://" + host, isPrivate: false, capturedAt: capturedAt, now: now,
+                      settings: settings, unlocked: unlocked)
+    }
 
     /// 只接受当前前台、刚收到的真实浏览器事件；无需、也不会查询任何后台标签页。
     /// 这个函数不是通讯连接器，只供后续原生消息桥在收到事件时调用。
@@ -822,18 +841,19 @@ public enum TimeInsightsBrowserSamplePolicy {
 
 /// 浏览器通讯的连接状态。
 public enum BrowserBridgeState: Equatable, Sendable {
-    /// 还没有接通任何浏览器扩展（阶段 A 永远是这个）。
+    /// 尚未收到此浏览器扩展的心跳。
     case notConnected
     case connected
     /// 扩展曾经连过，现在没有心跳。
     case offline
+    case permissionRequired
 }
 
-/// 浏览器扩展通讯协议。阶段 A 只有协议和没接通的实现，阶段 B 写 Safari / Chrome 等适配。
+/// 浏览器扩展通讯协议。
 public protocol TimeInsightsBrowserBridge: Sendable {
-    var state: BrowserBridgeState { get }
+    @MainActor var state: BrowserBridgeState { get }
     /// `bundleID` 这个浏览器现在前台的标签页；没接通、没有或是私密窗口时 nil。
-    func currentTab(for bundleID: String) -> BrowserTabSample?
+    @MainActor func currentTab(for bundleID: String) -> BrowserTabSample?
 }
 
 /// 没接通的浏览器通讯：什么都不给。

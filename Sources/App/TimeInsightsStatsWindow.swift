@@ -141,6 +141,9 @@ struct TimeInsightsStatsView: View {
                 let period = TimeInsightsPeriod.make(sessions, interval: interval)
                 periodStatistics(period)
             }
+            if unlocked {
+                websiteRanking(TimeInsightsWebsiteUsage.ranking(sessions, interval: interval))
+            }
         } else {
             TimeInsightsEmptyNote(text: tr("本机记录暂时无法读取，请检查隐私与数据设置。"),
                                   symbol: "exclamationmark.triangle")
@@ -245,9 +248,28 @@ struct TimeInsightsStatsView: View {
                     categoryBreakdown(period.categories, total: period.active)
                 }
             }
-            Text(tr("每段时间都由本机活动记录计算。更细的窗口标题、网站域名和完整时间轴仍在开发中。"))
+            Text(tr("每段时间都由本机活动记录计算。完整时间轴仍在开发中。"))
                 .font(.system(size: 13))
                 .foregroundStyle(.panelSecondary)
+        }
+    }
+
+    private func websiteRanking(_ websites: [TimeInsightsWebsiteUsage]) -> some View {
+        TimeInsightsCard(title: tr("网站域名统计")) {
+            if websites.isEmpty {
+                TimeInsightsEmptyNote(text: tr("这个时段没有网站记录。请在隐私与设置中检查记录授权和扩展连接。"),
+                                      symbol: "globe")
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(websites) { website in
+                        LabeledContent {
+                            Text(TimeInsightsFormat.duration(website.active)).monospacedDigit()
+                        } label: {
+                            Text(verbatim: website.domain).textSelection(.enabled)
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -53,10 +53,14 @@ public struct TimeInsightsRecorder: Sendable {
         public var classification: TimeInsightsCategory
         /// 仅存储经脱敏且同意采集的窗口标题；旧存档默认 nil。
         public var windowTitle: String?
+        public var domain: String?
+        /// 短网站切片属于连续的应用活动，不应用切 App 的一秒过滤。
+        var websitePartition: Bool?
+        var precedingWebsiteSlices: [ActivitySession]?
 
         public init(id: String = UUID().uuidString, bundleID: String, appName: String, start: Date,
                     lastSeen: Date, idle: Bool, classification: TimeInsightsCategory,
-                    windowTitle: String? = nil) {
+                    windowTitle: String? = nil, domain: String? = nil, websitePartition: Bool? = nil) {
             self.id = id
             self.bundleID = bundleID
             self.appName = appName
@@ -65,15 +69,21 @@ public struct TimeInsightsRecorder: Sendable {
             self.idle = idle
             self.classification = classification
             self.windowTitle = windowTitle
+            self.domain = domain
+            self.websitePartition = websitePartition
         }
 
         func closed(at end: Date) -> ActivitySession? {
             let finish = max(start, end)
-            guard finish.timeIntervalSince(start) >= TimeInsightsRecorder.minimumLength else { return nil }
+            guard finish > start,
+                  websitePartition == true || finish.timeIntervalSince(start) >= TimeInsightsRecorder.minimumLength
+            else { return nil }
             return ActivitySession(id: id, start: start, end: finish, bundleID: bundleID, appName: appName,
                                    windowTitle: idle ? nil : windowTitle,
+                                   domain: idle ? nil : domain,
                                    classification: classification,
-                                   source: idle ? .idleForeground : .foreground)
+                                   source: idle ? .idleForeground : (domain == nil ? .foreground : .browserBridge),
+                                   privacyFlags: !idle && domain != nil ? .domainOnly : [])
         }
     }
 
@@ -91,6 +101,10 @@ public struct TimeInsightsRecorder: Sendable {
     public private(set) var isIdle: Bool
     public private(set) var segment: Open?
     public private(set) var lastEvent: Date?
+    // AFK is backdated to the last input. Keep site boundaries after that input
+    // provisional until new input confirms them or the idle transition trims them.
+    private var pendingWebsiteSlices: [ActivitySession] = []
+    public var hasWebsiteSlices: Bool { segment?.websitePartition == true || !pendingWebsiteSlices.isEmpty }
 
     public init(idleAfter: TimeInterval = TimeInterval(TimeInsightsSettings.defaultIdleMinutes * 60),
                 excluded: Set<String> = [], rules: [TimeInsightsRule] = [], heartbeatGap: TimeInterval = 90,
@@ -134,10 +148,14 @@ public struct TimeInsightsRecorder: Sendable {
         }
         lastEvent = max(lastEvent ?? now, now)
 
+        if segment == nil {
+            finished += drainWebsiteSlices(through: .distantFuture)
+        }
         var reopenAt = now
         switch event {
         case .foreground(let next):
             if next != app {
+                finished += drainWebsiteSlices(through: now, discardRemainder: true)
                 finished += close(at: now)
                 app = next
             }
@@ -146,9 +164,10 @@ public struct TimeInsightsRecorder: Sendable {
             let lastInput = now.addingTimeInterval(-quiet)
             // 新的一段不能早于正在结束的这一段的开始（上次输入可能早于唤醒、解锁），
             // 没有开着的段时从现在开始，免得把锁屏、排除的时间算进来。
-            let floor = segment?.start ?? now
+            let floor = pendingWebsiteSlices.first?.start ?? segment?.start ?? now
             if quiet >= idleAfter, !isIdle {
                 // 门槛那几分钟本来就没有输入，活跃段在上次输入那一刻结束。
+                finished += drainWebsiteSlices(through: lastInput, discardRemainder: true)
                 finished += close(at: lastInput)
                 isIdle = true
                 reopenAt = max(lastInput, floor)
@@ -156,9 +175,12 @@ public struct TimeInsightsRecorder: Sendable {
                 finished += close(at: lastInput)
                 isIdle = false
                 reopenAt = max(lastInput, floor)
+            } else if !isIdle {
+                finished += drainWebsiteSlices(through: lastInput)
             }
         case .blocked(let reason):
             if !blocks.contains(reason) {
+                finished += drainWebsiteSlices(through: now, discardRemainder: true)
                 finished += close(at: now)
                 blocks.insert(reason)
             }
@@ -175,7 +197,7 @@ public struct TimeInsightsRecorder: Sendable {
     /// 按现在的状态开、关或续上开着的那段。
     private mutating func reconcile(now: Date, startAt: Date) -> [ActivitySession] {
         guard let target = eligibleApp else {
-            return close(at: now)
+            return drainWebsiteSlices(through: now, discardRemainder: true) + close(at: now)
         }
         if var current = segment {
             if current.bundleID == target.bundleID, current.idle == isIdle {
@@ -219,14 +241,59 @@ public struct TimeInsightsRecorder: Sendable {
         return finished
     }
 
+    public mutating func updateWebsite(_ domain: String?, at boundary: Date, observedAt now: Date) {
+        guard var current = segment, !current.idle, let target = eligibleApp else { return }
+        let category = TimeInsightsClassifier.classify(bundleID: target.bundleID, domain: domain, rules: rules)
+        guard current.domain != domain || current.classification != category else { return }
+        let edge = max(current.start, min(boundary, now))
+        current.websitePartition = true
+        if let closed = current.closed(at: edge) { pendingWebsiteSlices.append(closed) }
+        segment = Open(bundleID: target.bundleID, appName: target.name, start: edge, lastSeen: now,
+                       idle: false, classification: category, domain: domain, websitePartition: true)
+        lastEvent = max(lastEvent ?? now, now)
+    }
+
+    private mutating func drainWebsiteSlices(through date: Date, discardRemainder: Bool = false) -> [ActivitySession] {
+        let committed = pendingWebsiteSlices.compactMap { slice -> ActivitySession? in
+            guard slice.end <= date || (discardRemainder && slice.start < date) else { return nil }
+            var clipped = slice
+            clipped.end = min(date, slice.end)
+            return clipped
+        }
+        pendingWebsiteSlices.removeAll { discardRemainder || $0.end <= date }
+        return committed
+    }
+
+    public func provisionalSessions(now: Date) -> [ActivitySession] {
+        pendingWebsiteSlices + (provisional(now: now).map { [$0] } ?? [])
+    }
+
     /// 退出或停止时：开着的那段在这一刻结束。
     public mutating func flush(at now: Date) -> [ActivitySession] {
-        close(at: now)
+        drainWebsiteSlices(through: now, discardRemainder: true) + close(at: now)
     }
 
     /// 现在开着、还没结束的那段，按到现在为止算，给今日汇总加上（不写盘）。
     public func provisional(now: Date) -> ActivitySession? {
         segment?.closed(at: now)
+    }
+
+    public var checkpoint: Open? {
+        var snapshot = segment
+        if !pendingWebsiteSlices.isEmpty { snapshot?.precedingWebsiteSlices = pendingWebsiteSlices }
+        return snapshot
+    }
+
+    public static func recoverCheckpoint(_ segment: Open, now: Date) -> [ActivitySession] {
+        let limit = min(segment.lastSeen, now)
+        var sessions = (segment.precedingWebsiteSlices ?? []).compactMap { slice -> ActivitySession? in
+            guard slice.start < limit else { return nil }
+            var clipped = slice
+            clipped.end = min(limit, slice.end)
+            return clipped
+        }
+        if let last = recover(segment, now: now) { sessions.append(last) }
+        return sessions
     }
 
     /// 上次没收尾的那段（退出或崩溃时开着）：按最后一次心跳收尾，进程没在跑的时间不算。
