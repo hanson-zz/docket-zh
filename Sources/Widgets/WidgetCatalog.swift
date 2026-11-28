@@ -84,6 +84,13 @@ public enum WidgetCatalog {
               defaults: c([LiquidMotion.timerLookKey: .string(LiquidMotion.TimerLook.ring.rawValue)]),
               variants: [], supportsCompact: true, selfContained: true),
 
+        // 时间洞察：今日有效活跃时长、当前 App 和一条小进度条，点开是今日总览和 Top 5。
+        // 和专注计时放在同一个分类、紧挨着。设置（暂停、空闲判定、排除、清空、导出）是
+        // 全局的，存在 `TimeInsightsSettings`，不进卡片配置，所以这里没有默认值。
+        // 记录只在本机的 SQLite 里，见 `TimeInsightsDatabase`。
+        Entry(kind: .timeInsights, name: tr("时间洞察"), category: .health, defaults: c([:]),
+              variants: [], supportsCompact: false, selfContained: true),
+
         // 默认值里的 layout 仍是进度条：没存 layout 的旧卡片补默认值时保持
         // 原样。新放上去的卡片在 `make` 里换成圆环（推荐默认），所以圆环排第一。
         Entry(kind: .progress, name: tr("时间进度"), category: .time,
@@ -320,7 +327,7 @@ public enum WidgetCatalog {
                            WeatherPanel.moreCitiesKey: .list([]),
                            WeatherPanel.showIndicesKey: .bool(true),
                            WeatherPanel.showRainKey: .bool(true),
-                           // 暖心提示：卡片轮换一句、面板小熊猫说一句（WeatherTips），默认开。
+                           // 暖心提示显示在详情面板，扩展栏只保留居中的天气读数。
                            WeatherTips.showKey: .bool(true)]),
               variants: [(tr("当前"), ["layout": .string(WeatherStyle.currentLayout)]),
                          (tr("多日预报"), ["layout": .string(WeatherStyle.forecastLayout)]),
@@ -731,7 +738,8 @@ public enum WidgetCatalog {
              .translate,
              .github,
              .microphone, .gauges,
-             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper, .pullTooth, .divination, .shibaMatch:
+             .colorPicker, .capture, .emoji, .search, .volume, .toggles, .minesweeper, .pullTooth, .divination, .shibaMatch,
+             .timeInsights:
             nil
         }
     }
@@ -969,7 +977,8 @@ public enum WidgetCatalog {
         case .music, .progress, .stripe, .paddle, .shopify,
              .clipboard, .emoji, .appSwitcher, .bookmarks, .calculator, .github, .search, .posture,
              .aiUsage, .todo, .ambient, .lunar, .trash, .habit, .crypto, .appVolume, .radio,
-             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper, .pullTooth, .divination, .shibaMatch:
+             .anniversary, .water, .translate, .pet, .podcast, .perfectDay, .slacker, .aiAssistant, .cassette, .minesweeper, .pullTooth, .divination, .shibaMatch,
+             .timeInsights:
             nil
         }
     }
@@ -1057,6 +1066,9 @@ public enum WidgetCatalog {
         // 柴犬翻翻乐：柴犬、状态和「继续游戏」入口，不在卡片上玩。
         case .shibaMatch:
             return CGSize(width: ShibaMatch.tileWidth, height: ShibaMatch.tileHeight)
+        // 时间洞察：方底、今日活跃时长、当前 App 和一条小进度条。
+        case .timeInsights:
+            return CGSize(width: 204, height: 62)
         // 卜卦：小熊猫、今日签级和签号。
         case .divination:
             return CGSize(width: Divination.tileWidth, height: Divination.tileHeight)
@@ -1325,6 +1337,9 @@ public enum WidgetCatalog {
         // 柴犬翻翻乐：柴犬在上，进度和入口在下。
         case .shibaMatch:
             return ShibaMatch.columnHeight
+        // 时间洞察：图标、「3:12」、当前 App 和进度条上下排。
+        case .timeInsights:
+            return 104
         // 卜卦：小熊猫在上，签级在下。
         case .divination:
             return Divination.columnHeight

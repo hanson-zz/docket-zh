@@ -25,10 +25,12 @@ struct CassetteDetail: View {
     @State private var showAll = false
     /// 刚点的机型：写回配置后面板不一定马上拿到新的一份，先按点的显示。
     @State private var pickedModel: CassetteModel?
+    @State private var pickedDeckTheme: CassetteDeckTheme?
 
     private var current: WidgetInstance { WidgetWriter.current(instance.id) ?? instance }
     private var config: WidgetConfig { current.config }
     private var model: CassetteModel { pickedModel ?? CassetteModel.stored(config) }
+    private var deckTheme: CassetteDeckTheme { pickedDeckTheme ?? CassetteDeckTheme.stored(config) }
     private var browsersEnabled: Bool { config.bool("browsers", default: true) }
     private var autoSwitch: Bool { MusicSourceSwitch.autoSwitch(config) }
 
@@ -54,6 +56,9 @@ struct CassetteDetail: View {
                 topRow(track)
                 if page == .sources {
                     sourcesPage(track)
+                } else if model == .deck {
+                    deckPlayer(track)
+                        .padding(.top, 14)
                 } else {
                     machine(track)
                         .padding(.top, 14)
@@ -75,6 +80,12 @@ struct CassetteDetail: View {
             MusicService.shared.setWantsUpNext(true)
             // 只有已经给过录音权限才启动应用音量，绝不为了音量条去弹权限。
             if AppVolumeService.recordingGranted { AppVolumeService.shared.start() }
+        }
+        .onChange(of: instance.id) { _, _ in
+            pickedDeckTheme = nil
+        }
+        .onChange(of: config.values[CassetteDeckTheme.key]) { _, _ in
+            pickedDeckTheme = nil
         }
         .onDisappear {
             guard !context.isPreview else { return }
@@ -160,13 +171,192 @@ struct CassetteDetail: View {
             PanelBoombox(track: deck, visible: visible, volume: volumeLevel(track),
                          seek: seekHandler(track))
         case .deck:
-            // 机芯卡座：顶上三个圆玻璃键接现有控制，标签写正在放的和接下来两首（B 面）。
-            DeckMachine(track: deck,
-                        lines: DeckLabel.lines(track, deck: deck, preview: context.isPreview,
-                                               limit: CassetteDeck.panelLines),
+            // 机芯磁带只画结构；所有曲目和控制位于下方操作区。
+            DeckMachine(theme: deckTheme, track: deck,
+                        lines: [],
                         layout: .full, visible: visible,
-                        actions: MusicNow.actions(track, config: config, preview: context.isPreview),
-                        keySize: 34, tapeHeight: 156, corner: 18)
+                        actions: nil,
+                        keySize: 26, tapeHeight: 132, corner: 16)
+        }
+    }
+
+    private func deckPlayer(_ track: Playing?) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            deckThemePicker
+            DeckAcrylicBody(theme: deckTheme) {
+                VStack(spacing: 5) {
+                    DeckTape(track: deck(track), lines: [], compact: false, visible: !context.isPreview)
+                        .aspectRatio(1.8, contentMode: .fit)
+                    DeckPlayerPlate(theme: deckTheme) {
+                        if let track {
+                            VStack(alignment: .leading, spacing: 9) {
+                                deckTitles(track)
+                                deckProgress(track)
+                                deckKeys(track)
+                                deckVolume(track)
+                            }
+                        } else {
+                            idle
+                        }
+                    }
+                }
+            }
+            if let track {
+                controlHint(track)
+                upNext(track)
+            }
+        }
+    }
+
+    private var deckThemePicker: some View {
+        HStack(spacing: 4) {
+            ForEach(CassetteDeckTheme.allCases, id: \.self) { theme in
+                Button {
+                    pickedDeckTheme = theme
+                    guard !context.isPreview else { return }
+                    let latest = WidgetWriter.current(instance.id) ?? instance
+                    WidgetWriter.write(latest) { config in
+                        config = CassetteDeckTheme.choosing(theme, in: config)
+                    }
+                } label: {
+                    Text(theme.title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, minHeight: 26)
+                        .background(Capsule().fill(.primary.opacity(theme == deckTheme ? 0.14 : 0)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(theme == deckTheme ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .background(Capsule().fill(.primary.opacity(0.06)))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(tr("机芯卡座外观"))
+    }
+
+    private func deckTitles(_ track: Playing) -> some View {
+        HStack(spacing: 9) {
+            Group {
+                if let artwork = track.artwork {
+                    Image(nsImage: artwork).resizable().scaledToFill()
+                } else {
+                    ZStack {
+                        LinearGradient(colors: [.orange.opacity(0.85), .purple.opacity(0.6)],
+                                       startPoint: .bottomLeading, endPoint: .topTrailing)
+                        Image(systemName: "music.note").foregroundStyle(.white)
+                    }
+                }
+            }
+            .frame(width: 36, height: 36)
+            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(track.title).font(.system(size: 14, weight: .bold))
+                Text(track.artist.isEmpty ? track.album : track.artist)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.panelSecondary)
+            }
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func deckProgress(_ track: Playing) -> some View {
+        let current = deck(track)
+        return VStack(spacing: 2) {
+            DeckSlider(value: current.showsTime ? current.progress : 0, theme: deckTheme)
+                .seekable(seekHandler(track))
+                .accessibilityLabel(tr("进度"))
+            HStack {
+                Text(CassetteWidget.counter(current.elapsed))
+                Spacer()
+                Text(CassetteWidget.counter(current.duration))
+            }
+            .font(.system(size: 10, weight: .medium, design: .monospaced))
+            .foregroundStyle(.panelSecondary)
+        }
+    }
+
+    private func deckKey(_ symbol: String, label: String, primary: Bool = false,
+                         active: Bool = false, enabled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: primary ? 17 : 13, weight: .semibold))
+        }
+        .buttonStyle(DeckTransportStyle(theme: deckTheme, primary: primary, active: active))
+        .frame(width: primary ? 40 : 30, height: primary ? 40 : 30)
+        .disabled(!enabled)
+        .help(label)
+        .accessibilityLabel(label)
+    }
+
+    private func deckKeys(_ track: Playing) -> some View {
+        let live = !context.isPreview
+        let extras = track.source?.hasShuffleAndRepeat == true && !track.isBrowser
+        let mode = track.native?.repeatMode ?? .off
+        return HStack(spacing: 0) {
+            if extras {
+                deckKey("shuffle", label: tr("随机播放"), active: track.native?.shuffle == true,
+                        enabled: live) { MusicService.shared.setShuffle(!(track.native?.shuffle ?? false)) }
+                Spacer(minLength: 3)
+            }
+            if !track.isBrowser {
+                deckKey("backward.end.fill", label: tr("上一首"), enabled: live) { MusicService.shared.previous() }
+                Spacer(minLength: 3)
+            }
+            deckKey(track.isPlaying ? "pause.fill" : "play.fill",
+                    label: track.isPlaying ? tr("暂停") : tr("播放"), primary: true, enabled: live) {
+                if track.isBrowser { BrowserMedia.shared.playPause() } else { MusicService.shared.playPause() }
+            }
+            if !track.isBrowser {
+                Spacer(minLength: 3)
+                deckKey("forward.end.fill", label: tr("下一首"), enabled: live) { MusicService.shared.next() }
+            }
+            if extras {
+                Spacer(minLength: 3)
+                deckKey(mode == .one ? "repeat.1" : "repeat", label: mode.label, active: mode != .off,
+                        enabled: live) { MusicService.shared.cycleRepeat() }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func deckVolume(_ track: Playing) -> some View {
+        if let level = volumeLevel(track), let source = track.source, !track.isBrowser {
+            let route = MusicVolumeRoute.route(for: source, recordingGranted: AppVolumeService.recordingGranted)
+            HStack(spacing: 8) {
+                Image(systemName: "speaker.fill")
+                DeckSlider(value: level, theme: deckTheme)
+                    .seekable(SeekHandler(enabled: !context.isPreview && route != .none,
+                        changed: { value in setDeckVolume(value, done: false, source: source) },
+                        ended: { value in setDeckVolume(value, done: true, source: source) }))
+                    .accessibilityLabel(tr("音量"))
+                    .accessibilityValue("\(Int(level * 100))%")
+                    .accessibilityAdjustableAction { direction in
+                        guard !context.isPreview else { return }
+                        switch direction {
+                        case .increment: setDeckVolume(min(1, level + 0.05), done: true, source: source)
+                        case .decrement: setDeckVolume(max(0, level - 0.05), done: true, source: source)
+                        @unknown default: break
+                        }
+                    }
+                Image(systemName: "speaker.wave.3.fill")
+            }
+            .font(.system(size: 10))
+            .foregroundStyle(.panelSecondary)
+        }
+    }
+
+    private func setDeckVolume(_ value: Double, done: Bool, source: MusicSource) {
+        guard !context.isPreview else { return }
+        dragVolume = done ? nil : value
+        switch MusicVolumeRoute.route(for: source, recordingGranted: AppVolumeService.recordingGranted) {
+        case .player: MusicService.shared.setVolume(value * 100)
+        case .appVolume: AppVolumeService.shared.setPercent(value * 100, for: source.bundleID)
+        case .none: break
         }
     }
 
@@ -176,6 +366,9 @@ struct CassetteDetail: View {
         VStack(alignment: .leading, spacing: 0) {
             titles(track)
                 .padding(.top, 16)
+            if model == .deck {
+                deckProgress(track).padding(.top, 10)
+            }
             if model == .tape {
                 counterRow(track)
                     .padding(.top, 12)
@@ -190,9 +383,25 @@ struct CassetteDetail: View {
 
     private func titles(_ track: Playing) -> some View {
         HStack(alignment: .center, spacing: 10) {
+            if model == .deck {
+                Group {
+                    if let artwork = track.artwork {
+                        Image(nsImage: artwork).resizable().scaledToFill()
+                    } else {
+                        ZStack {
+                            LinearGradient(colors: [.orange.opacity(0.7), .purple.opacity(0.5)],
+                                           startPoint: .bottomLeading, endPoint: .topTrailing)
+                            Image(systemName: "music.note").foregroundStyle(.white)
+                        }
+                    }
+                }
+                .frame(width: 42, height: 42)
+                .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .accessibilityHidden(true)
+            }
             VStack(alignment: .leading, spacing: 4) {
                 Text(track.title)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: model == .deck ? 17 : 20, weight: .bold))
                 Text([track.artist, track.album].filter { !$0.isEmpty }.joined(separator: " · "))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.panelSecondary)
@@ -200,8 +409,9 @@ struct CassetteDetail: View {
             .lineLimit(1)
             .truncationMode(.tail)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // A 面：正在放的这一面；「接下来」是 B 面。
-            Text(tr("A 面"))
+            // 机芯卡座在磁带上标记外观，这里把空间留给曲目信息。
+            if model != .deck {
+                Text(tr("A 面"))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.panelSecondary)
                 .lineLimit(1)
@@ -209,6 +419,7 @@ struct CassetteDetail: View {
                 .padding(.horizontal, 10)
                 .frame(height: 26)
                 .glassPane(cornerRadius: 13)
+            }
         }
     }
 
@@ -419,7 +630,7 @@ struct CassetteDetail: View {
                 .font(.system(size: 15, weight: .bold))
             Spacer(minLength: 6)
             if let summary = CassetteWidget.upNextSummary(count: count) {
-                Text(summary)
+                Text(model == .deck ? tr("\(count) 首") : summary)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.panelSecondary)
                     .lineLimit(1)

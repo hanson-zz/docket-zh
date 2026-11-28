@@ -326,6 +326,8 @@ public enum WidgetTint {
         case .divination: Palette("#C8382E", "#D4A63A")
         // 柴犬翻翻乐：柴犬的橙，对比色是网球的黄绿。
         case .shibaMatch: Palette("#E8963A", "#8DBA3C")
+        // 时间洞察：沉静的青绿，对比色是琥珀，避开大面积蓝。
+        case .timeInsights: Palette("#2BA58C", "#E2A23C")
         }
     }
 

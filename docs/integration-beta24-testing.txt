@@ -1,0 +1,30 @@
+Dockling 1.1.0-beta.24 统一测试版
+
+此包面向 Apple Silicon Mac，要求 macOS 26 或更新版本。
+这是用于验收的 ad-hoc Debug 构建，没有创建正式 Release。
+
+包内内容
+- Dockling.app：天气布局、桌宠 2.0/2.1、卡带 A/B、时间洞察 A/B/网站统计。
+- BrowserExtension：Chrome 和 Edge 的解压缩扩展与本机主机安装脚本。
+- time-insights-chromium-testing.md：浏览器连接、权限和网站统计的验收步骤。
+- BUILD-INFO.json：实际构建提交、来源提交、版本与待验收项。
+
+开始测试
+1. 先退出正在运行的旧版 Dockling，保留旧 App，将此包解压到单独文件夹。
+2. 测试版与旧版使用相同 bundle ID，可能读取同一份设置和统计数据库；请先备份重要数据，不要同时运行两版。
+3. 天气卡片仅保留居中的图标、温度和城市。暖心提示在天气面板顶部，空气质量详情在「指数」页。原有暖心提示开关继续有效。
+4. 设置 → 小组件 → 桌面宠物：分别测试打字陪伴、鼠标掠过、左右/双键与头部跟随。新实验开关保持原来的默认值，旧设置照常读取。
+5. 复古卡带 → 机芯卡座：切换 A 面浅色透明 / B 面深色机械，检查卷轴、音乐控制和关闭重开后的主题。
+6. 在扩展栏放置时间洞察组件后才开始记录。基础统计免费，Pro 功能仍按原有授权工作。
+7. 网站统计还需要手动加载 BrowserExtension、安装 Native Messaging 主机并单独开启授权。请按照同包浏览器说明操作；它不会随着启动 App 自动安装。
+
+浏览器主机安装命令示例（把路径改成实际位置，不要照抄示例扩展 ID）：
+bash BrowserExtension/install-host.sh chrome CHROME_EXTENSION_ID /path/to/Dockling.app
+bash BrowserExtension/install-host.sh edge EDGE_EXTENSION_ID /path/to/Dockling.app
+
+已做的自动检查
+完整 Xcode 编译、全量单元测试、翻译检查、来源提交检查、图标和分层素材入包检查、应用与主机签名检查。实际结果见 BUILD-INFO.json 与 CI。
+
+仍待真机验收
+桌宠动态边缘、鼠标穿透与拖放、安全输入/低电量/睡眠切换；音乐切换不断播；浏览器前台、无痕、敏感页、撤权、断线；多显示器、浅深色、CPU/内存/能耗。
+自动检查通过不代表以上真机项目已经通过。未经真机验收不合并 main。

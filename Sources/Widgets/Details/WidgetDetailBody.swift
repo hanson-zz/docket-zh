@@ -129,6 +129,8 @@ struct WidgetDetailBody: View {
             ShibaMatchDetail(instance: instance, context: context)
         case .divination:
             DivinationDetail(instance: instance, context: context)
+        case .timeInsights:
+            TimeInsightsDetail(instance: instance, context: context)
         case .emoji:
             EmojiDetail(instance: instance, context: context)
         case .toggles:

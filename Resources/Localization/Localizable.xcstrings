@@ -1,6 +1,83 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "这个时段没有网站记录。请在隐私与设置中检查记录授权和扩展连接。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No website activity for this period. Check consent and the extension connection under Privacy and Settings."
+          }
+        }
+      }
+    },
+    "每段时间都由本机活动记录计算。完整时间轴仍在开发中。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Totals use activity recorded on this Mac. The full timeline is in development."
+          }
+        }
+      }
+    },
+    "扩展缺少权限。仅记录应用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension needs permission. App activity only."
+          }
+        }
+      }
+    },
+    "扩展已断开。仅记录应用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension disconnected. App activity only."
+          }
+        }
+      }
+    },
+    "扩展未连接，请检查安装。仅记录应用。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension not connected. Check installation. App activity only."
+          }
+        }
+      }
+    },
+    "扩展已连接" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension connected"
+          }
+        }
+      }
+    },
+    "需要 Chrome 或 Edge 扩展。只记录符合条件的前台网站域名，跳过私密窗口和敏感页面。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requires the Chrome or Edge extension. Records eligible foreground domains and skips private windows and sensitive pages."
+          }
+        }
+      }
+    },
     "\n\n\n---\n码头 %@ · macOS %@ · %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2190,6 +2267,17 @@
         }
       }
     },
+    "24 小时活动分布" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity Over 24 Hours"
+          }
+        }
+      }
+    },
     "4 种机型，各占一格" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2465,6 +2553,17 @@
         }
       }
     },
+    "今天共 %@ 段活跃，最长一段连续 %@，在 %@。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ active stretches today. The longest ran %@, in %@."
+          }
+        }
+      }
+    },
     "今天完成的番茄" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2483,6 +2582,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "What can AI help you with today?"
+          }
+        }
+      }
+    },
+    "今天还没有记录。切到别的应用用一会儿，这里就会出现。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing recorded today yet. Use another app for a while and it shows up here."
+          }
+        }
+      }
+    },
+    "今日有效活跃时长，进度条以 8 小时为满格。点开查看今日总览。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active time today. The bar is full at 8 hours. Click for today's overview."
+          }
+        }
+      }
+    },
+    "今日活跃" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active Today"
+          }
+        }
+      }
+    },
+    "从现在起继续记录前台应用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume recording the frontmost app from now on"
           }
         }
       }
@@ -2685,6 +2828,17 @@
         }
       }
     },
+    "准备中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Getting ready"
+          }
+        }
+      }
+    },
     "准备好开始下一轮专注了吗？" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2740,6 +2894,17 @@
         }
       }
     },
+    "前台停留 %@，其中 %@ 没有键盘鼠标操作，不算活跃。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the foreground for %@, of which %@ had no keyboard or mouse input and isn't counted as active."
+          }
+        }
+      }
+    },
     "助手正在启动，设置的上限尚未生效。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2747,6 +2912,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The helper is starting. The limit is not in effect yet."
+          }
+        }
+      }
+    },
+    "单独同意后才读取当前窗口的标题，可随时撤销。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads the current window's title only after you agree separately. You can withdraw any time."
           }
         }
       }
@@ -2795,6 +2971,17 @@
         }
       }
     },
+    "只记前台应用的名称和时长，不读按键内容、不截图、不上传，数据只存在这台 Mac 上。无操作满 %@ 分钟算离开，可在设置 ▸ 小组件 ▸ 时间洞察里改。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records only the frontmost app's name and time. No keystrokes, no screenshots, no uploads: the data stays on this Mac. %@ minutes without input counts as away, which you can change in Settings ▸ Widgets ▸ Time Insights."
+          }
+        }
+      }
+    },
     "叮" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2835,6 +3022,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Blow"
+          }
+        }
+      }
+    },
+    "周、月趋势" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekly and Monthly Trends"
           }
         }
       }
@@ -2916,6 +3114,46 @@
         }
       }
     },
+    "娱乐 (category)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entertainment"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "娛樂"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "娱乐"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "娛樂"
+          }
+        }
+      }
+    },
+    "学习" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learning"
+          }
+        }
+      }
+    },
     "完全磁盘访问权限：看见刚放进废纸篓的文件和它原来的位置。自动化里允许码头控制访达：请访达把文件放回原处，第一次放回时系统会问。没有自动化权限时，小熊猫只把文件叼回来，给一个「放回原处」的按钮。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2934,6 +3172,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Done · %@ moves"
+          }
+        }
+      }
+    },
+    "完整数据导出" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full Data Export"
+          }
+        }
+      }
+    },
+    "导出 CSV…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export CSV…"
+          }
+        }
+      }
+    },
+    "导出包括窗口标题和域名在内的全部字段。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export every field, including window titles and domains."
+          }
+        }
+      }
+    },
+    "导出失败" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export failed"
           }
         }
       }
@@ -2982,6 +3264,17 @@
         }
       }
     },
+    "工作只算开发、设计、学习、沟通几类；认不出的应用留在未分类，不当成工作。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work counts only Development, Design, Learning and Communication. Apps that aren't recognized stay uncategorized and never count as work."
+          }
+        }
+      }
+    },
     "左右拖动调整专注时长（5 到 90 分钟）" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3026,6 +3319,28 @@
         }
       }
     },
+    "已导出：%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exported: %@"
+          }
+        }
+      }
+    },
+    "已排除 %@，之后不再记录它。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is excluded and won't be recorded from now on."
+          }
+        }
+      }
+    },
     "已接通电源，电量 %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3044,6 +3359,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About %@%% played"
+          }
+        }
+      }
+    },
+    "已暂停记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording paused"
+          }
+        }
+      }
+    },
+    "已暂停记录，今天还没有数据。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording is paused and there's no data for today yet."
+          }
+        }
+      }
+    },
+    "已清空全部记录。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All records cleared."
           }
         }
       }
@@ -3081,6 +3429,28 @@
         }
       }
     },
+    "应用 Top 5" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top 5 Apps"
+          }
+        }
+      }
+    },
+    "应用活跃时长，只存本机" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App active time, kept on this Mac"
+          }
+        }
+      }
+    },
     "废纸篓救回" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3099,6 +3469,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trash Rescue needs two permissions"
+          }
+        }
+      }
+    },
+    "开发 (category)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Development"
+          }
+        },
+        "zh-HK" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开发"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開發"
           }
         }
       }
@@ -3187,6 +3586,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Standby"
+          }
+        }
+      }
+    },
+    "待接通" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming soon"
+          }
+        }
+      }
+    },
+    "待接通：这两项还在开发中，现在不采集任何窗口标题或网站。接通后也要你在这里逐项打开，购买 Pro 不会自动打开。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coming soon: both are still in development and no window titles or websites are collected now. Once ready, each still has to be turned on here by you. Buying Pro doesn't turn them on."
           }
         }
       }
@@ -3345,6 +3766,39 @@
         }
       }
     },
+    "按应用、标题关键词或域名设置分类和优先级。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set categories and priorities by app, title keyword or domain."
+          }
+        }
+      }
+    },
+    "按日、周、月对比活跃和工作时长。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare active and work time by day, week and month."
+          }
+        }
+      }
+    },
+    "按时间段查看每一段活动。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See every stretch of activity by time of day."
+          }
+        }
+      }
+    },
     "换外观" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3352,6 +3806,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Change look"
+          }
+        }
+      }
+    },
+    "排除 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclude %@"
+          }
+        }
+      }
+    },
+    "排除的应用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluded App"
+          }
+        }
+      }
+    },
+    "排除的应用，不计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excluded app, not counted"
           }
         }
       }
@@ -3477,6 +3964,17 @@
         }
       }
     },
+    "放上扩展栏后开始记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts recording once it's on the shelf"
+          }
+        }
+      }
+    },
     "放克" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3484,6 +3982,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Funk"
+          }
+        }
+      }
+    },
+    "数据" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
           }
         }
       }
@@ -3499,6 +4008,17 @@
         }
       }
     },
+    "数据打不开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data unavailable"
+          }
+        }
+      }
+    },
     "新纪录！" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3506,6 +4026,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New best!"
+          }
+        }
+      }
+    },
+    "无操作多久算离开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Away After"
           }
         }
       }
@@ -3521,6 +4052,28 @@
         }
       }
     },
+    "时间洞察" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time Insights"
+          }
+        }
+      }
+    },
+    "时间洞察，今日活跃 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time Insights, active today %@"
+          }
+        }
+      }
+    },
     "星星" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3528,6 +4081,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Star"
+          }
+        }
+      }
+    },
+    "暂停后不记录任何应用，随时可以继续" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While paused, no app is recorded. Resume any time."
+          }
+        }
+      }
+    },
+    "暂停记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause Recording"
+          }
+        }
+      }
+    },
+    "暂时离开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Away"
+          }
+        }
+      }
+    },
+    "暂时离开，不计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Away from the keyboard, not counted"
+          }
+        }
+      }
+    },
+    "更多统计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Stats"
           }
         }
       }
@@ -3565,6 +4173,17 @@
         }
       }
     },
+    "未分类" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uncategorized"
+          }
+        }
+      }
+    },
     "未听" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3572,6 +4191,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unplayed"
+          }
+        }
+      }
+    },
+    "未在使用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not in use"
           }
         }
       }
@@ -3594,6 +4224,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not in effect"
+          }
+        }
+      }
+    },
+    "本机数据打不开，暂停记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local data can't be opened, recording stopped"
+          }
+        }
+      }
+    },
+    "本机数据打不开，暂时没有可显示的记录。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The local data can't be opened, so there's nothing to show."
+          }
+        }
+      }
+    },
+    "本机数据文件打不开，已停止记录。可以在面板里清空数据后重新开始。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The local data file can't be opened, so recording stopped. Clear the data in the panel to start over."
+          }
+        }
+      }
+    },
+    "本机数据来自更新版本的码头，为免覆盖已停止记录。原文件保留不动。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The local data was written by a newer version of Dockling, so recording stopped to avoid overwriting it. The original file is left untouched."
           }
         }
       }
@@ -3664,6 +4338,28 @@
         }
       }
     },
+    "正在记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording"
+          }
+        }
+      }
+    },
+    "正在记录：%@ · %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording: %@ · %@"
+          }
+        }
+      }
+    },
     "正在试听" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3682,6 +4378,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moves %@"
+          }
+        }
+      }
+    },
+    "沟通" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Communication"
           }
         }
       }
@@ -3708,6 +4415,17 @@
         }
       }
     },
+    "活跃" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active"
+          }
+        }
+      }
+    },
     "消息灵动岛与刘海小岛" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3719,6 +4437,17 @@
         }
       }
     },
+    "添加应用…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add App…"
+          }
+        }
+      }
+    },
     "添加订阅…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3726,6 +4455,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Subscription..."
+          }
+        }
+      }
+    },
+    "清空数据…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Data…"
+          }
+        }
+      }
+    },
+    "清空这台 Mac 上全部时间洞察记录？不能撤销。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear all Time Insights records on this Mac? This can't be undone."
           }
         }
       }
@@ -3983,6 +4734,17 @@
         }
       }
     },
+    "窗口标题统计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Window Title Stats"
+          }
+        }
+      }
+    },
     "章节" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4082,6 +4844,28 @@
         }
       }
     },
+    "统计窗口标题" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track Window Titles"
+          }
+        }
+      }
+    },
+    "统计网站域名" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track Website Domains"
+          }
+        }
+      }
+    },
     "继续提问" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4104,6 +4888,17 @@
         }
       }
     },
+    "继续记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resume"
+          }
+        }
+      }
+    },
     "网球" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4111,6 +4906,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tennis ball"
+          }
+        }
+      }
+    },
+    "网站域名统计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website Domain Stats"
           }
         }
       }
@@ -4133,6 +4939,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Translate Text"
+          }
+        }
+      }
+    },
+    "自定义分类规则" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Category Rules"
           }
         }
       }
@@ -4181,6 +4998,28 @@
         }
       }
     },
+    "记录只存在这台 Mac 上，不上传。保留最近 %@ 天。基础导出包括时间、应用和分类。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records stay on this Mac and are never uploaded. The last %@ days are kept. The basic export includes times, apps and categories."
+          }
+        }
+      }
+    },
+    "设计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Design"
+          }
+        }
+      }
+    },
     "试听%@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4188,6 +5027,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Preview %@"
+          }
+        }
+      }
+    },
+    "详细时间轴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detailed Timeline"
+          }
+        }
+      }
+    },
+    "购买 Pro 不等于同意采集：窗口标题和网站需要你逐项单独打开，默认关闭，随时可以撤销。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buying Pro is not consent to collection. Window titles and websites each need to be turned on by you, are off by default, and can be turned off any time."
           }
         }
       }
@@ -4324,6 +5185,17 @@
         }
       }
     },
+    "超过这个时间没有键盘、鼠标或触控板操作，就不再算活跃，只算前台停留。只读取距上次操作多久，不读取按了什么。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After this long without keyboard, mouse or trackpad input, time is no longer counted as active, only as time in the foreground. Only the time since the last input is read, never what was pressed."
+          }
+        }
+      }
+    },
     "跳到休息，这一轮不算完成" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4368,6 +5240,17 @@
         }
       }
     },
+    "还没有排除的应用。排除后，这个应用在前台时不记录。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No excluded apps yet. An excluded app isn't recorded while it's in the foreground."
+          }
+        }
+      }
+    },
     "这一轮你手动停了或换了声音，下一轮再自动播放" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4386,6 +5269,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This episode has no chapters"
+          }
+        }
+      }
+    },
+    "这些功能还在开发中，接通前不会采集任何窗口标题或网站。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These features are still in development. No window titles or websites are collected until they're ready."
+          }
+        }
+      }
+    },
+    "这些是 Pro 功能，还在开发中。接通前不会采集任何窗口标题或网站。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These are Pro features still in development. No window titles or websites are collected until they're ready."
           }
         }
       }
@@ -4434,6 +5339,28 @@
         }
       }
     },
+    "通过浏览器扩展只记域名，不记网址路径和查询内容。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records only the domain through a browser extension, never the page path or query."
+          }
+        }
+      }
+    },
+    "采集" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracking"
+          }
+        }
+      }
+    },
     "重新填入这条" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4452,6 +5379,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bell"
+          }
+        }
+      }
+    },
+    "锁屏或休眠中，不计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locked or asleep, not counted"
           }
         }
       }
@@ -4606,6 +5544,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open Dockling"
+          }
+        }
+      }
+    },
+    "隐私与数据" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Data"
           }
         }
       }
@@ -4771,6 +5720,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "While the red panda sits facing you, its eyes follow the pointer. A click surprises it, petting makes it shy, and rapid clicks make it dizzy. Only the pointer position is used, and nothing is recorded. With Reduce Motion on, it does not follow the pointer and expressions change without animation."
+          }
+        }
+      }
+    },
+    "头部立体跟随（实验）" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3D head follow (experimental)"
+          }
+        }
+      }
+    },
+    "跟着指针轻微倾头。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。使用现有图片分层，不改变原有脸型；低电量或减弱动态效果时关闭。默认关闭。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilts its head slightly toward the pointer. Requires Lively expressions, and works while the red panda sits facing you on the Dock or the desktop. Uses layers of the existing artwork without changing its face. Off in Low Power Mode or with Reduce Motion. Off by default."
+          }
+        }
+      }
+    },
+    "打字陪伴" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typing companion"
+          }
+        }
+      }
+    },
+    "跟着打字节奏点头、前爪轻敲。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只读取系统提供的“距上次按键时间”，不读取、记录或上传按键内容；低电量或减弱动态效果时不动。默认关闭。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nods and taps its front paws along with your typing. Requires Lively expressions, and works while the red panda sits facing you on the Dock or the desktop. Only reads the system's \"time since last key press\". Keystrokes are never read, recorded, or uploaded. Stays still in Low Power Mode or with Reduce Motion. Off by default."
+          }
+        }
+      }
+    },
+    "鼠标掠过反应" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pointer swoop reaction"
+          }
+        }
+      }
+    },
+    "指针快速经过附近时小熊猫会短暂惊讶，约 7 秒冷却。需要开启灵动表情，小熊猫正面坐在程序坞或桌面上时生效。只使用即时坐标，不记录轨迹。减弱动态效果时不触发。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the pointer sweeps past quickly, the red panda looks briefly surprised, with a cooldown of about 7 seconds. Requires Lively expressions, and works while the red panda sits facing you on the Dock or the desktop. Only the current pointer position is used, and no path is recorded. Does not trigger with Reduce Motion on."
           }
         }
       }
@@ -20265,6 +21280,17 @@
         }
       }
     },
+    "分类占比" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Category"
+          }
+        }
+      }
+    },
     "分组" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22967,6 +23993,17 @@
         }
       }
     },
+    "单独授权，随时可以关掉" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Granted separately, can be turned off at any time"
+          }
+        }
+      }
+    },
     "单色" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23051,6 +24088,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Broadcom"
+          }
+        }
+      }
+    },
+    "占前台停留 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% of time in front"
+          }
+        }
+      }
+    },
+    "占活跃时长 %@%%" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%% of active time"
           }
         }
       }
@@ -24265,6 +25324,17 @@
         }
       }
     },
+    "只记应用名称和时长，不读按键、不截图，数据只存在这台 Mac 上。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only app names and durations, no keystrokes or screenshots, and the data stays on this Mac."
+          }
+        }
+      }
+    },
     "只达标一项" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24939,6 +26009,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ afternoon free"
+          }
+        }
+      }
+    },
+    "周、月趋势、完整应用排行和自定义分类规则都在完整统计里。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekly and monthly trends, the full app ranking and custom category rules are in Full Stats."
           }
         }
       }
@@ -26160,6 +27241,17 @@
         }
       }
     },
+    "在 Safari、Chrome、Edge 里只记当前标签页的域名，不记网址路径和查询内容，私密窗口不记。需要自动化权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Safari, Chrome and Edge, records only the domain of the current tab, never the path or query, and nothing from private windows. Needs Automation permission."
+          }
+        }
+      }
+    },
     "在 Spotify 中查看" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -26915,6 +28007,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The basics are always free"
+          }
+        }
+      }
+    },
+    "基础导出包括时间、应用和分类，免费。暂停、排除、清空也都免费。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The basic export holds times, apps and categories and is free. Pausing, excluding and clearing are free too."
+          }
+        }
+      }
+    },
+    "基础记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic recording"
           }
         }
       }
@@ -28491,6 +29605,17 @@
         }
       }
     },
+    "完整统计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full Stats"
+          }
+        }
+      }
+    },
     "精简" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -29913,6 +31038,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Workdays"
+          }
+        }
+      }
+    },
+    "工作时长" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Work Time"
           }
         }
       }
@@ -32263,6 +33399,17 @@
         }
       }
     },
+    "开发中" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In development"
+          }
+        }
+      }
+    },
     "开启" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -32688,6 +33835,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Current chapter, "
+          }
+        }
+      }
+    },
+    "当前记录" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording Now"
           }
         }
       }
@@ -34008,6 +35166,17 @@
         }
       }
     },
+    "总活跃" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total active"
+          }
+        }
+      }
+    },
     "显示在输入框下面，最多 %@ 个。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34686,6 +35855,17 @@
         }
       }
     },
+    "打开 设置 ▸ 时间洞察：记录开关、排除的应用、导出和清空数据" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings ▸ Time Insights: recording, excluded apps, export and clearing data"
+          }
+        }
+      }
+    },
     "打开“%@”" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -34825,6 +36005,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open it to see unread mail here. Dockling never opens it on its own."
+          }
+        }
+      }
+    },
+    "打开完整统计窗口：日、周、月统计、历史和分类规则" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the full stats window: daily, weekly and monthly stats, history and category rules"
           }
         }
       }
@@ -36083,6 +37274,17 @@
         }
       }
     },
+    "持平" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same"
+          }
+        }
+      }
+    },
     "指数" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36534,6 +37736,28 @@
         }
       }
     },
+    "排除后，这个应用在前台时不记录。可在 设置 ▸ 时间洞察 里移除。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Once excluded, this app is not recorded while in front. You can remove it in Settings ▸ Time Insights."
+          }
+        }
+      }
+    },
+    "排除最近使用的 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclude recently used %@"
+          }
+        }
+      }
+    },
     "接下来 · 歌单「%@」" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36607,6 +37831,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ songs"
+          }
+        }
+      }
+    },
+    "排除此应用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exclude this app"
           }
         }
       }
@@ -36695,6 +37930,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Up to %@"
+          }
+        }
+      }
+    },
+    "本段 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This stretch %@"
           }
         }
       }
@@ -36853,6 +38099,39 @@
         }
       }
     },
+    "码头在前台，不计时" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling is in front, not counted"
+          }
+        }
+      }
+    },
+    "码头自身" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling itself"
+          }
+        }
+      }
+    },
+    "码头自身、登录窗口和屏幕保护程序默认不计入。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dockling itself, the login window and the screen saver are never counted."
+          }
+        }
+      }
+    },
     "稍后这里会堆出今天每小时的电量" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36860,6 +38139,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Each hour's charge will pile up here"
+          }
+        }
+      }
+    },
+    "空闲判定阈值" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idle threshold"
           }
         }
       }
@@ -36882,6 +38172,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Result %@ %@, click to copy"
+          }
+        }
+      }
+    },
+    "解锁码头 Pro 后才能打开" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Available once Dockling Pro is unlocked"
           }
         }
       }
@@ -70827,6 +72128,28 @@
         }
       }
     },
+    "记录你正在使用的前台应用和使用时长。关掉等于暂停记录，主面板上也能随时暂停。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records the app you are using in front and for how long. Turning this off pauses recording, which you can also do from the main panel at any time."
+          }
+        }
+      }
+    },
+    "记录前台窗口的标题（如文档名），标题会截短并去掉邮箱、长数字。需要辅助功能权限。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Records the title of the front window (such as a document name). Titles are shortened, and email addresses and long numbers are removed. Needs Accessibility permission."
+          }
+        }
+      }
+    },
     "访达" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -72938,6 +74261,17 @@
         }
       }
     },
+    "记录前台应用" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record the frontmost app"
+          }
+        }
+      }
+    },
     "铜钱 (coins)" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -73875,6 +75209,17 @@
         }
       }
     },
+    "这一项还在开发中，现在不采集。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is still in development and collects nothing yet."
+          }
+        }
+      }
+    },
     "这台 Mac 解不开 %@（.%@ 格式）。可以先用音频软件转成 wav 或 m4a，改好 config.json 里的文件名再导入。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -74502,6 +75847,17 @@
         }
       }
     },
+    "解锁 Pro 查看周、月趋势、完整应用排行和自定义分类规则。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock Pro for weekly and monthly trends, the full app ranking and custom category rules."
+          }
+        }
+      }
+    },
     "读不了这个文件夹，可能已被移动或删除。" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -74876,6 +76232,50 @@
         }
       }
     },
+    "记录开关、空闲判定、排除的应用、高级统计授权和数据管理都在 设置 ▸ 时间洞察。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recording, the idle threshold, excluded apps, advanced statistics permissions and data management are in Settings ▸ Time Insights."
+          }
+        }
+      }
+    },
+    "购买 Pro 不等于同意采集：每一项都要你在这里单独打开，默认关闭，随时可以关掉。关掉后不再采集，已记录的仍可查看、导出或清空。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buying Pro is not consent to collect: each item has to be turned on here by you, is off by default and can be turned off at any time. Once off, nothing more is collected, and what was recorded can still be viewed, exported or cleared."
+          }
+        }
+      }
+    },
+    "较昨日 %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ vs yesterday"
+          }
+        }
+      }
+    },
+    "还没有应用记录。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No apps recorded yet."
+          }
+        }
+      }
+    },
     "避免外出，关好门窗" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -74883,6 +76283,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avoid going out and keep windows closed"
+          }
+        }
+      }
+    },
+    "隐私与设置…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy & Settings…"
           }
         }
       }
@@ -74938,6 +76349,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Glow"
+          }
+        }
+      }
+    },
+    "这两项是码头 Pro 功能，解锁后才能打开。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These two are Dockling Pro features and can be turned on once Pro is unlocked."
           }
         }
       }
@@ -75004,6 +76426,61 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recently Played"
+          }
+        }
+      }
+    },
+    "高级统计" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced statistics"
+          }
+        }
+      }
+    },
+    "默认只记录应用名称和时长；窗口标题和网站要单独授权。不读按键内容、不截图、不做文字识别、不上传，记录只存在这台 Mac 上，保留最近 %@ 天。" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By default only app names and durations are recorded; window titles and websites need separate permission. No keystrokes, no screenshots, no text recognition, no uploads: records stay on this Mac and the last %@ days are kept."
+          }
+        }
+      }
+    },
+    "A 面 · 浅色透明" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Side A · Pearl"
+          }
+        }
+      }
+    },
+    "B 面 · 深色机械" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Side B · Mechanical"
+          }
+        }
+      }
+    },
+    "机芯卡座外观" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deck appearance"
           }
         }
       }

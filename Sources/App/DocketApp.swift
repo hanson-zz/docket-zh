@@ -137,6 +137,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 起身休息，离开期间到点不提醒。同样看着每个布局里的久坐卡片。
         PostureAwayMonitor.shared.widgets = { [state] in state.allWidgets }
         PostureAwayMonitor.shared.start()
+        // 时间洞察：前台 App 的有效活跃时长，只记在本机。只有放着时间洞察卡片时才记，
+        // 暂停、排除和清空在面板和设置里。
+        TimeInsightsTracker.shared.widgets = { [state] in state.allWidgets }
+        TimeInsightsTracker.shared.openSettings = { [state] in
+            SettingsWindow.shared.show(app: state, tab: TimeInsightsSettingsTab.id)
+        }
+        TimeInsightsTracker.shared.openStats = {
+            TimeInsightsStatsWindow.shared.show()
+        }
+        TimeInsightsTracker.shared.start()
         // 壁纸按早中晚自动换（Pro）：同样看着每个布局里的壁纸卡片，卡片不在屏幕上也换。
         WallpaperAutoDriver.shared.widgets = { [state] in state.allWidgets }
         WallpaperAutoDriver.shared.start()
@@ -367,6 +377,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        // 时间洞察开着的那段在退出这一刻收尾写盘，下次启动不用再按心跳恢复。
+        TimeInsightsTracker.shared.stop()
         // Synchronous on purpose. Restoring the Dock means writing its
         // preferences and restarting it, and a Task would not be given the
         // time: quitting must not be how someone loses their Dock settings.
