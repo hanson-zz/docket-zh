@@ -328,7 +328,7 @@ jobs:
       # 时间洞察 Debug 测试版：仅阶段 A / B 的草稿 PR 打包，供真机验证，
       # 不是正式发布。ZIP 名和 artifact 名带拉取请求头部的提交 SHA。
       - name: Package Time Insights test build
-        if: github.event_name == 'pull_request' && (github.head_ref == 'feature/time-insights-pro-1' || github.head_ref == 'feature/time-insights-pro-phase-b')
+        if: github.event_name == 'pull_request' && (github.head_ref == 'feature/time-insights-pro-1' || github.head_ref == 'feature/time-insights-pro-phase-b' || github.head_ref == 'feature/time-insights-pro-websites')
         shell: bash
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -349,7 +349,7 @@ jobs:
           echo "Download the \`Dockling-TimeInsights-Test\` artifact below. It contains the app ZIP and SHA256SUMS." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Time Insights test build
-        if: github.event_name == 'pull_request' && (github.head_ref == 'feature/time-insights-pro-1' || github.head_ref == 'feature/time-insights-pro-phase-b')
+        if: github.event_name == 'pull_request' && (github.head_ref == 'feature/time-insights-pro-1' || github.head_ref == 'feature/time-insights-pro-phase-b' || github.head_ref == 'feature/time-insights-pro-websites')
         uses: actions/upload-artifact@v7
         with:
           name: Dockling-TimeInsights-Test-${{ github.event.pull_request.head.sha }}

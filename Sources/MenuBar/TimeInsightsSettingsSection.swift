@@ -125,9 +125,13 @@ struct TimeInsightsSettingsPane: View {
             }
             consentRow(.websites,
                        title: tr("网站域名统计"),
-                       detail: tr("在 Safari、Chrome、Edge 里只记当前标签页的域名，不记网址路径和查询内容，私密窗口不记。需要浏览器扩展；扩展尚未接通，不会采集。"),
+                       detail: tr("需要 Chrome 或 Edge 扩展。只记录符合条件的前台网站域名，跳过私密窗口和敏感页面。"),
                        isOn: tracker.settings.websitesOptIn) { on in
                 tracker.update { $0.websitesOptIn = on }
+            }
+            if unlocked && tracker.settings.websitesOptIn {
+                websiteConnection("Chrome", bundleID: "com.google.Chrome")
+                websiteConnection("Edge", bundleID: "com.microsoft.edgemac")
             }
             if !unlocked {
                 HStack(spacing: 8) {
@@ -146,6 +150,23 @@ struct TimeInsightsSettingsPane: View {
         } header: {
             header(tr("高级统计"), symbol: "square.stack.3d.up.fill", pro: true)
         }
+    }
+
+    private func websiteConnection(_ browser: String, bundleID: String) -> some View {
+        let message: String
+        switch tracker.browserStates[bundleID] ?? .notConnected {
+        case .connected:
+            message = tr("扩展已连接")
+        case .notConnected:
+            message = tr("扩展未连接，请检查安装。仅记录应用。")
+        case .offline:
+            message = tr("扩展已断开。仅记录应用。")
+        case .permissionRequired:
+            message = tr("扩展缺少权限。仅记录应用。")
+        }
+        return LabeledContent(browser, value: message)
+            .font(.system(size: 13))
+            .foregroundStyle(.secondary)
     }
 
     /// 一项单独授权的开关。没解锁不能开；没接通时写「开发中」，不能开。

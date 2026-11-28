@@ -17,8 +17,7 @@ private let timeInsightsLog = Logger(subsystem: "com.docket-zh.app", category: "
 ///   睡眠、切换用户用 NSWorkspace 通知，锁屏和屏保用分布式通知，和久坐提醒的离开检测一样。
 /// - 开着的那段每 30 秒存一次心跳，崩溃或强退后下次启动按最后一次心跳收尾，
 ///   进程没在跑的时间不算。
-/// - 不读窗口标题、不读网址（阶段 B 才有，且要 Pro 加单独同意），日志里不写 App 以外的内容，
-///   也不写 App 名，只写错误码。
+/// - 窗口标题和前台网站域名分别需要 Pro 与独立授权；日志只写错误码。
 @MainActor @Observable
 final class TimeInsightsTracker {
     static let shared = TimeInsightsTracker()
@@ -38,8 +37,9 @@ final class TimeInsightsTracker {
     /// 数据库打不开时给用户看的一句话。
     private(set) var storageProblem: String?
     private(set) var settings: TimeInsightsSettings
-    /// 浏览器扩展的连接状态（阶段 B），现在永远是没接通。
-    let browserBridge: any TimeInsightsBrowserBridge = UnconnectedBrowserBridge()
+    private(set) var browserStates: [String: BrowserBridgeState] = [:]
+    @ObservationIgnored private let browserBridge = TimeInsightsChromiumBridge()
+    @ObservationIgnored private var browserTimer: Timer?
     /// macOS 原生窗口标题来源：只有主动同意、Pro 解锁且系统辅助功能授权后调用。
     @ObservationIgnored private let titleSource = NativeTimeInsightsWindowTitleSource()
     var accessibilityTrusted: Bool { titleSource.isConnected }
@@ -88,6 +88,14 @@ final class TimeInsightsTracker {
             feed(.foreground(front), at: now)
         }
         observe()
+        browserBridge.onRequest = { [weak self] report in self?.receiveBrowserReport(report) }
+        browserBridge.start()
+        let browserTimer = Timer(timeInterval: 0.5, repeats: true) { _ in
+            MainActor.assumeIsolated { TimeInsightsTracker.shared.checkBrowser() }
+        }
+        browserTimer.tolerance = 0.1
+        RunLoop.main.add(browserTimer, forMode: .common)
+        self.browserTimer = browserTimer
         let timer = Timer(timeInterval: Self.sampleInterval, repeats: true) { _ in
             MainActor.assumeIsolated { TimeInsightsTracker.shared.sample() }
         }
@@ -99,6 +107,8 @@ final class TimeInsightsTracker {
     /// 退出时：开着的那段在这一刻结束、写盘，清掉心跳。
     func stop() {
         let now = Date.now
+        settleWebsiteIdle(at: now)
+        synchronizeBrowser(at: now)
         persist(recorder.flush(at: now))
         try? database?.saveOpen(nil)
         checkpointID = nil
@@ -172,7 +182,9 @@ final class TimeInsightsTracker {
         let rules = ProAccess.isUnlocked ? settings.customRules : []
         if recorder.rules != rules { recorder.rules = rules }
         guard let segment = recorder.segment, !segment.idle,
-              let app = recorder.eligibleApp else { return }
+              let app = recorder.eligibleApp,
+              !(TimeInsightsBrowserSamplePolicy.chromiumBrowsers.contains(app.bundleID) && recorder.hasWebsiteSlices)
+        else { return }
         let permitted = TimeInsightsPro.collectsWindowTitles(settings, unlocked: ProAccess.isUnlocked)
             && titleSource.isConnected && TimeInsightsTitlePrivacy.allows(bundleID: app.bundleID)
         let title: String?
@@ -188,9 +200,69 @@ final class TimeInsightsTracker {
     }
 
     private func feed(_ event: TimeInsightsRecorder.Event, at now: Date = .now) {
+        switch event {
+        case .foreground, .blocked:
+            settleWebsiteIdle(at: now)
+            synchronizeBrowser(at: now)
+        default:
+            break
+        }
         persist(recorder.handle(event, at: now))
+        synchronizeBrowser(at: now)
         checkpoint(now)
         publish(now)
+    }
+
+    private func settleWebsiteIdle(at now: Date) {
+        let seconds = Self.idleSeconds()
+        let browserResumed = recorder.isIdle && seconds < recorder.idleAfter
+            && TimeInsightsPro.collectsWebsites(settings, unlocked: ProAccess.isUnlocked)
+            && TimeInsightsBrowserSamplePolicy.chromiumBrowsers.contains(recorder.eligibleApp?.bundleID ?? "")
+        guard recorder.hasWebsiteSlices || browserResumed else { return }
+        persist(recorder.handle(.idle(seconds), at: now))
+    }
+
+    private func synchronizeBrowser(at now: Date) {
+        let bundleID = recorder.eligibleApp?.bundleID
+        let unlocked = ProAccess.isUnlocked
+        let eligible = TimeInsightsPro.collectsWebsites(settings, unlocked: unlocked)
+            && isPlaced && recorder.segment != nil && !recorder.isIdle
+            && Self.idleSeconds() < recorder.idleAfter
+            && bundleID == NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            && TimeInsightsBrowserSamplePolicy.chromiumBrowsers.contains(bundleID ?? "")
+        let observation = bundleID.flatMap { browserBridge.lastObservation(for: $0) }
+        browserBridge.authorize(eligible ? bundleID : nil)
+        guard let bundleID, TimeInsightsBrowserSamplePolicy.chromiumBrowsers.contains(bundleID) else { return }
+        let tab = browserBridge.currentTab(for: bundleID)
+        guard tab != nil || recorder.hasWebsiteSlices else { return }
+        // When the bridge expires, fall back from the last verified sample.
+        // Consent and foreground changes otherwise take effect at the system event.
+        let expired = observation.map { now.timeIntervalSince($0) > TimeInsightsChromiumBridge.expiry } ?? false
+        let edge = eligible || expired ? (observation ?? now) : now
+        recorder.updateWebsite(tab?.domain, at: edge, observedAt: now)
+    }
+
+    private func receiveBrowserReport(_ report: TimeInsightsChromiumBridge.Report) -> UUID? {
+        let now = Date.now
+        // Check the macOS state before granting access or accepting a sample.
+        checkBrowser(at: now)
+        let grant = browserBridge.ingest(report, now: now, settings: settings, unlocked: ProAccess.isUnlocked)
+        if report.status != "ready" { checkBrowser(at: now) }
+        return grant
+    }
+
+    private func checkBrowser(at now: Date = .now) {
+        let next = Dictionary(uniqueKeysWithValues: TimeInsightsBrowserSamplePolicy.chromiumBrowsers.map {
+            ($0, browserBridge.state(for: $0, now: now))
+        })
+        if next != browserStates { browserStates = next }
+        let before = recorder.segment
+        settleWebsiteIdle(at: now)
+        synchronizeBrowser(at: now)
+        if before?.id != recorder.segment?.id {
+            checkpoint(now)
+            publish(now)
+        }
     }
 
     // MARK: 存储
@@ -225,9 +297,8 @@ final class TimeInsightsTracker {
     /// 上次退出或崩溃时开着的那段：按最后一次心跳收尾写进去。
     private func recoverOpenSegment(_ db: TimeInsightsDatabase) {
         guard let segment = try? db.loadOpen() else { return }
-        if let session = TimeInsightsRecorder.recover(segment, now: .now) {
-            try? db.insert(TimeInsightsMath.splitByDay(session))
-        }
+        let sessions = TimeInsightsRecorder.recoverCheckpoint(segment, now: .now)
+        try? db.insert(sessions.flatMap { TimeInsightsMath.splitByDay($0) })
         try? db.saveOpen(nil)
     }
 
@@ -247,7 +318,7 @@ final class TimeInsightsTracker {
 
     private func checkpoint(_ now: Date) {
         guard let database else { return }
-        let segment = recorder.segment
+        let segment = recorder.checkpoint
         guard segment?.id != checkpointID || now.timeIntervalSince(lastCheckpoint) >= Self.checkpointInterval else { return }
         try? database.saveOpen(segment)
         checkpointID = segment?.id
@@ -270,9 +341,7 @@ final class TimeInsightsTracker {
     private func publish(_ now: Date) {
         if Calendar.current.startOfDay(for: now) != todayStart { reloadToday(now) }
         var sessions = todaySessions
-        if let live = recorder.provisional(now: now) {
-            sessions += TimeInsightsMath.splitByDay(live)
-        }
+        sessions += recorder.provisionalSessions(now: now).flatMap { TimeInsightsMath.splitByDay($0) }
         let day = TimeInsightsDay.make(categorized(sessions), day: now)
         if day != today { today = day }
         let nextStatus = recorder.status
@@ -349,17 +418,16 @@ final class TimeInsightsTracker {
         guard storageProblem == nil, let database,
               let finished = try? database.sessions(overlapping: interval) else { return nil }
         var snapshot = finished
-        if let live = recorder.provisional(now: .now),
-           live.end > interval.start, live.start < interval.end {
-            snapshot += TimeInsightsMath.splitByDay(live)
-        }
+        snapshot += recorder.provisionalSessions(now: .now)
+            .filter { $0.end > interval.start && $0.start < interval.end }
+            .flatMap { TimeInsightsMath.splitByDay($0) }
         return categorized(snapshot)
     }
 
     /// 基础 CSV（免费）：时间、App、分类和来源，不含窗口标题和域名。
     func exportCSV(to url: URL) throws {
         var sessions = (try database?.allSessions()) ?? []
-        if let live = recorder.provisional(now: .now) { sessions.append(live) }
+        sessions += recorder.provisionalSessions(now: .now)
         try TimeInsightsCSV.make(sessions).write(to: url, atomically: true, encoding: .utf8)
     }
 

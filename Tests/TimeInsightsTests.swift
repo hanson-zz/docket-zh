@@ -479,11 +479,12 @@ final class TimeInsightsTests: XCTestCase {
         settings.websitesOptIn = true
         XCTAssertFalse(TimeInsightsPro.collectsWindowTitles(settings, unlocked: false), "没解锁时同意了也不采")
         XCTAssertTrue(TimeInsightsPro.collectsWindowTitles(settings, unlocked: true), "阶段 B 源已接通，还需系统授权")
-        XCTAssertFalse(TimeInsightsPro.collectsWebsites(settings, unlocked: true), "阶段 A 待接通")
+        XCTAssertTrue(TimeInsightsPro.collectsWebsites(settings, unlocked: true))
+        XCTAssertFalse(TimeInsightsPro.collectsWebsites(settings, unlocked: false))
         XCTAssertTrue(TimeInsightsProFeature.trends.isConnected, "周/月真实统计已接通")
         XCTAssertTrue(TimeInsightsProFeature.windowTitles.isConnected)
         XCTAssertTrue(TimeInsightsProFeature.customRules.isConnected)
-        XCTAssertFalse(TimeInsightsProFeature.websites.isConnected)
+        XCTAssertTrue(TimeInsightsProFeature.websites.isConnected)
         XCTAssertFalse(TimeInsightsProFeature.detailedTimeline.isConnected)
         XCTAssertFalse(TimeInsightsProFeature.fullExport.isConnected)
         XCTAssertEqual(Set(TimeInsightsProFeature.allCases.filter(\.needsConsent)), [.windowTitles, .websites])
@@ -558,7 +559,70 @@ final class TimeInsightsTests: XCTestCase {
                        "example.com")
         XCTAssertEqual(UnconnectedBrowserBridge().state, .notConnected,
                        "纯逻辑协议准备好不代表扩展已经接通")
-        XCTAssertFalse(TimeInsightsProFeature.websites.isConnected)
+        XCTAssertTrue(TimeInsightsProFeature.websites.isConnected)
+    }
+
+    func testChromiumWireDomainRejectsURLsAndPrivateHosts() {
+        let settings = TimeInsightsSettings(websitesOptIn: true)
+        let chrome = "com.google.Chrome"
+        func accept(_ host: String, browser: String = "com.google.Chrome") -> BrowserTabSample? {
+            TimeInsightsBrowserSamplePolicy.acceptDomain(
+                host, browserBundleID: browser, foregroundBundleID: chrome,
+                capturedAt: at(10), now: at(11), settings: settings, unlocked: true
+            )
+        }
+        XCTAssertEqual(accept("www.example.com")?.domain, "example.com")
+        for host in ["http://example.com", "example.com/path", "example.com?x=1", "user@example.com",
+                     "accounts.example.com", "127.0.0.1", "printer.local", "example..com", "-bad.com"] {
+            XCTAssertNil(accept(host), host)
+        }
+        XCTAssertNil(accept("example.com", browser: "com.apple.Safari"))
+        XCTAssertNil(accept("example.com", browser: "com.microsoft.edgemac"))
+    }
+
+    func testWebsiteSwitchAndDisconnectPartitionTheSameAppTime() throws {
+        var recorder = recorder()
+        let chrome = TimeInsightsRecorder.App(bundleID: "com.google.Chrome", name: "Chrome")
+        recorder.rules = [TimeInsightsRule(.domain("example.com"), category: .learning)]
+        _ = recorder.handle(.foreground(chrome), at: at(0))
+        recorder.updateWebsite("example.com", at: at(0.25), observedAt: at(0.5))
+        recorder.updateWebsite("example.org", at: at(5), observedAt: at(5.2))
+        recorder.updateWebsite(nil, at: at(8), observedAt: at(8.1))
+        let snapshot = try XCTUnwrap(recorder.checkpoint)
+        let decoded = try JSONDecoder().decode(TimeInsightsRecorder.Open.self, from: JSONEncoder().encode(snapshot))
+        XCTAssertEqual(TimeInsightsRecorder.recoverCheckpoint(decoded, now: at(9)).map(\.id),
+                       recorder.provisionalSessions(now: at(8.1)).map(\.id))
+        let slices = recorder.handle(.foreground(xcode), at: at(10))
+        XCTAssertEqual(slices.map(\.duration), [0.25, 4.75, 3, 2])
+        XCTAssertEqual(slices.compactMap(\.domain), ["example.com", "example.org"])
+        XCTAssertEqual(slices[1].classification, .learning)
+        XCTAssertEqual(slices[1].source, .browserBridge)
+        XCTAssertEqual(slices[1].privacyFlags, .domainOnly)
+        XCTAssertNil(slices[1].windowTitle)
+        XCTAssertEqual(slices[3].source, .foreground)
+
+        let range = DateInterval(start: at(1), end: at(7))
+        let ranking = TimeInsightsWebsiteUsage.ranking(slices + slices, interval: range)
+        XCTAssertEqual(ranking.map(\.active), [4, 2])
+        XCTAssertEqual(ranking.map(\.domain), ["example.com", "example.org"])
+    }
+
+    func testIdleBackdatingTrimsWebsiteChangesAfterLastInput() {
+        var recorder = recorder(idle: 10)
+        let edge = TimeInsightsRecorder.App(bundleID: "com.microsoft.edgemac", name: "Edge")
+        _ = recorder.handle(.foreground(edge), at: at(0))
+        recorder.updateWebsite("example.com", at: at(1), observedAt: at(1))
+        recorder.updateWebsite("example.org", at: at(8), observedAt: at(8))
+        recorder.updateWebsite(nil, at: at(11), observedAt: at(11))
+        let finished = recorder.handle(.idle(10), at: at(14))
+        XCTAssertEqual(finished.map(\.duration), [1, 3])
+        XCTAssertEqual(finished.compactMap(\.domain), ["example.com"])
+        XCTAssertEqual(recorder.segment?.start, at(4))
+        XCTAssertNil(recorder.segment?.domain)
+        XCTAssertEqual(recorder.provisional(now: at(14))?.source, .idleForeground)
+        _ = recorder.handle(.blocked(.locked), at: at(15))
+        recorder.updateWebsite("example.net", at: at(16), observedAt: at(16))
+        XCTAssertNil(recorder.segment)
     }
 
     func testBrowserAndPasswordManagerVariantsNeverExposeAccessibilityTitles() {

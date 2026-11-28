@@ -196,6 +196,25 @@ public enum TimeInsightsActivityDetail {
 
 // MARK: 较昨日、占比
 
+public struct TimeInsightsWebsiteUsage: Equatable, Sendable, Identifiable {
+    public let domain: String
+    public let active: TimeInterval
+    public var id: String { domain }
+
+    public static func ranking(_ sessions: [ActivitySession], interval: DateInterval) -> [Self] {
+        let counted = sessions.filter { !TimeInsightsDefaults.alwaysSkipped.contains($0.bundleID) }
+        let slices = TimeInsightsMath.clipped(TimeInsightsMath.normalized(counted), to: interval)
+        var totals: [String: TimeInterval] = [:]
+        for slice in slices where slice.source == .browserBridge {
+            guard let domain = slice.domain else { continue }
+            totals[domain, default: 0] += slice.duration
+        }
+        return totals.map { Self(domain: $0.key, active: $0.value) }.sorted {
+            $0.active != $1.active ? $0.active > $1.active : $0.domain < $1.domain
+        }
+    }
+}
+
 public enum TimeInsightsStats {
     /// 较昨日的变化比例（0.12 是多了 12%）。昨天没有任何有效活跃（没装、没放卡片、
     /// 暂停了一整天）时 nil，界面上就不写较昨日，不拿 0 去比。
