@@ -1,6 +1,72 @@
 {
   "sourceLanguage" : "zh-Hans",
   "strings" : {
+    "网站统计未开启": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Website statistics are off"
+          }
+        }
+      }
+    },
+    "放置时间洞察小组件后开始记录": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add the Time Insights widget to start recording"
+          }
+        }
+      }
+    },
+    "扩展已连接，等待此浏览器在前台": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension connected. Waiting for this browser to be in the foreground."
+          }
+        }
+      }
+    },
+    "扩展已连接，当前仅记录应用": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension connected. Currently recording application time only."
+          }
+        }
+      }
+    },
+    "扩展已连接，正在统计前台网站": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension connected. Recording the foreground website."
+          }
+        }
+      }
+    },
+    "网页加载中、私密窗口或敏感页面只记录应用，不记录网站域名。": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading pages, private windows and sensitive pages record application time only, without website domains."
+          }
+        }
+      }
+    },
     "这个时段没有网站记录。请在隐私与设置中检查记录授权和扩展连接。" : {
       "extractionState" : "manual",
       "localizations" : {

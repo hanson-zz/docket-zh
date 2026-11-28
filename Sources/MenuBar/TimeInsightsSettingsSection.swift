@@ -132,6 +132,12 @@ struct TimeInsightsSettingsPane: View {
             if unlocked && tracker.settings.websitesOptIn {
                 websiteConnection("Chrome", bundleID: "com.google.Chrome")
                 websiteConnection("Edge", bundleID: "com.microsoft.edgemac")
+                Text(tr("网页加载中、私密窗口或敏感页面只记录应用，不记录网站域名。"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(tr("检查状态")) { tracker.refreshBrowserConnections() }
+                    .buttonStyle(.borderless)
             }
             if !unlocked {
                 HStack(spacing: 8) {
@@ -153,18 +159,7 @@ struct TimeInsightsSettingsPane: View {
     }
 
     private func websiteConnection(_ browser: String, bundleID: String) -> some View {
-        let message: String
-        switch tracker.browserStates[bundleID] ?? .notConnected {
-        case .connected:
-            message = tr("扩展已连接")
-        case .notConnected:
-            message = tr("扩展未连接，请检查安装。仅记录应用。")
-        case .offline:
-            message = tr("扩展已断开。仅记录应用。")
-        case .permissionRequired:
-            message = tr("扩展缺少权限。仅记录应用。")
-        }
-        return LabeledContent(browser, value: message)
+        LabeledContent(browser, value: tracker.websiteConnection(for: bundleID).title)
             .font(.system(size: 13))
             .foregroundStyle(.secondary)
     }

@@ -38,6 +38,8 @@ final class TimeInsightsTracker {
     private(set) var storageProblem: String?
     private(set) var settings: TimeInsightsSettings
     private(set) var browserStates: [String: BrowserBridgeState] = [:]
+    /// Only publish the browser identity, never a URL, for recording status UI.
+    private(set) var currentWebsiteBrowserID: String?
     @ObservationIgnored private let browserBridge = TimeInsightsChromiumBridge()
     @ObservationIgnored private var browserTimer: Timer?
     /// macOS 原生窗口标题来源：只有主动同意、Pro 解锁且系统辅助功能授权后调用。
@@ -352,9 +354,23 @@ final class TimeInsightsTracker {
         if category != currentCategory { currentCategory = category }
         let segmentStart = app == nil ? nil : recorder.segment?.start
         if segmentStart != currentSegmentStart { currentSegmentStart = segmentStart }
+        let websiteBrowser = nextStatus == .recording && recorder.segment?.domain != nil ? app?.bundleID : nil
+        if websiteBrowser != currentWebsiteBrowserID { currentWebsiteBrowserID = websiteBrowser }
     }
 
     // MARK: 用户操作（全部免费）
+
+    func websiteConnection(for bundleID: String) -> TimeInsightsWebsiteConnection {
+        .resolve(bridge: browserStates[bundleID] ?? .notConnected, status: status,
+                 enabled: ProAccess.isUnlocked && settings.websitesOptIn, placed: isPlaced,
+                 excluded: settings.isExcluded(bundleID), foreground: currentApp?.bundleID == bundleID,
+                 hasWebsite: currentWebsiteBrowserID == bundleID)
+    }
+
+    func refreshBrowserConnections() {
+        sample()
+        checkBrowser()
+    }
 
     func update(_ change: (inout TimeInsightsSettings) -> Void) {
         var next = settings
