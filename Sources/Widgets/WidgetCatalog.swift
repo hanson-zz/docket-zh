@@ -320,7 +320,7 @@ public enum WidgetCatalog {
                            WeatherPanel.moreCitiesKey: .list([]),
                            WeatherPanel.showIndicesKey: .bool(true),
                            WeatherPanel.showRainKey: .bool(true),
-                           // 暖心提示：卡片轮换一句、面板小熊猫说一句（WeatherTips），默认开。
+                           // 暖心提示显示在详情面板，扩展栏只保留居中的天气读数。
                            WeatherTips.showKey: .bool(true)]),
               variants: [(tr("当前"), ["layout": .string(WeatherStyle.currentLayout)]),
                          (tr("多日预报"), ["layout": .string(WeatherStyle.forecastLayout)]),

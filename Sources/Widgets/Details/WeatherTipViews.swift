@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// 天气暖心提示的界面部分：把面板和卡片手上的数据交给 `WeatherTips`，
-/// 面板顶上的小熊猫气泡，卡片上轮换的一行。判断和文案都在 Core（WeatherTips）。
+/// 天气暖心提示的界面部分：把面板手上的数据交给 `WeatherTips`，
+/// 用面板顶上的小熊猫气泡呈现。判断和文案都在 Core（WeatherTips）。
 enum WeatherTipSource {
     /// 把一个城市手上的数据拼成判断用的输入；哪项没有就留空，那一类提示跳过。
     static func input(weather: WeatherNow?, nowcast: WeatherNowcast?, aqi: Int?, forecast: DailyForecast?,
